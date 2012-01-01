@@ -4,7 +4,7 @@ import xml.dom
 from xml4h import builder, builder_xmldom
 
 
-class TestXmlDomBuilder(unittest.TestCase):
+class TestXmlBuilderNode(unittest.TestCase):
 
     def test_create_invalid_impl(self):
         self.assertRaises(Exception,
