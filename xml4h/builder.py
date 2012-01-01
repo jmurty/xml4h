@@ -30,6 +30,11 @@ class XmlDomBuilderNode(object):
         doctype = None  # TODO
         doc = dom_impl.createDocument(
             namespace_uri, root_tagname, doctype)
+        # Automatically add namespace URI to root Element as attribute
+        if namespace_uri is not None:
+            doc.firstChild.setAttributeNS(
+                'http://www.w3.org/2000/xmlns/',
+                'xmlns', namespace_uri)
         # Return a node wrapping the root element
         return XmlDomBuilderNode(_element=doc.firstChild, _document=doc)
 
@@ -43,6 +48,12 @@ class XmlDomBuilderNode(object):
     def root(self):
         return XmlDomBuilderNode(_document=self._document,
             _element=self._document.firstChild)
+
+    def __eq__(self, other):
+        if self is other:
+            return True
+        # xml.dom.Document's == test doesn't match equivalent docs
+        return unicode(self) == unicode(other)
 
     def write(self, writer, encoding='utf-8',
             indent=0, newline='\n', omit_declaration=False):
@@ -63,29 +74,49 @@ class XmlDomBuilderNode(object):
     def __unicode__(self):
         return self.xml()
 
-    def up(self, count=1):
+    def up(self, count=1, to_tagname=None):
         elem = self._element
-        for i in range(count):
-            # Don't try to go up beyond the document root
+        up_count = 0
+        while True:
+            # Don't go up beyond the document root
             if elem.parentNode is None or elem.parentNode == self._document:
                 return XmlDomBuilderNode(_document=self._document,
                     _element=self._document.firstChild)
             elem = elem.parentNode
+            if to_tagname is None:
+                up_count += 1
+                if up_count >= count:
+                    break
+            else:
+                if elem.nodeName == to_tagname:
+                    break
         return XmlDomBuilderNode(_element=elem, _document=self._document)
 
-    def element(self, tagname, namespace_uri=None):
+    def element(self, tagname, namespace_uri=None,
+            attributes=None, text=None, before=False):
         if namespace_uri is None:
             elem = self._document.createElement(tagname)
         else:
             elem = self._document.createElementNS(namespace_uri, tagname)
-        self._element.appendChild(elem)
+        # Automatically add namespace URI to Element as attribute
+        if namespace_uri is not None:
+            self._namespace(elem, namespace_uri)
+        if attributes is not None:
+            self._attributes(elem, attr_obj=attributes)
+        if text is not None:
+            self._text(elem, text=text)
+        if before:
+            self._element.parentNode.insertBefore(elem, self._element)
+        else:
+            self._element.appendChild(elem)
         return XmlDomBuilderNode(_element=elem, _document=self._document)
 
     elem = element  # Alias
 
     e = element  # Alias
 
-    def attributes(self, attr_obj=None, namespace_uri=None, **attr_dict):
+    def _attributes(self, element,
+            attr_obj=None, namespace_uri=None, **attr_dict):
         if attr_obj is not None:
             if isinstance(attr_obj, dict):
                 attr_dict.update(attr_obj)
@@ -100,18 +131,76 @@ class XmlDomBuilderNode(object):
             if not isinstance(v, basestring):
                 v = unicode(v)
             if namespace_uri is None:
-                self._element.setAttribute(n, v)
+                element.setAttribute(n, v)
             else:
-                self._element.setAttributeNS(namespace_uri, n, v)
+                element.setAttributeNS(namespace_uri, n, v)
+
+    def attributes(self, attr_obj=None, namespace_uri=None, **attr_dict):
+        self._attributes(self._element,
+            attr_obj=attr_obj, namespace_uri=namespace_uri, **attr_dict)
         return self
 
     attrs = attributes  # Alias
 
     a = attributes  # Alias
 
-    def text(self, text):
+    def _text(self, element, text):
         text_node = self._document.createTextNode(text)
-        self._element.appendChild(text_node)
+        element.appendChild(text_node)
+
+    def text(self, text):
+        self._text(self._element, text)
         return self
 
     t = text  # Alias
+
+    def _comment(self, element, text):
+        comment_node = self._document.createComment(text)
+        element.appendChild(comment_node)
+
+    def comment(self, text):
+        self._comment(self._element, text)
+        return self
+
+    c = comment  # Alias
+
+    def _instruction(self, element, target, data):
+        instruction_node = self._document.createProcessingInstruction(
+            target, data)
+        element.appendChild(instruction_node)
+
+    def instruction(self, target, data):
+        self._instruction(self._element, target, data)
+        return self
+
+    processing_instruction = instruction  # Alias
+
+    i = instruction  # Alias
+
+    def _namespace(self, element, namespace_uri, prefix=None):
+        if not prefix:
+            ns_name = 'xmlns'
+        else:
+            ns_name = 'xmlns:%s' % prefix
+        self._attributes(element,
+            {ns_name: namespace_uri},
+            namespace_uri='http://www.w3.org/2000/xmlns/')
+
+    def namespace(self, namespace_uri, prefix=None):
+        self._namespace(self._element, namespace_uri, prefix=prefix)
+        return self
+
+    ns = namespace  # Alias
+
+# TODO
+#    def _cdata(self, dlement, data):
+#        cdata_node = self._document.createCDATANode(data)
+#        element.appendChild(cdata_node)
+#
+#    def cdata(self, data):
+#        self._cdata(self._element, data)
+#        return self
+#
+#    data = cdata  # Alias
+#
+#    d = cdata  # Alias
