@@ -296,29 +296,24 @@ class BaseBuilderNodesTest(object):
             xmlb.xml())
         # TODO Test namespaces work as expected when searching/traversing DOM
 
-# TODO
-#    def test_cdata(self):
-#        # Aliases
-#        xmlb = self.my_builder('DocRoot')
-#        self.assertEqual(xmlb.add_cdata, xmlb.add_data)
-#        self.assertEqual(xmlb.add_cdata, xmlb.add_d)
-#        # Add text values to elements
-#        xmlb = (
-#            self.my_builder('DocRoot')
-#                .add_e('Elem1').t('<content/> as text').up()
-#                .add_e('Elem2').add_d('<content/> as CDATA').up()
-#            )
-#        self.assertEqual(
-#            '<?xml version="1.0" encoding="utf-8"?>\n'
-#            '<DocRoot>\n'
-#            '    <Elem1>\n'
-#            '        &lt;content&gt; as text\n'
-#            '    </Elem1>\n'
-#            '    <Elem2>\n'
-#            '        <content> as CDATA\n'
-#            '    </Elem2>\n'
-#            '</DocRoot>\n',
-#            xmlb.xml())
+    def test_cdata(self):
+        # Aliases
+        xmlb = self.my_builder('DocRoot')
+        self.assertEqual(xmlb.add_cdata, xmlb.add_data)
+        self.assertEqual(xmlb.add_cdata, xmlb.add_d)
+        # Add text values to elements
+        xmlb = (
+            self.my_builder('DocRoot')
+                .add_e('Elem1').add_t('<content/> as text').up()
+                .add_e('Elem2').add_d('<content/> as cdata').up()
+            )
+        self.assertEqual(
+            '<?xml version="1.0" encoding="utf-8"?>\n'
+            '<DocRoot>\n'
+            '    <Elem1>&lt;content/&gt; as text</Elem1>\n'
+            '    <Elem2><![CDATA[<content/> as cdata]]></Elem2>\n'
+            '</DocRoot>\n',
+            xmlb.xml())
 
     def test_element_with_extra_kwargs(self):
         xmlb = (

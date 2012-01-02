@@ -24,7 +24,7 @@ class Node(object):
 
     @property
     def root(self):
-        return self._build_wrap_node(
+        return self._wrap_impl_node(
             self._get_root_element(), self.impl_document)
 
     @property
@@ -40,7 +40,7 @@ class Node(object):
 
     @property
     def node_type(self):
-        return self._get_node_type(self.impl_node)
+        return self._map_node_type(self.impl_node)
 
     def __eq__(self, other):
         if self is other:
@@ -76,7 +76,7 @@ class Node(object):
     # Methods that operate on underlying DOM implementation
 
     @classmethod
-    def _build_wrap_node(self, impl_node, impl_document):
+    def _wrap_impl_node(self, impl_node, impl_document):
         raise NotImplementedError()
 
     def _new_element_node(self, tagname, namespace_uri):
@@ -100,7 +100,7 @@ class Node(object):
     def _get_children(self, node, namespace_uri=None):
         raise NotImplementedError()
 
-    def _get_node_type(self, node):
+    def _map_node_type(self, node):
         raise NotImplementedError()
 
     def _get_root_element(self):
@@ -168,7 +168,8 @@ class ValueNode(Node):
             writer.write("<!--%s-->" % self.value)
         #elif self.is_type(Node.NOTATION_NODE): # TODO
         else:
-            raise Exception('write of node of type %s is not supported')
+            raise Exception('write of node %s is not supported'
+                % self.__class__)
 
 
 class NameValueNode(ValueNode):
@@ -236,7 +237,7 @@ class ElementNode(NameValueNode):
     def _set_attribute(self, element, name, value, namespace_uri=None):
         raise NotImplementedError()
 
-    def _get_attributes(self, namespace_uri=None):
+    def _get_attributes(self, element, namespace_uri=None):
         raise NotImplementedError()
 
 
@@ -246,7 +247,7 @@ class ElementNode(NameValueNode):
         for child in self._get_children(
                 self.impl_node, namespace_uri=namespace_uri):
             child_wrap_nodes.append(
-                self._build_wrap_node(child, self.impl_document))
+                self._wrap_impl_node(child, self.impl_document))
         return child_wrap_nodes
 
     def up(self, count=1, to_tagname=None):
@@ -256,7 +257,7 @@ class ElementNode(NameValueNode):
             # Don't go up beyond the document root
             if (self._get_parent(elem) is None
                     or self._get_parent(elem) == self.impl_document):
-                return self._build_wrap_node(self._get_root_element(), self.impl_document)
+                return self._wrap_impl_node(self._get_root_element(), self.impl_document)
             elem = self._get_parent(elem)
             if to_tagname is None:
                 up_count += 1
@@ -265,7 +266,7 @@ class ElementNode(NameValueNode):
             else:
                 if self._get_name(elem) == to_tagname:
                     break
-        return self._build_wrap_node(elem, self.impl_document)
+        return self._wrap_impl_node(elem, self.impl_document)
 
     def add_element(self, tagname, namespace_uri=None,
             attributes=None, text=None, before=False):
@@ -283,7 +284,7 @@ class ElementNode(NameValueNode):
                 before_sibling=self.impl_node)
         else:
             self._add_child_node(self.impl_node, elem)
-        return self._build_wrap_node(elem, self.impl_document)
+        return self._wrap_impl_node(elem, self.impl_document)
 
     add_elem = add_element  # Alias
 
@@ -308,9 +309,10 @@ class ElementNode(NameValueNode):
 
     def get_attributes(self, namespace_uri=None):
         attr_wrap_nodes = []
-        for attr in self._get_attributes(namespace_uri=namespace_uri):
+        for attr in self._get_attributes(
+                self.impl_node, namespace_uri=namespace_uri):
             attr_wrap_nodes.append(
-                self._build_wrap_node(attr, self.impl_document))
+                self._wrap_impl_node(attr, self.impl_document))
         return sorted(attr_wrap_nodes, key=lambda a: a.name)
 
     def set_attributes(self, attr_obj=None, namespace_uri=None, **attr_dict):
@@ -373,7 +375,7 @@ class ElementNode(NameValueNode):
 
     set_ns = set_namespace  # Alias
 
-    def _add_cdata(self, dlement, data):
+    def _add_cdata(self, element, data):
         cdata_node = self._new_cdata_node(data)
         element.appendChild(cdata_node)
 

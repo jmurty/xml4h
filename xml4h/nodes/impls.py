@@ -1,33 +1,34 @@
-import re
-from StringIO import StringIO
-
-import xml
-
 from xml4h import is_pyxml_installed
 from xml4h.nodes import (Node, ValueNode, NameValueNode,
     ElementNode, AttributeNode, ProcessingInstructionNode)
+
+import xml
 
 
 class XmlDomNode(Node):
 
     @classmethod
-    def _build_wrap_node(self, impl_node, impl_document):
-        if not isinstance(impl_document, xml.dom.minidom.Document):
-            raise Exception('oops')
+    def _wrap_impl_node(self, impl_node, impl_document):
         if isinstance(impl_node, tuple):
             return XmlDomAttributeNode(impl_node, impl_document)
-        elif impl_node.nodeType == xml.dom.Node.ELEMENT_NODE:
-            return XmlDomElementNode(impl_node, impl_document)
-        elif (impl_node.nodeType == xml.dom.Node.TEXT_NODE
-                or impl_node.nodeType == xml.dom.Node.COMMENT_NODE):
-            return XmlDomValueNode(impl_node, impl_document)
-        elif impl_node.nodeType == xml.dom.Node.PROCESSING_INSTRUCTION_NODE:
-            return XmlDomProcessingInstructionNode(impl_node, impl_document)
-        raise NotImplementedError(
-            'Wrapping of %s implementation nodes is not implemented'
-            % impl_node)
+        try:
+            impl_class = {
+                xml.dom.Node.ELEMENT_NODE: XmlDomElementNode,
+                xml.dom.Node.ATTRIBUTE_NODE: XmlDomAttributeNode,
+                xml.dom.Node.TEXT_NODE: XmlDomTextNode,
+                xml.dom.Node.CDATA_SECTION_NODE: XmlDomCDATANode,
+                xml.dom.Node.ENTITY_NODE: XmlDomEntityNode,
+                xml.dom.Node.PROCESSING_INSTRUCTION_NODE:
+                    XmlDomProcessingInstructionNode,
+                xml.dom.Node.COMMENT_NODE: XmlDomCommentNode,
+                }[impl_node.nodeType]
+            return impl_class(impl_node, impl_document)
+        except KeyError, e:
+            raise NotImplementedError(
+                'Wrapping of %s implementation nodes is not implemented'
+                % impl_node)
 
-    def _get_node_type(self, node):
+    def _map_node_type(self, node):
         try:
             return {
                 xml.dom.Node.ELEMENT_NODE: Node.ELEMENT_NODE,
@@ -60,6 +61,9 @@ class XmlDomNode(Node):
     def _new_processing_instruction_node(self, target, data):
         return self.impl_document.createProcessingInstruction(target, data)
 
+    def _new_cdata_node(self, text):
+        return self.impl_document.createCDATASection(text)
+
     def _get_parent(self, element):
         return element.parentNode
 
@@ -76,6 +80,12 @@ class XmlDomValueNode(XmlDomNode, ValueNode):
         return node.nodeValue
 
 
+class XmlDomNameValueNode(XmlDomValueNode, NameValueNode):
+
+    def _get_name(self, node):
+        return node.nodeName
+
+
 class XmlDomAttributeNode(XmlDomNode, AttributeNode):
 
     def _get_name(self, node):
@@ -85,16 +95,24 @@ class XmlDomAttributeNode(XmlDomNode, AttributeNode):
         return node[1]
 
 
-class XmlDomProcessingInstructionNode(XmlDomNode, ProcessingInstructionNode):
+class XmlDomTextNode(XmlDomValueNode):
+    pass
 
-    def _get_name(self, node):
-        return node.nodeName
+class XmlDomCDATANode(XmlDomValueNode):
+    pass
 
-    def _get_value(self, node):
-        return node.nodeValue
+class XmlDomEntityNode(XmlDomValueNode):
+    pass
+
+class XmlDomCommentNode(XmlDomValueNode):
+    pass
+
+class XmlDomProcessingInstructionNode(XmlDomNameValueNode,
+        ProcessingInstructionNode):
+    pass
 
 
-class XmlDomElementNode(XmlDomNode, ElementNode):
+class XmlDomElementNode(XmlDomNameValueNode, ElementNode):
     '''
     Wrap underlying XML document-building libarary/implementation and
     expose utility functions to easily build XML nodes.
@@ -126,24 +144,12 @@ class XmlDomElementNode(XmlDomNode, ElementNode):
         else:
             element.setAttribute(name, value)
 
-    def _get_attributes(self, namespace_uri=None):
-        return self.impl_node.attributes.items()
-
-    @property
-    def _attribute_class(self):
-        return XmlDomAttributeNode
-
-    def _get_tagname(self, element):
-        return element.nodeName
+    def _get_attributes(self, element, namespace_uri=None):
+        return element.attributes.items()
 
     def __eq__(self, other):
         if super(XmlDomElementNode, self).__eq__(other):
             return True
         # xml.dom.Document's == test doesn't match equivalent docs
+        # TODO Very inefficient
         return unicode(self) == unicode(other)
-
-    def _get_name(self, node):
-        return node.tagName
-
-    def _get_value(self, node):
-        return node.value
