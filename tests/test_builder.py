@@ -27,12 +27,6 @@ class BaseBuilderNodesTest(object):
     def my_builder(self):
         raise NotImplementedError()
 
-    # We implement our own, since assertRegexpMatches is only available in 2.7+
-    def assertRegexpMatch(self, regexp_text, test_text):
-        matches = re.match(regexp_text, test_text, flags=re.MULTILINE)
-        self.assertFalse(matches is None,
-            ('REGEXP %s != %s' % (regexp_text, test_text)).replace('\n', '\\n'))
-
     def test_element(self):
         xmlb = self.my_builder('DocRoot')
         # Aliases
@@ -40,8 +34,8 @@ class BaseBuilderNodesTest(object):
         self.assertEqual(xmlb.add_element, xmlb.add_e)
         # Add elements
         xmlb = self.my_builder('DocRoot').add_e('Deeper').add_e('AndDeeper').add_e('DeeperStill')
-        self.assertRegexpMatch(
-            '<\?xml version=[\'"]1.0[\'"] encoding=[\'"]utf-8[\'"]\?>\n'
+        self.assertEqual(
+            '<?xml version="1.0" encoding="utf-8"?>\n'
             '<DocRoot>\n'
             '    <Deeper>\n'
             '        <AndDeeper>\n'
@@ -58,7 +52,11 @@ class BaseBuilderNodesTest(object):
         self.assertEqual('DocRoot', xmlb.root.name)
 
     def test_up(self):
-        xmlb = self.my_builder('DocRoot').add_e('Deeper').add_e('AndDeeper').add_e('DeeperStill')
+        xmlb = (
+            self.my_builder('DocRoot')
+                .add_e('Deeper')
+                .add_e('AndDeeper')
+                .add_e('DeeperStill'))
         self.assertEqual('DeeperStill', xmlb.name)
 
         # Can navigate up XML DOM tree one step at a time...
@@ -107,14 +105,14 @@ class BaseBuilderNodesTest(object):
                   {'test': 'value-in-first-arg'},
                   test='value-in-kwargs').up()
             )
-        self.assertRegexpMatch(
-            '<\?xml version=[\'"]1.0[\'"] encoding=[\'"]utf-8[\'"]\?>\n'
+        self.assertEqual(
+            '<?xml version="1.0" encoding="utf-8"?>\n'
             '<DocRoot>\n'
-            '    <Elem1 x=[\'"]1[\'"]/>\n'
-            '    <Elem2 a=[\'"]a[\'"] b=[\'"]bee[\'"]/>\n'
-            '    <Elem3 hyphenated-name=[\'"]v2[\'"]/>\n'
-            '    <Elem4 twelve=[\'"]12[\'"]/>\n'
-            '    <Elem5 test=[\'"]value-in-first-arg[\'"]/>\n'
+            '    <Elem1 x="1"/>\n'
+            '    <Elem2 a="a" b="bee"/>\n'
+            '    <Elem3 hyphenated-name="v2"/>\n'
+            '    <Elem4 twelve="12"/>\n'
+            '    <Elem5 test="value-in-first-arg"/>\n'
             '</DocRoot>\n',
             xmlb.xml())
 
@@ -122,24 +120,24 @@ class BaseBuilderNodesTest(object):
         xmlb = self.my_builder('DocRoot').add_e('Elem1').up().add_e('Elem2')
         # Default printed output is utf-8, and pretty-printed
         xml = (
-            '<\?xml version=[\'"]1.0[\'"] encoding=[\'"]utf-8[\'"]\?>\n'
+            '<?xml version="1.0" encoding="utf-8"?>\n'
             '<DocRoot>\n'
             '    <Elem1/>\n'
             '    <Elem2/>\n'
             '</DocRoot>\n'
             )
-        self.assertRegexpMatch(xml, str(xmlb))
-        self.assertRegexpMatch(xml, unicode(xmlb))
-        self.assertRegexpMatch(xml, xmlb.xml())
+        self.assertEqual(xml, str(xmlb))
+        self.assertEqual(xml, unicode(xmlb))
+        self.assertEqual(xml, xmlb.xml())
         # Mix it up a bit
-        self.assertRegexpMatch(
+        self.assertEqual(
             '<DocRoot>\n'
             '    <Elem1/>\n'
             '    <Elem2/>\n'
             '</DocRoot>\n',
             xmlb.xml(omit_declaration=True))
-        self.assertRegexpMatch(
-            '<\?xml version=[\'"]1.0[\'"] encoding=[\'"]latin1[\'"]\?>\n'
+        self.assertEqual(
+            '<?xml version="1.0" encoding="latin1"?>\n'
             '<DocRoot>\n'
             '  <Elem1/>\n'
             '  <Elem2/>\n'
@@ -149,8 +147,8 @@ class BaseBuilderNodesTest(object):
             test_xml = xmlb.xml(encoding=None, indent=8, newline='\t')
             if is_pyxml_installed():
                 self.fail('Expected exception using newline argument')
-            self.assertRegexpMatch(
-                '<\?xml version=[\'"]1.0[\'"] \?>\t'
+            self.assertEqual(
+                '<?xml version="1.0"?>\t'
                 '<DocRoot>\t'
                 '        <Elem1/>\t'
                 '        <Elem2/>\t'
@@ -175,24 +173,11 @@ class BaseBuilderNodesTest(object):
               .add_e('Elem2').add_t('Seven equals %s' % 7).up()
             )
         self.assertEqual(
-            (is_pyxml_installed()
-                and (
-            "<?xml version='1.0' encoding='utf-8'?>\n"
+            '<?xml version="1.0" encoding="utf-8"?>\n'
             '<DocRoot>\n'
             '    <Elem1>A text value</Elem1>\n'
             '    <Elem2>Seven equals 7</Elem2>\n'
-            '</DocRoot>\n'
-                ) or (
-            '<?xml version="1.0" encoding="utf-8"?>\n'
-            '<DocRoot>\n'
-            '    <Elem1>\n'
-            '        A text value\n'
-            '    </Elem1>\n'
-            '    <Elem2>\n'
-            '        Seven equals 7\n'
-            '    </Elem2>\n'
-            '</DocRoot>\n'
-            )),
+            '</DocRoot>\n',
             xmlb.xml())
         # Multiple text nodes, and text node next to nested element
         xmlb = (
@@ -201,29 +186,13 @@ class BaseBuilderNodesTest(object):
               .add_e('Elem2').add_t('Text').add_e('Nested').add_t('Text in nested').up()
             )
         self.assertEqual(
-            (is_pyxml_installed()
-                and (
-            "<?xml version='1.0' encoding='utf-8'?>\n"
-            '<DocRoot>\n'
-            '    <Elem1>First text valueSecond text value</Elem1>\n'
-            '    <Elem2>Text<Nested>Text in nested</Nested>\n'
-            '    </Elem2>\n'
-            '</DocRoot>\n'
-                ) or (
             '<?xml version="1.0" encoding="utf-8"?>\n'
             '<DocRoot>\n'
-            '    <Elem1>\n'
-            '        First text value\n'
-            '        Second text value\n'
-            '    </Elem1>\n'
-            '    <Elem2>\n'
-            '        Text\n'
-            '        <Nested>\n'
-            '            Text in nested\n'
-            '        </Nested>\n'
+            '    <Elem1>First text valueSecond text value</Elem1>\n'
+            '    <Elem2>Text\n'
+            '        <Nested>Text in nested</Nested>\n'
             '    </Elem2>\n'
-            '</DocRoot>\n'
-            )),
+            '</DocRoot>\n',
             xmlb.xml())
 
     def test_comment(self):
@@ -235,12 +204,10 @@ class BaseBuilderNodesTest(object):
             self.my_builder('DocRoot')
                 .add_e('Elem1').add_c('Here is my comment').up()
             )
-        self.assertRegexpMatch(
-            '<\?xml version=[\'"]1.0[\'"] encoding=[\'"]utf-8[\'"]\?>\n'
+        self.assertEqual(
+            '<?xml version="1.0" encoding="utf-8"?>\n'
             '<DocRoot>\n'
-            '    <Elem1>\n'
-            '        <!--Here is my comment-->\n'
-            '    </Elem1>\n'
+            '    <Elem1><!--Here is my comment--></Elem1>\n'
             '</DocRoot>\n',
             xmlb.xml())
 
@@ -253,10 +220,10 @@ class BaseBuilderNodesTest(object):
         xmlb = (
             self.my_builder('DocRoot').add_i('inst-target', 'inst-data')
             )
-        self.assertRegexpMatch(
-            '<\?xml version=[\'"]1.0[\'"] encoding=[\'"]utf-8[\'"]\?>\n'
+        self.assertEqual(
+            '<?xml version="1.0" encoding="utf-8"?>\n'
             '<DocRoot>\n'
-            '    <\?inst-target inst-data\?>\n'
+            '    <?inst-target inst-data?>\n'
             '</DocRoot>\n',
             xmlb.xml())
 
@@ -273,7 +240,7 @@ class BaseBuilderNodesTest(object):
         self.assertEqual(
             (is_pyxml_installed()
                 and (
-            "<?xml version='1.0' encoding='utf-8'\?>\n"
+            "<?xml version='1.0' encoding='utf-8'?>\n"
             "<DocRoot xmlns='urn:default'>\n"
             "    <Elem1 xmlns='urn:elem1'/>\n"
             "    <Elem2 xmlns:myns='urn:elem2'/>\n"
@@ -310,21 +277,21 @@ class BaseBuilderNodesTest(object):
                     .set_as({'myns:custom-ns-prefix-explicit': 1},
                         namespace_uri='urn:custom')
             )
-        self.assertRegexpMatch(
-            '<\?xml version=[\'"]1.0[\'"] encoding=[\'"]utf-8[\'"]\?>\n'
-            '<DocRoot xmlns=[\'"]urn:default[\'"] xmlns:myns=[\'"]urn:custom[\'"]>\n'
+        self.assertEqual(
+            '<?xml version="1.0" encoding="utf-8"?>\n'
+            '<DocRoot xmlns="urn:default" xmlns:myns="urn:custom">\n'
             '    <NSDefaultImplicit/>\n'
-            '    <NSDefaultExplicit xmlns=[\'"]urn:default[\'"]/>\n'
-            '    <NSCustomExplicit xmlns=[\'"]urn:custom[\'"]/>\n'
+            '    <NSDefaultExplicit xmlns="urn:default"/>\n'
+            '    <NSCustomExplicit xmlns="urn:custom"/>\n'
             '    <myns:NSCustomWithPrefixImplicit/>\n'
-            '    <myns:NSCustomWithPrefixExplicit xmlns=[\'"]urn:custom[\'"]/>\n'
-            '    <Attrs1 default-ns-explicit=[\'"]1[\'"]'
-                       ' default-ns-implicit=[\'"]1[\'"]/>\n'
+            '    <myns:NSCustomWithPrefixExplicit xmlns="urn:custom"/>\n'
+            '    <Attrs1 default-ns-explicit="1"'
+                       ' default-ns-implicit="1"/>\n'
             '    <Attrs2'
                        # TODO Shouldn't this have a namespace prefix?
-                       ' custom-ns-explicit=[\'"]1[\'"]'
-                       ' myns:custom-ns-prefix-explicit=[\'"]1[\'"]'
-                       ' myns:custom-ns-prefix-implicit=[\'"]1[\'"]/>\n'
+                       ' custom-ns-explicit="1"'
+                       ' myns:custom-ns-prefix-explicit="1"'
+                       ' myns:custom-ns-prefix-implicit="1"/>\n'
             '</DocRoot>\n',
             xmlb.xml())
         # TODO Test namespaces work as expected when searching/traversing DOM
@@ -365,28 +332,13 @@ class BaseBuilderNodesTest(object):
                 .add_e('Elem', attributes={'x': 1}, text='More text').up()
             )
         self.assertEqual(
-            (is_pyxml_installed()
-                and (
-            "<?xml version='1.0' encoding='utf-8'?>\n"
-            "<DocRoot>\n"
-            "    <Elem x='1'/>\n"
-            "    <Elem my-attribute='value'/>\n"
-            "    <Elem>Text value</Elem>\n"
-            "    <Elem x='1'>More text</Elem>\n"
-            "</DocRoot>\n"
-                ) or (
             '<?xml version="1.0" encoding="utf-8"?>\n'
             '<DocRoot>\n'
             '    <Elem x="1"/>\n'
             '    <Elem my-attribute="value"/>\n'
-            '    <Elem>\n'
-            '        Text value\n'
-            '    </Elem>\n'
-            '    <Elem x="1">\n'
-            '        More text\n'
-            '    </Elem>\n'
-            '</DocRoot>\n'
-            )),
+            '    <Elem>Text value</Elem>\n'
+            '    <Elem x="1">More text</Elem>\n'
+            '</DocRoot>\n',
             xmlb.xml())
         # Insert a new element before another
         xmlb = (
@@ -395,8 +347,8 @@ class BaseBuilderNodesTest(object):
                 .add_e('PenultimateElement', before=True)
                 .add_e('ThirdLastElement', before=True)
             )
-        self.assertRegexpMatch(
-            '<\?xml version=[\'"]1.0[\'"] encoding=[\'"]utf-8[\'"]\?>\n'
+        self.assertEqual(
+            '<?xml version="1.0" encoding="utf-8"?>\n'
             '<DocRoot>\n'
             '    <ThirdLastElement/>\n'
             '    <PenultimateElement/>\n'

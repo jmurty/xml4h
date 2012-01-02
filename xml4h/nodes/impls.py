@@ -1,11 +1,49 @@
 import re
 from StringIO import StringIO
 
+import xml
+
 from xml4h import is_pyxml_installed
-from xml4h.nodes import Node, ElementNode
+from xml4h.nodes import (Node, ValueNode, NameValueNode,
+    ElementNode, AttributeNode, ProcessingInstructionNode)
 
 
 class XmlDomNode(Node):
+
+    @classmethod
+    def _build_wrap_node(self, impl_node, impl_document):
+        if not isinstance(impl_document, xml.dom.minidom.Document):
+            raise Exception('oops')
+        if isinstance(impl_node, tuple):
+            return XmlDomAttributeNode(impl_node, impl_document)
+        elif impl_node.nodeType == xml.dom.Node.ELEMENT_NODE:
+            return XmlDomElementNode(impl_node, impl_document)
+        elif (impl_node.nodeType == xml.dom.Node.TEXT_NODE
+                or impl_node.nodeType == xml.dom.Node.COMMENT_NODE):
+            return XmlDomValueNode(impl_node, impl_document)
+        elif impl_node.nodeType == xml.dom.Node.PROCESSING_INSTRUCTION_NODE:
+            return XmlDomProcessingInstructionNode(impl_node, impl_document)
+        raise NotImplementedError(
+            'Wrapping of %s implementation nodes is not implemented'
+            % impl_node)
+
+    def _get_node_type(self, node):
+        try:
+            return {
+                xml.dom.Node.ELEMENT_NODE: Node.ELEMENT_NODE,
+                xml.dom.Node.ATTRIBUTE_NODE: Node.ATTRIBUTE_NODE,
+                xml.dom.Node.TEXT_NODE: Node.TEXT_NODE,
+                xml.dom.Node.CDATA_SECTION_NODE: Node.CDATA_SECTION_NODE,
+                xml.dom.Node.ENTITY_NODE: Node.ENTITY_NODE,
+                xml.dom.Node.PROCESSING_INSTRUCTION_NODE: Node.PROCESSING_INSTRUCTION_NODE,
+                xml.dom.Node.COMMENT_NODE: Node.COMMENT_NODE,
+                xml.dom.Node.DOCUMENT_NODE: Node.DOCUMENT_NODE,
+                xml.dom.Node.DOCUMENT_TYPE_NODE: Node.DOCUMENT_TYPE_NODE,
+                xml.dom.Node.NOTATION_NODE: Node.NOTATION_NODE,
+                }[node.nodeType]
+        except KeyError, e:
+            raise Exception('Unknown implementation node type: %s'
+                % node.nodeType)
 
     def _new_element_node(self, tagname, namespace_uri=None):
         if namespace_uri is None:
@@ -25,34 +63,35 @@ class XmlDomNode(Node):
     def _get_parent(self, element):
         return element.parentNode
 
+    def _get_children(self, element, namespace_uri=None):
+        return element.childNodes
+
     def _get_root_element(self):
         return self.impl_document.firstChild
 
-    def write(self, writer, encoding='utf-8',
-            indent=0, newline='\n', omit_declaration=False):
-        self.impl_document.write(writer, encoding=encoding,
-            indent='', addident=' ' * indent, newl=newline)
 
-    # Reference: stackoverflow.com/questions/749796/pretty-printing-xml-in-python
-    def xml(self, encoding='utf-8',
-            indent=4, newline='\n', omit_declaration=False):
-        if is_pyxml_installed():
-            # Use PyXML's pretty-printer that doesn't add whitespace
-            # around text nodes
-            from xml.dom.ext import PrettyPrint
-            string_io = StringIO()
-            # TODO Possible to set newlines?
-            if newline != '\n':
-                raise Exception('newline parameter is not supported by PyXML')
-            PrettyPrint(self.impl_document, stream=string_io,
-                encoding=encoding, indent=' ' * indent)
-            xml = string_io.getvalue()
-        else:
-            xml = self.impl_document.toprettyxml(encoding=encoding,
-                indent=' ' * indent, newl=newline)
-        if omit_declaration:
-            return re.sub(r'^<\?.*\?>\s*', '', xml, flags=re.MULTILINE)
-        return xml
+class XmlDomValueNode(XmlDomNode, ValueNode):
+
+    def _get_value(self, node):
+        return node.nodeValue
+
+
+class XmlDomAttributeNode(XmlDomNode, AttributeNode):
+
+    def _get_name(self, node):
+        return node[0]
+
+    def _get_value(self, node):
+        return node[1]
+
+
+class XmlDomProcessingInstructionNode(XmlDomNode, ProcessingInstructionNode):
+
+    def _get_name(self, node):
+        return node.nodeName
+
+    def _get_value(self, node):
+        return node.nodeValue
 
 
 class XmlDomElementNode(XmlDomNode, ElementNode):
@@ -87,6 +126,13 @@ class XmlDomElementNode(XmlDomNode, ElementNode):
         else:
             element.setAttribute(name, value)
 
+    def _get_attributes(self, namespace_uri=None):
+        return self.impl_node.attributes.items()
+
+    @property
+    def _attribute_class(self):
+        return XmlDomAttributeNode
+
     def _get_tagname(self, element):
         return element.nodeName
 
@@ -96,4 +142,8 @@ class XmlDomElementNode(XmlDomNode, ElementNode):
         # xml.dom.Document's == test doesn't match equivalent docs
         return unicode(self) == unicode(other)
 
+    def _get_name(self, node):
+        return node.tagName
 
+    def _get_value(self, node):
+        return node.value
