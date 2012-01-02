@@ -1,8 +1,28 @@
-from xml4h import is_pyxml_installed
-from xml4h.nodes import (Node, ValueNode, NameValueNode,
+from xml4h.nodes import (Document, Node, ValueNode, NameValueNode,
     ElementNode, AttributeNode, ProcessingInstructionNode)
 
 import xml
+
+
+class XmlDomDocument(Document):
+
+    def new_impl_element(self, tagname, namespace_uri=None):
+        if namespace_uri is None:
+            return self.impl_document.createElement(tagname)
+        else:
+            return self.impl_document.createElementNS(namespace_uri, tagname)
+
+    def new_impl_text(self, text):
+        return self.impl_document.createTextNode(text)
+
+    def new_impl_comment(self, text):
+        return self.impl_document.createComment(text)
+
+    def new_impl_instruction(self, target, data):
+        return self.impl_document.createProcessingInstruction(target, data)
+
+    def new_impl_cdata(self, text):
+        return self.impl_document.createCDATASection(text)
 
 
 class XmlDomNode(Node):
@@ -28,6 +48,10 @@ class XmlDomNode(Node):
                 'Wrapping of %s implementation nodes is not implemented'
                 % impl_node)
 
+    @classmethod
+    def _wrap_impl_document(self, impl_document):
+        return XmlDomDocument(impl_document)
+
     def _map_node_type(self, node):
         try:
             return {
@@ -45,24 +69,6 @@ class XmlDomNode(Node):
         except KeyError, e:
             raise Exception('Unknown implementation node type: %s'
                 % node.nodeType)
-
-    def _new_element_node(self, tagname, namespace_uri=None):
-        if namespace_uri is None:
-            return self.impl_document.createElement(tagname)
-        else:
-            return self.impl_document.createElementNS(namespace_uri, tagname)
-
-    def _new_text_node(self, text):
-        return self.impl_document.createTextNode(text)
-
-    def _new_comment_node(self, text):
-        return self.impl_document.createComment(text)
-
-    def _new_processing_instruction_node(self, target, data):
-        return self.impl_document.createProcessingInstruction(target, data)
-
-    def _new_cdata_node(self, text):
-        return self.impl_document.createCDATASection(text)
 
     def _get_parent(self, element):
         return element.parentNode

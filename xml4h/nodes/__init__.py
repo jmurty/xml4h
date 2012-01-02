@@ -3,8 +3,33 @@ from StringIO import StringIO
 
 import xml4h.writer
 
+class Document(object):
+
+    def __init__(self, document):
+        self._impl_document = document
+
+    @property
+    def impl_document(self):
+        return self._impl_document
+
+    def new_impl_element(self, tagname, namespace_uri):
+        raise NotImplementedError()
+
+    def new_impl_text(self, text):
+        raise NotImplementedError()
+
+    def new_impl_comment(self, text):
+        raise NotImplementedError()
+
+    def new_impl_instruction(self, target, data):
+        raise NotImplementedError()
+
+    def new_impl_cdata(self, text):
+        raise NotImplementedError()
+
 
 class Node(object):
+
     ELEMENT_NODE = 1
     ATTRIBUTE_NODE = 2
     TEXT_NODE = 3
@@ -19,21 +44,28 @@ class Node(object):
     def __init__(self, node, document):
         if document is None or node is None:
             raise Exception('Cannot instantiate without node and document')
-        self._node = node
-        self._document = document
+        self._impl_node = node
+        self._impl_document = document
+        self._document = None
+
+    @property
+    def impl_node(self):
+        return self._impl_node
+
+    @property
+    def impl_document(self):
+        return self._impl_document
+
+    @property
+    def document(self):
+        if self._document is None:
+            self._document = self._wrap_impl_document(self.impl_document)
+        return self._document
 
     @property
     def root(self):
         return self._wrap_impl_node(
             self._get_root_element(), self.impl_document)
-
-    @property
-    def impl_node(self):
-        return self._node
-
-    @property
-    def impl_document(self):
-        return self._document
 
     def is_type(self, node_type_constant):
         return self.node_type == node_type_constant
@@ -79,19 +111,8 @@ class Node(object):
     def _wrap_impl_node(self, impl_node, impl_document):
         raise NotImplementedError()
 
-    def _new_element_node(self, tagname, namespace_uri):
-        raise NotImplementedError()
-
-    def _new_text_node(self, text):
-        raise NotImplementedError()
-
-    def _new_comment_node(self, text):
-        raise NotImplementedError()
-
-    def _new_processing_instruction_node(self, target, data):
-        raise NotImplementedError()
-
-    def _new_cdata_node(self, text):
+    @classmethod
+    def _wrap_impl_document(self, impl_document):
         raise NotImplementedError()
 
     def _get_parent(self, node):
@@ -270,7 +291,7 @@ class ElementNode(NameValueNode):
 
     def add_element(self, tagname, namespace_uri=None,
             attributes=None, text=None, before=False):
-        elem = self._new_element_node(tagname, namespace_uri)
+        elem = self.document.new_impl_element(tagname, namespace_uri)
         # Automatically add namespace URI to Element as attribute
         if namespace_uri is not None:
             self._set_namespace(elem, namespace_uri)
@@ -327,7 +348,7 @@ class ElementNode(NameValueNode):
     attributes = property(get_attributes, set_attributes)
 
     def _add_text(self, element, text):
-        text_node = self._new_text_node(text)
+        text_node = self.document.new_impl_text(text)
         element.appendChild(text_node)
 
     def add_text(self, text):
@@ -339,7 +360,7 @@ class ElementNode(NameValueNode):
     # TODO set_text : replaces any existing text nodes
 
     def _add_comment(self, element, text):
-        comment_node = self._new_comment_node(text)
+        comment_node = self.document.new_impl_comment(text)
         element.appendChild(comment_node)
 
     def add_comment(self, text):
@@ -349,7 +370,7 @@ class ElementNode(NameValueNode):
     add_c = add_comment  # Alias
 
     def _add_instruction(self, element, target, data):
-        instruction_node = self._new_processing_instruction_node(target, data)
+        instruction_node = self.document.new_impl_instruction(target, data)
         element.appendChild(instruction_node)
 
     def add_instruction(self, target, data):
@@ -376,7 +397,7 @@ class ElementNode(NameValueNode):
     set_ns = set_namespace  # Alias
 
     def _add_cdata(self, element, data):
-        cdata_node = self._new_cdata_node(data)
+        cdata_node = self.document.new_impl_cdata(data)
         element.appendChild(cdata_node)
 
     def add_cdata(self, data):
