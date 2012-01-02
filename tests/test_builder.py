@@ -3,7 +3,7 @@ import re
 import xml.dom
 from functools import partial
 
-from xml4h import builder, builder_xmldom, is_pyxml_installed
+from xml4h import builder, builder_xmldom
 
 
 class TestBuilderMethods(unittest.TestCase):
@@ -143,21 +143,13 @@ class BaseBuilderNodesTest(object):
             '  <Elem2/>\n'
             '</DocRoot>\n',
             xmlb.xml(encoding='latin1', indent=2))
-        try:
-            test_xml = xmlb.xml(encoding=None, indent=8, newline='\t')
-            if is_pyxml_installed():
-                self.fail('Expected exception using newline argument')
-            self.assertEqual(
-                '<?xml version="1.0"?>\t'
-                '<DocRoot>\t'
-                '        <Elem1/>\t'
-                '        <Elem2/>\t'
-                '</DocRoot>\t',
-                test_xml)
-        except Exception, e:
-            if (not is_pyxml_installed()
-                    or not 'newline parameter is not supported' in str(e)):
-                raise
+        self.assertEqual(
+            '<?xml version="1.0"?>\t'
+            '<DocRoot>\t'
+            '        <Elem1/>\t'
+            '        <Elem2/>\t'
+            '</DocRoot>\t',
+            xmlb.xml(encoding=None, indent=8, newline='\t'))
 
     def test_writer(self):
         pass # TODO
@@ -238,20 +230,11 @@ class BaseBuilderNodesTest(object):
                 .add_e('Elem2').set_ns('urn:elem2', prefix='myns').up()
             )
         self.assertEqual(
-            (is_pyxml_installed()
-                and (
-            "<?xml version='1.0' encoding='utf-8'?>\n"
-            "<DocRoot xmlns='urn:default'>\n"
-            "    <Elem1 xmlns='urn:elem1'/>\n"
-            "    <Elem2 xmlns:myns='urn:elem2'/>\n"
-            '</DocRoot>\n'
-                ) or (
             '<?xml version="1.0" encoding="utf-8"?>\n'
             '<DocRoot xmlns="urn:default">\n'
             '    <Elem1 xmlns="urn:elem1"/>\n'
             '    <Elem2 xmlns:myns="urn:elem2"/>\n'
-            '</DocRoot>\n'
-            )),
+            '</DocRoot>\n',
             xmlb.xml())
         # Set namespaces of elements and attributes on creation
         xmlb = (
