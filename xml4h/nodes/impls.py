@@ -1,5 +1,7 @@
 import re
+from StringIO import StringIO
 
+from xml4h import is_pyxml_installed
 from xml4h.nodes import Node, ElementNode
 
 
@@ -7,34 +9,47 @@ class XmlDomNode(Node):
 
     def _new_element_node(self, tagname, namespace_uri=None):
         if namespace_uri is None:
-            return self.document.createElement(tagname)
+            return self.impl_document.createElement(tagname)
         else:
-            return self.document.createElementNS(namespace_uri, tagname)
+            return self.impl_document.createElementNS(namespace_uri, tagname)
 
     def _new_text_node(self, text):
-        return self.document.createTextNode(text)
+        return self.impl_document.createTextNode(text)
 
     def _new_comment_node(self, text):
-        return self.document.createComment(text)
+        return self.impl_document.createComment(text)
 
     def _new_processing_instruction_node(self, target, data):
-        return self.document.createProcessingInstruction(target, data)
+        return self.impl_document.createProcessingInstruction(target, data)
 
     def _get_parent(self, element):
         return element.parentNode
 
     def _get_root_element(self):
-        return self.document.firstChild
+        return self.impl_document.firstChild
 
     def write(self, writer, encoding='utf-8',
             indent=0, newline='\n', omit_declaration=False):
-        self.document.write(writer, encoding=encoding,
+        self.impl_document.write(writer, encoding=encoding,
             indent='', addident=' ' * indent, newl=newline)
 
+    # Reference: stackoverflow.com/questions/749796/pretty-printing-xml-in-python
     def xml(self, encoding='utf-8',
             indent=4, newline='\n', omit_declaration=False):
-        xml = self.document.toprettyxml(encoding=encoding,
-            indent=' ' * indent, newl=newline)
+        if is_pyxml_installed():
+            # Use PyXML's pretty-printer that doesn't add whitespace
+            # around text nodes
+            from xml.dom.ext import PrettyPrint
+            string_io = StringIO()
+            # TODO Possible to set newlines?
+            if newline != '\n':
+                raise Exception('newline parameter is not supported by PyXML')
+            PrettyPrint(self.impl_document, stream=string_io,
+                encoding=encoding, indent=' ' * indent)
+            xml = string_io.getvalue()
+        else:
+            xml = self.impl_document.toprettyxml(encoding=encoding,
+                indent=' ' * indent, newl=newline)
         if omit_declaration:
             return re.sub(r'^<\?.*\?>\s*', '', xml, flags=re.MULTILINE)
         return xml

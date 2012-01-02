@@ -7,17 +7,17 @@ class Node(object):
         self._document = document
 
     @property
-    def element(self):
+    def impl_element(self):
         return self._element
 
     @property
-    def document(self):
+    def impl_document(self):
         return self._document
 
     def __eq__(self, other):
         if self is other:
             return True
-        return self.document == getattr(other, 'document')
+        return self.impl_document == getattr(other, 'impl_document', None)
 
     # Methods that operate on underlying DOM implementation
 
@@ -69,10 +69,10 @@ class NamedNode(Node):
 
 
     def get_name(self):
-        return self._get_tagname(self.element)
+        return self._get_tagname(self.impl_element)
 
     def set_name(self, name):
-        self._set_tagname(self.element, name)
+        self._set_tagname(self.impl_element, name)
 
     name = property(get_name, set_name)
 
@@ -99,16 +99,16 @@ class ElementNode(NamedNode):
 
     @property
     def root(self):
-        return self.klass(self._get_root_element(), self.document)
+        return self.klass(self._get_root_element(), self.impl_document)
 
     def up(self, count=1, to_tagname=None):
-        elem = self.element
+        elem = self.impl_element
         up_count = 0
         while True:
             # Don't go up beyond the document root
             if (self._get_parent(elem) is None
-                    or self._get_parent(elem) == self.document):
-                return self.klass(self._get_root_element(), self.document)
+                    or self._get_parent(elem) == self.impl_document):
+                return self.klass(self._get_root_element(), self.impl_document)
             elem = self._get_parent(elem)
             if to_tagname is None:
                 up_count += 1
@@ -117,7 +117,7 @@ class ElementNode(NamedNode):
             else:
                 if self._get_tagname(elem) == to_tagname:
                     break
-        return self.klass(elem, self.document)
+        return self.klass(elem, self.impl_document)
 
     def add_element(self, tagname, namespace_uri=None,
             attributes=None, text=None, before=False):
@@ -131,11 +131,11 @@ class ElementNode(NamedNode):
             self._add_text(elem, text=text)
         if before:
             self._add_child_node(
-                self._get_parent(self.element), elem,
-                before_sibling=self.element)
+                self._get_parent(self.impl_element), elem,
+                before_sibling=self.impl_element)
         else:
-            self._add_child_node(self.element, elem)
-        return self.klass(elem, self.document)
+            self._add_child_node(self.impl_element, elem)
+        return self.klass(elem, self.impl_document)
 
     add_elem = add_element  # Alias
 
@@ -159,7 +159,7 @@ class ElementNode(NamedNode):
             self._set_attribute(element, n, v, namespace_uri=namespace_uri)
 
     def set_attributes(self, attr_obj=None, namespace_uri=None, **attr_dict):
-        self._set_attributes(self.element,
+        self._set_attributes(self.impl_element,
             attr_obj=attr_obj, namespace_uri=namespace_uri, **attr_dict)
         return self
 
@@ -172,7 +172,7 @@ class ElementNode(NamedNode):
         element.appendChild(text_node)
 
     def add_text(self, text):
-        self._add_text(self.element, text)
+        self._add_text(self.impl_element, text)
         return self
 
     add_t = add_text  # Alias
@@ -184,7 +184,7 @@ class ElementNode(NamedNode):
         element.appendChild(comment_node)
 
     def add_comment(self, text):
-        self._add_comment(self.element, text)
+        self._add_comment(self.impl_element, text)
         return self
 
     add_c = add_comment  # Alias
@@ -194,7 +194,7 @@ class ElementNode(NamedNode):
         element.appendChild(instruction_node)
 
     def add_instruction(self, target, data):
-        self._add_instruction(self.element, target, data)
+        self._add_instruction(self.impl_element, target, data)
         return self
 
     add_processing_instruction = add_instruction  # Alias
@@ -211,7 +211,7 @@ class ElementNode(NamedNode):
             namespace_uri='http://www.w3.org/2000/xmlns/')
 
     def set_namespace(self, namespace_uri, prefix=None):
-        self._set_namespace(self.element, namespace_uri, prefix=prefix)
+        self._set_namespace(self.impl_element, namespace_uri, prefix=prefix)
         return self
 
     set_ns = set_namespace  # Alias
@@ -221,7 +221,7 @@ class ElementNode(NamedNode):
         element.appendChild(cdata_node)
 
     def add_cdata(self, data):
-        self._add_cdata(self.element, data)
+        self._add_cdata(self.impl_element, data)
         return self
 
     add_data = add_cdata  # Alias
