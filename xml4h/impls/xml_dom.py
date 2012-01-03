@@ -1,6 +1,6 @@
-from xml4h.nodes import (_XmlImplWrapper, Node, ElementNode, AttributeNode,
-    TextNode, CDATANode, EntityNode, CommentNode,
-    ProcessingInstructionNode)
+from xml4h.impls.interface import _XmlImplWrapper
+from xml4h.nodes import (Node, ElementNode, AttributeNode, TextNode,
+    CDATANode, EntityNode, CommentNode, ProcessingInstructionNode)
 
 import xml.dom
 
