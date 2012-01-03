@@ -334,11 +334,6 @@ class BaseBuilderNodesTest(object):
             '</DocRoot>\n',
             xmlb.xml())
 
-    def test_eq(self):
-        xmlb1 = self.my_builder('DocRoot').add_e('Elem1').up().add_e('Elem2')
-        xmlb2 = self.my_builder('DocRoot').add_e('Elem1').up().add_e('Elem2')
-        self.assertTrue(xmlb1 == xmlb2)
-
     def test_unicode(self):
         pass # TODO
 
