@@ -3,49 +3,50 @@ from StringIO import StringIO
 
 
 class Node(object):
+    XMLNS_URI = 'http://www.w3.org/2000/xmlns/'
 
-    ELEMENT_NODE = 1
-    ATTRIBUTE_NODE = 2
-    TEXT_NODE = 3
-    CDATA_SECTION_NODE = 4
-    ENTITY_NODE = 5
-    PROCESSING_INSTRUCTION_NODE = 6
-    COMMENT_NODE = 7
-    DOCUMENT_NODE = 8
-    DOCUMENT_TYPE_NODE = 9
-    NOTATION_NODE = 10
+    ELEMENT = 1
+    ATTRIBUTE = 2
+    TEXT = 3
+    CDATA = 4
+    ENTITY = 5
+    PROCESSING_INSTRUCTION = 6
+    COMMENT = 7
+    DOCUMENT = 8
+    DOCUMENT_TYPE = 9
+    NOTATION = 10
 
-    def __init__(self, node, document, impl_wrapper):
-        if document is None or node is None:
-            raise Exception('Cannot instantiate without node and document')
+    def __init__(self, node, wrapper):
+        if node is None or wrapper is None:
+            raise Exception('Cannot instantiate without node and wrapper')
         self._impl_node = node
-        self._impl_document = document
-        self._impl_wrapper = impl_wrapper
+        self._wrapper = wrapper
 
     @property
     def impl_node(self):
         return self._impl_node
 
     @property
-    def impl_document(self):
-        return self._impl_document
+    def wrapper(self):
+        return self._wrapper
 
     @property
-    def impl_wrapper(self):
-        return self._impl_wrapper
+    def impl_document(self):
+        return self.wrapper.impl_document
 
     @property
     def root(self):
-        return self.impl_wrapper.wrap_impl_node(
-            self.impl_wrapper.get_root_element(),
-            self.impl_document, self.impl_wrapper)
+        # Return self if this is the root node
+        if self.impl_node == self.wrapper.impl_root_element:
+            return self
+        return self.wrapper.wrap_impl_node(self.wrapper.impl_root_element)
 
     def is_type(self, node_type_constant):
         return self.node_type == node_type_constant
 
     @property
     def node_type(self):
-        return self.impl_wrapper.map_node_type(self.impl_node)
+        return self.wrapper.map_node_type(self.impl_node)
 
     def __eq__(self, other):
         if self is other:
@@ -106,7 +107,7 @@ class Node(object):
 class _ValueNode(Node):
 
     def get_value(self):
-        return self.impl_wrapper.get_node_value(self.impl_node)
+        return self.wrapper.get_node_value(self.impl_node)
 
     def set_value(self, value):
         self.set_value(self.impl_node, value)
@@ -117,18 +118,18 @@ class _ValueNode(Node):
             indent=0, newline='', quote_char='"', omit_declaration=False,
             _depth=0):
         indent, newline = self._sanitize_write_params(indent, newline)
-        if self.is_type(Node.TEXT_NODE):
+        if self.is_type(Node.TEXT):
             writer.write(self._sanitize_write_value(self.value))
-        elif self.is_type(Node.CDATA_SECTION_NODE):
+        elif self.is_type(Node.CDATA):
             if ']]>' in self.value:
                 raise Exception("']]>' is not allowed in CDATA node value")
             writer.write("<![CDATA[%s]]>" % self.value)
-        #elif self.is_type(Node.ENTITY_NODE): # TODO
-        elif self.is_type(Node.COMMENT_NODE):
+        #elif self.is_type(Node.ENTITY): # TODO
+        elif self.is_type(Node.COMMENT):
             if '--' in self.value:
                 raise Exception("'--' is not allowed in COMMENT node value")
             writer.write("<!--%s-->" % self.value)
-        #elif self.is_type(Node.NOTATION_NODE): # TODO
+        #elif self.is_type(Node.NOTATION): # TODO
         else:
             raise Exception('write of node %s is not supported'
                 % self.__class__)
@@ -137,7 +138,7 @@ class _ValueNode(Node):
 class _NameValueNode(_ValueNode):
 
     def get_name(self):
-        return self.impl_wrapper.get_node_name(self.impl_node)
+        return self.wrapper.get_node_name(self.impl_node)
 
     def set_name(self, name):
         self.set_name(self.impl_node, name)
@@ -145,23 +146,23 @@ class _NameValueNode(_ValueNode):
     name = property(get_name, set_name)
 
 
-class TextNode(_ValueNode):
+class Text(_ValueNode):
     pass
 
 
-class CDATANode(_ValueNode):
+class CDATA(_ValueNode):
     pass
 
 
-class EntityNode(_ValueNode):
+class Entity(_ValueNode):
     pass
 
 
-class CommentNode(_ValueNode):
+class Comment(_ValueNode):
     pass
 
 
-class AttributeNode(_NameValueNode):
+class Attribute(_NameValueNode):
 
     @property
     def prefix(self):
@@ -174,7 +175,7 @@ class AttributeNode(_NameValueNode):
             return self.name.split(':')[1]
 
 
-class ProcessingInstructionNode(_NameValueNode):
+class ProcessingInstruction(_NameValueNode):
 
     @property
     def target(self):
@@ -193,20 +194,18 @@ class ProcessingInstructionNode(_NameValueNode):
         writer.write(newline)
 
 
-class ElementNode(_NameValueNode):
+class Element(_NameValueNode):
     '''
     Wrap underlying XML document-building libarary/implementation and
     expose utility functions to easily build XML nodes.
     '''
 
     @property
-    def children(self, namespace_uri=None):
+    def children(self, ns_uri=None):
         child_wrap_nodes = []
-        for child in self.impl_wrapper.get_node_children(
-                self.impl_node, namespace_uri=namespace_uri):
-            child_wrap_nodes.append(
-                self.impl_wrapper.wrap_impl_node(
-                    child, self.impl_document, self.impl_wrapper))
+        for child in self.wrapper.get_node_children(
+                self.impl_node, ns_uri=ns_uri):
+            child_wrap_nodes.append(self.wrapper.wrap_impl_node(child))
         return child_wrap_nodes
 
     def up(self, count=1, to_tagname=None):
@@ -214,48 +213,45 @@ class ElementNode(_NameValueNode):
         up_count = 0
         while True:
             # Don't go up beyond the document root
-            if (self.impl_wrapper.get_node_parent(elem) is None
-                or self.impl_wrapper.get_node_parent(elem) == self.impl_document):
+            if (self.wrapper.get_node_parent(elem) is None
+                or self.wrapper.get_node_parent(elem) == self.impl_document):
 
-                return self.impl_wrapper.wrap_impl_node(
-                    self.impl_wrapper.get_root_element(),
-                    self.impl_document, self.impl_wrapper)
-            elem = self.impl_wrapper.get_node_parent(elem)
+                return self.wrapper.wrap_impl_node(
+                    self.wrapper.impl_root_element)
+            elem = self.wrapper.get_node_parent(elem)
             if to_tagname is None:
                 up_count += 1
                 if up_count >= count:
                     break
             else:
-                if self.impl_wrapper.get_node_name(elem) == to_tagname:
+                if self.wrapper.get_node_name(elem) == to_tagname:
                     break
-        return self.impl_wrapper.wrap_impl_node(
-            elem, self.impl_document, self.impl_wrapper)
+        return self.wrapper.wrap_impl_node(elem)
 
-    def add_element(self, tagname, namespace_uri=None,
+    def build_element(self, tagname, ns_uri=None,
             attributes=None, text=None, before=False):
-        elem = self.impl_wrapper.new_impl_element(tagname, namespace_uri)
+        elem = self.wrapper.new_impl_element(tagname, ns_uri)
         # Automatically add namespace URI to Element as attribute
-        if namespace_uri is not None:
-            self._set_namespace(elem, namespace_uri)
+        if ns_uri is not None:
+            self._set_namespace(elem, ns_uri)
         if attributes is not None:
             self._set_attributes(elem, attr_obj=attributes)
         if text is not None:
-            self._add_text(elem, text=text)
+            self._build_text(elem, text=text)
         if before:
-            self.impl_wrapper.add_node_child(
-                self.impl_wrapper.get_node_parent(self.impl_node),
+            self.wrapper.add_node_child(
+                self.wrapper.get_node_parent(self.impl_node),
                 elem, before_sibling=self.impl_node)
         else:
-            self.impl_wrapper.add_node_child(self.impl_node, elem)
-        return self.impl_wrapper.wrap_impl_node(
-            elem, self.impl_document, self.impl_wrapper)
+            self.wrapper.add_node_child(self.impl_node, elem)
+        return self.wrapper.wrap_impl_node(elem)
 
-    add_elem = add_element  # Alias
+    build_elem = build_element  # Alias
 
-    add_e = add_element  # Alias
+    build_e = build_element  # Alias
 
     def _set_attributes(self, element,
-            attr_obj=None, namespace_uri=None, **attr_dict):
+            attr_obj=None, ns_uri=None, **attr_dict):
         if attr_obj is not None:
             if isinstance(attr_obj, dict):
                 attr_dict.update(attr_obj)
@@ -269,21 +265,19 @@ class ElementNode(_NameValueNode):
                 raise Exception("Invalid attribute name value contains space")
             if not isinstance(v, basestring):
                 v = unicode(v)
-            self.impl_wrapper.set_node_attribute(
-                element, n, v, namespace_uri=namespace_uri)
+            self.wrapper.set_node_attribute(
+                element, n, v, ns_uri=ns_uri)
 
-    def get_attributes(self, namespace_uri=None):
+    def get_attributes(self, ns_uri=None):
         attr_wrap_nodes = []
-        for attr in self.impl_wrapper.get_node_attributes(
-                self.impl_node, namespace_uri=namespace_uri):
-            attr_wrap_nodes.append(
-                self.impl_wrapper.wrap_impl_node(
-                    attr, self.impl_document, self.impl_wrapper))
+        for attr in self.wrapper.get_node_attributes(
+                self.impl_node, ns_uri=ns_uri):
+            attr_wrap_nodes.append(self.wrapper.wrap_impl_node(attr))
         return sorted(attr_wrap_nodes, key=lambda a: a.name)
 
-    def set_attributes(self, attr_obj=None, namespace_uri=None, **attr_dict):
+    def set_attributes(self, attr_obj=None, ns_uri=None, **attr_dict):
         self._set_attributes(self.impl_node,
-            attr_obj=attr_obj, namespace_uri=namespace_uri, **attr_dict)
+            attr_obj=attr_obj, ns_uri=ns_uri, **attr_dict)
         return self
 
     set_attrs = set_attributes  # Alias
@@ -292,66 +286,66 @@ class ElementNode(_NameValueNode):
 
     attributes = property(get_attributes, set_attributes)
 
-    def _add_text(self, element, text):
-        text_node = self.impl_wrapper.new_impl_text(text)
+    def _build_text(self, element, text):
+        text_node = self.wrapper.new_impl_text(text)
         element.appendChild(text_node)
 
-    def add_text(self, text):
-        self._add_text(self.impl_node, text)
+    def build_text(self, text):
+        self._build_text(self.impl_node, text)
         return self
 
-    add_t = add_text  # Alias
+    build_t = build_text  # Alias
 
     # TODO set_text : replaces any existing text nodes
 
-    def _add_comment(self, element, text):
-        comment_node = self.impl_wrapper.new_impl_comment(text)
+    def _build_comment(self, element, text):
+        comment_node = self.wrapper.new_impl_comment(text)
         element.appendChild(comment_node)
 
-    def add_comment(self, text):
-        self._add_comment(self.impl_node, text)
+    def build_comment(self, text):
+        self._build_comment(self.impl_node, text)
         return self
 
-    add_c = add_comment  # Alias
+    build_c = build_comment  # Alias
 
-    def _add_instruction(self, element, target, data):
-        instruction_node = self.impl_wrapper.new_impl_instruction(target, data)
+    def _build_instruction(self, element, target, data):
+        instruction_node = self.wrapper.new_impl_instruction(target, data)
         element.appendChild(instruction_node)
 
-    def add_instruction(self, target, data):
-        self._add_instruction(self.impl_node, target, data)
+    def build_instruction(self, target, data):
+        self._build_instruction(self.impl_node, target, data)
         return self
 
-    add_processing_instruction = add_instruction  # Alias
+    build_processing_instruction = build_instruction  # Alias
 
-    add_i = add_instruction  # Alias
+    build_i = build_instruction  # Alias
 
-    def _set_namespace(self, element, namespace_uri, prefix=None):
+    def _set_namespace(self, element, ns_uri, prefix=None):
         if not prefix:
             ns_name = 'xmlns'
         else:
             ns_name = 'xmlns:%s' % prefix
         self._set_attributes(element,
-            {ns_name: namespace_uri},
-            namespace_uri='http://www.w3.org/2000/xmlns/')
+            {ns_name: ns_uri},
+            ns_uri=self.XMLNS_URI)
 
-    def set_namespace(self, namespace_uri, prefix=None):
-        self._set_namespace(self.impl_node, namespace_uri, prefix=prefix)
+    def set_namespace(self, ns_uri, prefix=None):
+        self._set_namespace(self.impl_node, ns_uri, prefix=prefix)
         return self
 
     set_ns = set_namespace  # Alias
 
-    def _add_cdata(self, element, data):
-        cdata_node = self.impl_wrapper.new_impl_cdata(data)
+    def _build_cdata(self, element, data):
+        cdata_node = self.wrapper.new_impl_cdata(data)
         element.appendChild(cdata_node)
 
-    def add_cdata(self, data):
-        self._add_cdata(self.impl_node, data)
+    def build_cdata(self, data):
+        self._build_cdata(self.impl_node, data)
         return self
 
-    add_data = add_cdata  # Alias
+    build_data = build_cdata  # Alias
 
-    add_d = add_cdata  # Alias
+    build_d = build_cdata  # Alias
 
     # Adapted from standard library method xml.dom.minidom.writexml
     def write(self, writer, encoding='utf-8',
@@ -380,8 +374,8 @@ class ElementNode(_NameValueNode):
             last_child_was_indented = False
             writer.write(">")
             for child in self.children:
-                if (child.is_type(Node.ELEMENT_NODE)
-                        or child.is_type(Node.PROCESSING_INSTRUCTION_NODE)):
+                if (child.is_type(Node.ELEMENT)
+                        or child.is_type(Node.PROCESSING_INSTRUCTION)):
                     if not last_child_was_indented:
                         writer.write(newline)
                     last_child_was_indented = True
