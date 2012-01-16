@@ -19,8 +19,16 @@ class _XmlImplWrapper(object):
     @classmethod
     def wrap_document(cls, document):
         wrapper = cls(document)
-        wrapped_root_element = Element(root_elem, wrapper)
-        return wrapped_root_element
+        return Element(wrapper.impl_root_element, wrapper)
+
+    @classmethod
+    def wrap_node(cls, node):
+        wrapper = cls(cls.get_impl_document(node))
+        return Element(node, wrapper)
+
+    @classmethod
+    def get_impl_document(self, node):
+        return node.ownerDocument
 
 
     def __init__(self, document):
@@ -33,9 +41,6 @@ class _XmlImplWrapper(object):
     @property
     def impl_root_element(self):
         return self.impl_document.documentElement
-
-    def get_impl_document(self, node):
-        return node.ownerDocument
 
     # Utility implementation methods
 
@@ -64,6 +69,16 @@ class _XmlImplWrapper(object):
         raise NotImplementedError()
 
     def new_impl_cdata(self, text):
+        raise NotImplementedError()
+
+    def find_node_elements(self, node, name='*', ns_uri='*'):
+        '''
+        Return NodeList containing element node descendants of the given node
+        which match the search constraints.
+
+        If name is '*', elements with any name will be returned.
+        If ns_uri is '*', elements in any namespace will be returned.
+        '''
         raise NotImplementedError()
 
     # Node implementation methods

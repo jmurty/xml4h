@@ -53,6 +53,42 @@ class Node(object):
             return True
         return self.impl_document == getattr(other, 'impl_document', None)
 
+    def _convert_nodelist(self, nodelist):
+        # TODO Do something more efficient here, lazy wrapping?
+        return [self.wrapper.wrap_impl_node(n) for n in nodelist]
+
+    @property
+    def parent(self):
+        # Root Element has no parent element
+        if self.impl_node == self.wrapper.impl_root_element:
+            return None
+        return self.wrapper.wrap_impl_node(
+            self.wrapper.get_node_parent(self.impl_node))
+
+    def find(self, name=None, ns_uri=None, whole_document=False):
+        if name is None:
+            name = '*'  # Match all element names
+        if ns_uri is None:
+            ns_uri = '*'  # Match all namespaces
+        if whole_document:
+            search_from_node = self.impl_document
+        else:
+            search_from_node = self.impl_node
+        nodelist = self.wrapper.find_node_elements(search_from_node,
+            name=name, ns_uri=ns_uri)
+        return self._convert_nodelist(nodelist)
+
+    def doc_find(self, name=None, ns_uri=None):
+        return self.find(name=name, ns_uri=ns_uri, whole_document=True)
+
+    def find_first(self, name=None, ns_uri=None, whole_document=False):
+        results = self.find(
+            name=name, ns_uri=ns_uri, whole_document=whole_document)
+        if results:
+            return results[0]
+        else:
+            return None
+
     def _sanitize_write_value(self, value):
         if not value:
             return value

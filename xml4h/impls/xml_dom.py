@@ -80,6 +80,9 @@ class XmlDomImplWrapper(_XmlImplWrapper):
     def new_impl_cdata(self, text):
         return self.impl_document.createCDATASection(text)
 
+    def find_node_elements(self, node, name='*', ns_uri='*'):
+        return node.getElementsByTagNameNS(ns_uri, name)
+
     def get_node_parent(self, element):
         return element.parentNode
 
