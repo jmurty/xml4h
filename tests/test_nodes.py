@@ -1,7 +1,7 @@
 import unittest
 import xml.dom
 
-from xml4h.nodes import Element
+from xml4h import nodes
 from xml4h.impls.xml_dom import XmlDomImplWrapper
 
 class BaseTestNodes(object):
@@ -12,17 +12,38 @@ class BaseTestNodes(object):
         self.assertEqual('DocRoot', wrapped_elem.name)
         self.assertEqual(self.doc, wrapped_elem.impl_document)
 
-    def test_wrap_node(self):
-        # Wrap root node
-        wrapped_elem = XmlDomImplWrapper.wrap_node(self.root_elem)
-        self.assertEqual(self.root_elem, wrapped_elem.impl_node)
-        self.assertEqual('DocRoot', wrapped_elem.name)
-        self.assertEqual(self.doc, wrapped_elem.impl_document)
-        # Wrap a non-root node
-        wrapped_elem = XmlDomImplWrapper.wrap_node(self.elem3_second)
-        self.assertEqual(self.elem3_second, wrapped_elem.impl_node)
-        self.assertEqual('Element3', wrapped_elem.name)
-        self.assertEqual('Element4', wrapped_elem.parent.name)
+    def test_wrap_node_and_is_type_methods(self):
+        # Wrap root element
+        wrapped_node = XmlDomImplWrapper.wrap_node(self.root_elem)
+        self.assertEqual(self.root_elem, wrapped_node.impl_node)
+        self.assertEqual('DocRoot', wrapped_node.name)
+        self.assertEqual(self.doc, wrapped_node.impl_document)
+        self.assertTrue(wrapped_node.is_type(nodes.ELEMENT))
+        self.assertTrue(wrapped_node.is_element)
+        # Wrap a non-root element
+        wrapped_node = XmlDomImplWrapper.wrap_node(self.elem3_second)
+        self.assertEqual(self.elem3_second, wrapped_node.impl_node)
+        self.assertEqual('ns2:Element3', wrapped_node.name)
+        self.assertEqual('Element4', wrapped_node.parent.name)
+        self.assertTrue(wrapped_node.is_type(nodes.ELEMENT))
+        self.assertTrue(wrapped_node.is_element)
+        # Test node types
+        wrapped_node = XmlDomImplWrapper.wrap_node(self.text_node)
+        self.assertIsInstance(wrapped_node, nodes.Text)
+        self.assertTrue(wrapped_node.is_type(nodes.TEXT))
+        self.assertTrue(wrapped_node.is_text)
+        wrapped_node = XmlDomImplWrapper.wrap_node(self.cdata_node)
+        self.assertIsInstance(wrapped_node, nodes.CDATA)
+        self.assertTrue(wrapped_node.is_type(nodes.CDATA))
+        self.assertTrue(wrapped_node.is_cdata)
+        wrapped_node =XmlDomImplWrapper.wrap_node(self.comment_node)
+        self.assertIsInstance(wrapped_node, nodes.Comment)
+        self.assertTrue(wrapped_node.is_type(nodes.COMMENT))
+        self.assertTrue(wrapped_node.is_comment)
+        wrapped_node = XmlDomImplWrapper.wrap_node(self.instruction_node)
+        self.assertIsInstance(wrapped_node, nodes.ProcessingInstruction)
+        self.assertTrue(wrapped_node.is_type(nodes.PROCESSING_INSTRUCTION))
+        self.assertTrue(wrapped_node.is_processing_instruction)
 
     def test_parent(self):
         # Root element has no parent
@@ -40,6 +61,108 @@ class BaseTestNodes(object):
         wrapped_elem = XmlDomImplWrapper.wrap_node(self.elem3_second)
         self.assertEqual(self.root_elem, wrapped_elem.parent.parent.impl_node)
 
+    def test_children(self):
+        self.assertEquals(self.elem1, self.wrapped_root.children[0].impl_node)
+        self.assertEquals(['Element1', 'Element2', 'Element3', 'Element4'],
+            [n.name for n in self.wrapped_root.children])
+        self.assertEquals(['Element2'],
+            [n.name for n in self.wrapped_root.find_first('Element3').children])
+
+    def test_siblings(self):
+        wrapped_node = self.wrapped_root.children[1]
+        self.assertEqual(['Element1', 'Element3', 'Element4'],
+            [n.name for n in wrapped_node.siblings])
+        self.assertEqual(['Element1'],
+            [n.name for n in wrapped_node.siblings_before])
+        self.assertEqual(['Element3', 'Element4'],
+            [n.name for n in wrapped_node.siblings_after])
+        # Empty list if finding siblings beyond beginning/end of nodes
+        self.assertEqual([], self.wrapped_root.children[0].siblings_before)
+        self.assertEqual([], self.wrapped_root.children[-1].siblings_after)
+
+    def test_namespace_data(self):
+        # Namespace data for element without namespace
+        wrapped_elem = XmlDomImplWrapper.wrap_node(self.elem1)
+        self.assertEqual(None, wrapped_elem.namespace_uri)
+        self.assertEqual('Element1', wrapped_elem.name)
+        self.assertEqual(None, wrapped_elem.prefix)
+        self.assertEqual('Element1', wrapped_elem.local_name)
+        # Namespace data for ns element without prefix
+        wrapped_elem = XmlDomImplWrapper.wrap_node(self.elem3)
+        self.assertEqual('urn:ns1', wrapped_elem.namespace_uri)
+        self.assertEqual('Element3', wrapped_elem.name)
+        self.assertEqual(None, wrapped_elem.prefix)
+        self.assertEqual('Element3', wrapped_elem.local_name)
+        # Namespace data for ns element with prefix
+        wrapped_elem = XmlDomImplWrapper.wrap_node(self.elem3_second)
+        self.assertEqual('urn:ns2', wrapped_elem.namespace_uri)
+        self.assertEqual('ns2:Element3', wrapped_elem.name)
+        self.assertEqual('ns2', wrapped_elem.prefix)
+        self.assertEqual('Element3', wrapped_elem.local_name)
+        # TODO Fix commented scenarios
+        # Namespace data for attribute without namespace
+        wrapped_elem = XmlDomImplWrapper.wrap_node(self.elem1)
+#        self.assertEqual(None, wrapped_elem.attributes[0].namespace_uri)
+        self.assertEqual('a', wrapped_elem.attributes[0].name)
+        self.assertEqual(None, wrapped_elem.attributes[0].prefix)
+#        self.assertEqual('a', wrapped_elem.attributes[0].local_name)
+        # Namespace data for attribute with namespace
+#        self.assertEqual('urn:ns1', wrapped_elem.attributes[1].namespace_uri)
+        self.assertEqual('ns1:b', wrapped_elem.attributes[1].name)
+        self.assertEqual('ns1', wrapped_elem.attributes[1].prefix)
+        self.assertEqual('b', wrapped_elem.attributes[1].local_name)
+
+    def test_name(self):
+        wrapped_node = XmlDomImplWrapper.wrap_node(self.elem1)
+        self.assertEqual('Element1', wrapped_node.name)
+        attribute_node = wrapped_node.attributes[0]
+        self.assertEqual('a', attribute_node.name)
+        wrapped_node = XmlDomImplWrapper.wrap_node(self.text_node)
+        self.assertEqual('#text', wrapped_node.name)
+        wrapped_node = XmlDomImplWrapper.wrap_node(self.cdata_node)
+        self.assertEqual('#cdata-section', wrapped_node.name)
+        wrapped_node =XmlDomImplWrapper.wrap_node(self.comment_node)
+        self.assertEqual('#comment', wrapped_node.name)
+        wrapped_node = XmlDomImplWrapper.wrap_node(self.instruction_node)
+        self.assertEqual(wrapped_node.target, wrapped_node.name)
+
+    def test_attributes(self):
+        # Get and set attributes on element
+        pass  # TODO
+
+    def test_element_text(self):
+        # Get text on element
+        wrapped_node = XmlDomImplWrapper.wrap_node(self.elem1)
+        self.assertEqual('Some text', wrapped_node.text)
+        # Set text on element
+        wrapped_node.text = 'Different text'
+        self.assertEqual('Different text', wrapped_node.text)
+        self.assertEqual(
+            wrapped_node.children[0].value,
+            wrapped_node.children[0].impl_node.nodeValue)
+        # Unset text on element (removes any text children)
+        wrapped_node.text = None
+        self.assertEqual(None, wrapped_node.text)
+        self.assertEqual([], wrapped_node.children)
+
+    def test_delete(self):
+        # Remove single Element using delete() method
+        self.assertEqual(
+            ['Element1', 'Element2', 'Element3', 'Element4'],
+            [n.name for n in self.wrapped_root.children])
+        self.wrapped_root.children[0].delete()
+        self.assertEqual(
+            ['Element2', 'Element3', 'Element4'],
+            [n.name for n in self.wrapped_root.children])
+        self.assertEqual(6, len(self.wrapped_root.doc_find()))
+        # Remove element with child elements using __del__()
+        # TODO Implement __del__()
+#        del(self.wrapped_root.children[2])
+#        self.assertEqual(
+#            ['Element2', 'Element3'],
+#            [n.name for n in self.wrapped_root.children])
+#        self.assertEqual(4, len(self.wrapped_root.doc_find()))
+
     def test_find_methods(self):
         # Find all elements in document
         elems = self.wrapped_root.find(whole_document=True)
@@ -56,12 +179,12 @@ class BaseTestNodes(object):
         # Find non-namespaced element
         elems = self.wrapped_root.find('Element1')
         self.assertEqual(1, len(elems))
-        self.assertIsInstance(elems[0], Element)
+        self.assertIsInstance(elems[0], nodes.Element)
         # Find multiple non-namespaced elements
         elems = self.wrapped_root.find('Element2')
         self.assertEqual(2, len(elems))
-        self.assertIsInstance(elems[0], Element)
-        self.assertIsInstance(elems[1], Element)
+        self.assertIsInstance(elems[0], nodes.Element)
+        self.assertIsInstance(elems[1], nodes.Element)
         self.assertEqual('DocRoot', elems[0].parent.name)
         self.assertEqual('Element3', elems[1].parent.name)
         # Find namespaced elements (only 1 Element3 in each namespace)
@@ -82,7 +205,8 @@ class BaseTestNodes(object):
         self.assertEqual('Element4', elems[1].name)
         elems = self.wrapped_root.find(ns_uri='urn:ns2')
         self.assertEqual(1, len(elems))
-        self.assertEqual('Element3', elems[0].name)
+        self.assertEqual('ns2:Element3', elems[0].name)
+        self.assertEqual('Element3', elems[0].local_name)
         self.assertEqual('Element4', elems[0].parent.name)
         # Chain finds
         self.wrapped_root.find('Element3')[0].find
@@ -104,19 +228,28 @@ class TestMinidomNodes(BaseTestNodes, unittest.TestCase):
         doc = factory.createDocument(ns_uri, 'DocRoot', doctype)
         self.root_elem = doc.firstChild
         self.elem1 = doc.createElement('Element1')
+        self.elem1.setAttribute('a', '1')
+        self.elem1.setAttributeNS('urn:ns1', 'ns1:b', '2')
         self.elem2 = doc.createElement('Element2')
         self.elem3 = doc.createElementNS('urn:ns1', 'Element3')
         self.elem4 = doc.createElementNS('urn:ns1', 'Element4')
         self.elem2_second = doc.createElement('Element2')
-        self.elem3_second = doc.createElementNS('urn:ns2', 'Element3')
+        self.elem3_second = doc.createElementNS('urn:ns2', 'ns2:Element3')
         self.text_node = doc.createTextNode('Some text')
+        self.cdata_node = doc.createCDATASection('Some cdata')
+        self.comment_node = doc.createComment('A comment')
+        self.instruction_node = doc.createProcessingInstruction(
+            'pi-target', 'pi-data')
         doc.documentElement.appendChild(self.elem1)
         doc.documentElement.appendChild(self.elem2)
         doc.documentElement.appendChild(self.elem3)
         doc.documentElement.appendChild(self.elem4)
         self.elem1.appendChild(self.text_node)
+        self.elem2.appendChild(self.cdata_node)
         self.elem3.appendChild(self.elem2_second)
+        self.elem2_second.appendChild(self.comment_node)
         self.elem4.appendChild(self.elem3_second)
+        self.elem3_second.appendChild(self.instruction_node)
         self.doc = doc
         self.wrapped_root = XmlDomImplWrapper.wrap_document(doc)
 

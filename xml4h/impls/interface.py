@@ -24,7 +24,7 @@ class _XmlImplWrapper(object):
     @classmethod
     def wrap_node(cls, node):
         wrapper = cls(cls.get_impl_document(node))
-        return Element(node, wrapper)
+        return wrapper.wrap_impl_node(node)
 
     @classmethod
     def get_impl_document(self, node):
@@ -83,6 +83,9 @@ class _XmlImplWrapper(object):
 
     # Node implementation methods
 
+    def get_node_namespace_uri(self, node):
+        raise NotImplementedError()
+
     def get_node_parent(self, node):
         raise NotImplementedError()
 
@@ -103,3 +106,7 @@ class _XmlImplWrapper(object):
 
     def add_node_child(self, parent, child, before_sibling=None):
         raise NotImplementedError()
+
+    def remove_node_child(self, parent, child):
+        raise NotImplementedError()
+

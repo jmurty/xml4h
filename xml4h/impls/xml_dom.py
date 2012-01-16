@@ -1,6 +1,5 @@
 from xml4h.impls.interface import _XmlImplWrapper
-from xml4h.nodes import (Node, Element, Attribute, Text,
-    CDATA, Entity, Comment, ProcessingInstruction)
+from xml4h import nodes
 
 import xml.dom
 
@@ -21,17 +20,17 @@ class XmlDomImplWrapper(_XmlImplWrapper):
 
     def wrap_impl_node(self, impl_node):
         if isinstance(impl_node, tuple):
-            return Attribute(impl_node, self)
+            return nodes.Attribute(impl_node, self)
         try:
             impl_class = {
-                xml.dom.Node.ELEMENT_NODE: Element,
-                xml.dom.Node.ATTRIBUTE_NODE: Attribute,
-                xml.dom.Node.TEXT_NODE: Text,
-                xml.dom.Node.CDATA_SECTION_NODE: CDATA,
-                xml.dom.Node.ENTITY_NODE: Entity,
+                xml.dom.Node.ELEMENT_NODE: nodes.Element,
+                xml.dom.Node.ATTRIBUTE_NODE: nodes.Attribute,
+                xml.dom.Node.TEXT_NODE: nodes.Text,
+                xml.dom.Node.CDATA_SECTION_NODE: nodes.CDATA,
+                xml.dom.Node.ENTITY_NODE: nodes.Entity,
                 xml.dom.Node.PROCESSING_INSTRUCTION_NODE:
-                    ProcessingInstruction,
-                xml.dom.Node.COMMENT_NODE: Comment,
+                    nodes.ProcessingInstruction,
+                xml.dom.Node.COMMENT_NODE: nodes.Comment,
                 # TODO
                 #xml.dom.Node.DOCUMENT_NODE: ,
                 #xml.dom.Node.DOCUMENT_TYPE_NODE: ,
@@ -46,17 +45,17 @@ class XmlDomImplWrapper(_XmlImplWrapper):
     def map_node_type(self, node):
         try:
             return {
-                xml.dom.Node.ELEMENT_NODE: Node.ELEMENT,
-                xml.dom.Node.ATTRIBUTE_NODE: Node.ATTRIBUTE,
-                xml.dom.Node.TEXT_NODE: Node.TEXT,
-                xml.dom.Node.CDATA_SECTION_NODE: Node.CDATA,
-                xml.dom.Node.ENTITY_NODE: Node.ENTITY,
+                xml.dom.Node.ELEMENT_NODE: nodes.ELEMENT,
+                xml.dom.Node.ATTRIBUTE_NODE: nodes.ATTRIBUTE,
+                xml.dom.Node.TEXT_NODE: nodes.TEXT,
+                xml.dom.Node.CDATA_SECTION_NODE: nodes.CDATA,
+                xml.dom.Node.ENTITY_NODE: nodes.ENTITY,
                 xml.dom.Node.PROCESSING_INSTRUCTION_NODE:
-                    Node.PROCESSING_INSTRUCTION,
-                xml.dom.Node.COMMENT_NODE: Node.COMMENT,
-                xml.dom.Node.DOCUMENT_NODE: Node.DOCUMENT,
-                xml.dom.Node.DOCUMENT_TYPE_NODE: Node.DOCUMENT_TYPE,
-                xml.dom.Node.NOTATION_NODE: Node.NOTATION,
+                    nodes.PROCESSING_INSTRUCTION,
+                xml.dom.Node.COMMENT_NODE: nodes.COMMENT,
+                xml.dom.Node.DOCUMENT_NODE: nodes.DOCUMENT,
+                xml.dom.Node.DOCUMENT_TYPE_NODE: nodes.DOCUMENT_TYPE,
+                xml.dom.Node.NOTATION_NODE: nodes.NOTATION,
                 }[node.nodeType]
         except KeyError, e:
             raise Exception('Unknown implementation node type: %s'
@@ -82,6 +81,9 @@ class XmlDomImplWrapper(_XmlImplWrapper):
 
     def find_node_elements(self, node, name='*', ns_uri='*'):
         return node.getElementsByTagNameNS(ns_uri, name)
+
+    def get_node_namespace_uri(self, node):
+        return node.namespaceURI
 
     def get_node_parent(self, element):
         return element.parentNode
@@ -117,3 +119,8 @@ class XmlDomImplWrapper(_XmlImplWrapper):
             parent.insertBefore(child, before_sibling)
         else:
             parent.appendChild(child)
+
+    def remove_node_child(self, parent, child, destroy_node=True):
+        parent.removeChild(child)
+        if destroy_node:
+            child.unlink()
