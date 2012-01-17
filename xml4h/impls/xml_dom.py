@@ -19,8 +19,6 @@ class XmlDomImplWrapper(_XmlImplWrapper):
         return doc
 
     def map_node_to_class(self, impl_node):
-        if isinstance(impl_node, tuple):
-            return nodes.Attribute
         try:
             return {
                 xml.dom.Node.ELEMENT_NODE: nodes.Element,
@@ -40,7 +38,7 @@ class XmlDomImplWrapper(_XmlImplWrapper):
                 }[impl_node.nodeType]
         except KeyError, e:
             raise Exception(
-                'Unrecognized type for implementation node: %s' % node)
+                'Unrecognized type for implementation node: %s' % impl_node)
 
     def new_impl_element(self, tagname, ns_uri=None):
         return self.impl_document.createElementNS(ns_uri, tagname)
@@ -70,25 +68,45 @@ class XmlDomImplWrapper(_XmlImplWrapper):
         return element.childNodes
 
     def get_node_name(self, node):
-        # Attribute "node" is actually a tuple
-        if isinstance(node, tuple):
-            return node[0]
-        else:
-            return node.nodeName
+        return node.nodeName
 
     def get_node_value(self, node):
-        # Attribute "node" is actually a tuple
-        if isinstance(node, tuple):
-            return node[1]
-        else:
-            return node.nodeValue
+        return node.nodeValue
 
     def get_node_attributes(self, element, ns_uri=None):
-        # TODO Filter by namespace URI
-        return element.attributes.items()
+        attr_nodes = []
+        for attr_name in element.attributes.keys():
+            if self.has_node_attribute(element, attr_name, ns_uri):
+                attr_nodes.append(
+                    self.get_node_attribute_node(element, attr_name, ns_uri))
+        return attr_nodes
 
-    def set_node_attribute(self, element, name, value, ns_uri=None):
+    def has_node_attribute(self, element, name, ns_uri=None):
+        if ns_uri is not None:
+            return element.hasAttributeNS(ns_uri, name)
+        else:
+            return element.hasAttribute(name)
+
+    def get_node_attribute_node(self, element, name, ns_uri=None):
+        if ns_uri is not None:
+            return element.getAttributeNodeNS(ns_uri, name)
+        else:
+            return element.getAttributeNode(name)
+
+    def get_node_attribute_value(self, element, name, ns_uri=None):
+        if ns_uri is not None:
+            return element.getAttributeNS(ns_uri, name)
+        else:
+            return element.getAttribute(name)
+
+    def set_node_attribute_value(self, element, name, value, ns_uri=None):
         element.setAttributeNS(ns_uri, name, value)
+
+    def remove_node_attribute(self, element, name, ns_uri=None):
+        if ns_uri is not None:
+            element.removeAttributeNS(ns_uri, name)
+        else:
+            element.removeAttribute(name)
 
     def add_node_child(self, parent, child, before_sibling=None):
         if before_sibling is not None:

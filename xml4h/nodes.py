@@ -131,6 +131,16 @@ class Node(object):
             self.impl_node, ns_uri=ns_uri)
         return self._convert_nodelist(nodelist)
 
+    # TODO: Better to leave this undefined?
+    @property
+    def attributes(self):
+        return None
+
+    # TODO: Better to leave this undefined?
+    @property
+    def attribute_nodes(self):
+        return None
+
     @property
     def siblings(self, ns_uri=None):
         nodelist = self.wrapper.get_node_children(
@@ -166,7 +176,7 @@ class Node(object):
     def namespace_uri(self):
         return self.impl_node.namespaceURI
 
-    ns = namespace_uri  # Alias
+    ns_uri = namespace_uri  # Alias
 
     @property
     def prefix(self):
@@ -264,21 +274,21 @@ class EntityReference(Node):
 
 class _NameValueNode(Node):
 
-    def get_name(self):
+    def _get_name(self):
         return self.wrapper.get_node_name(self.impl_node)
 
-    def set_name(self, name):
+    def _set_name(self, name):
         self.set_name(self.impl_node, name)
 
-    name = property(get_name, set_name)
+    name = property(_get_name, _set_name)
 
-    def get_value(self):
+    def _get_value(self):
         return self.wrapper.get_node_value(self.impl_node)
 
-    def set_value(self, value):
-        self.set_value(self.impl_node, value)
+    def _set_value(self, value):
+        self.wrapper.set_node_value(self.impl_node, value)
 
-    value = property(get_value, set_value)
+    value = property(_get_value, _set_value)
 
 
 class Text(_NameValueNode):
@@ -300,15 +310,29 @@ class Comment(_NameValueNode):
 class Attribute(_NameValueNode):
     _node_type = ATTRIBUTE_NODE
 
+    # Cannot set/change name of attribute
+    @property
+    def name(self):
+        return self._get_name()
+
+    # Cannot set/change value of attribute
+    @property
+    def value(self):
+        return self._get_value()
+
     @property
     def prefix(self):
         if ':' in self.name:
             return self.name.split(':')[0]
+        else:
+            return None
 
     @property
     def local_name(self):
         if ':' in self.name:
             return self.name.split(':')[1]
+        else:
+            return self.name
 
 
 class ProcessingInstruction(_NameValueNode):
@@ -356,6 +380,34 @@ class Element(_NameValueNode):
 
     text = property(_get_text, _set_text)
 
+    def _get_attributes(self, ns_uri=None):
+        attr_impl_nodes = self.wrapper.get_node_attributes(
+            self.impl_node, ns_uri=ns_uri)
+        return AttributeDict(attr_impl_nodes, self.impl_node, self.wrapper)
+
+    def _set_attributes(self, attr_obj=None, ns_uri=None, **attr_dict):
+        # Remove existing attributes
+        for attr_name in self._get_attributes(ns_uri):
+            self.wrapper.remove_node_attribute(
+                self.impl_node, attr_name, ns_uri)
+        # Add new attributes
+        self._set_element_attributes(self.impl_node,
+            attr_obj=attr_obj, ns_uri=ns_uri, **attr_dict)
+
+    attributes = property(_get_attributes, _set_attributes)
+
+    @property
+    def attribute_nodes(self):
+        impl_attr_nodes = self.wrapper.get_node_attributes(self.impl_node)
+        wrapped_attr_nodes = [self.wrapper.wrap_node(a, self.impl_document)
+                              for a in impl_attr_nodes]
+        return sorted(wrapped_attr_nodes, key=lambda x: x.name)
+
+    def attribute_node(self, name, ns_uri=None):
+        attr_impl_node = self.wrapper.get_node_attribute_node(
+            self.impl_node, name, ns_uri)
+        return self.wrapper.wrap_node(attr_impl_node, self.impl_document)
+
     def up(self, count=1, to_tagname=None):
         elem = self.impl_node
         up_count = 0
@@ -383,7 +435,7 @@ class Element(_NameValueNode):
         if ns_uri is not None:
             self._set_namespace(elem, ns_uri)
         if attributes is not None:
-            self._set_attributes(elem, attr_obj=attributes)
+            self._set_element_attributes(elem, attr_obj=attributes)
         if text is not None:
             self._build_text(elem, text)
         if before:
@@ -398,7 +450,7 @@ class Element(_NameValueNode):
 
     build_e = build_element  # Alias
 
-    def _set_attributes(self, element,
+    def _set_element_attributes(self, element,
             attr_obj=None, ns_uri=None, **attr_dict):
         if attr_obj is not None:
             if isinstance(attr_obj, dict):
@@ -409,31 +461,29 @@ class Element(_NameValueNode):
             else:
                 raise Exception('Attribute data must be a dictionary or list')
         for n, v in attr_dict.items():
+            my_ns_uri = ns_uri
+            if isinstance(n, tuple):
+                n, my_ns_uri = n
             if ' ' in n:
                 raise Exception("Invalid attribute name value contains space")
+            # TODO Necessary? Desirable?
             if not isinstance(v, basestring):
                 v = unicode(v)
-            self.wrapper.set_node_attribute(
-                element, n, v, ns_uri=ns_uri)
-
-    def get_attributes(self, ns_uri=None):
-        attr_wrap_nodes = []
-        for attr in self.wrapper.get_node_attributes(
-                self.impl_node, ns_uri=ns_uri):
-            attr_wrap_nodes.append(
-                self.wrapper.wrap_node(attr, document=self.impl_document))
-        return sorted(attr_wrap_nodes, key=lambda a: a.name)
+            self.wrapper.set_node_attribute_value(
+                element, n, v, ns_uri=my_ns_uri)
 
     def set_attributes(self, attr_obj=None, ns_uri=None, **attr_dict):
-        self._set_attributes(self.impl_node,
+        self._set_element_attributes(self.impl_node,
+            attr_obj=attr_obj, ns_uri=ns_uri, **attr_dict)
+
+    def build_attributes(self, attr_obj=None, ns_uri=None, **attr_dict):
+        self._set_element_attributes(self.impl_node,
             attr_obj=attr_obj, ns_uri=ns_uri, **attr_dict)
         return self
 
-    set_attrs = set_attributes  # Alias
+    build_attrs = build_attributes  # Alias
 
-    set_as = set_attributes  # Alias
-
-    attributes = property(get_attributes, set_attributes)
+    build_as = build_attributes  # Alias
 
     def _build_text(self, element, text):
         text_node = self.wrapper.new_impl_text(text)
@@ -474,7 +524,7 @@ class Element(_NameValueNode):
             ns_name = 'xmlns'
         else:
             ns_name = 'xmlns:%s' % prefix
-        self._set_attributes(element,
+        self._set_element_attributes(element,
             {ns_name: ns_uri},
             ns_uri=self.XMLNS_URI)
 
@@ -495,3 +545,76 @@ class Element(_NameValueNode):
     build_data = build_cdata  # Alias
 
     build_d = build_cdata  # Alias
+
+
+class AttributeDict(object):
+    '''
+    Dictionary-like object of element attributes that always reflects the
+    state of the underlying element node, and that allows for in-place
+    modifications that will immediately affect the element.
+    '''
+
+    def __init__(self, attr_impl_nodes, impl_element, wrapper):
+        self.impl_element = impl_element
+        self.wrapper = wrapper
+
+    def _unpack_name(self, name):
+        if isinstance(name, tuple):
+            name, ns_uri = name
+            return name, ns_uri
+        else:
+            return name, None
+
+    def __len__(self):
+        return len(self.impl_attributes)
+
+    def __getitem__(self, name):
+        name, ns_uri = self._unpack_name(name)
+        # Override behavior of some (all?) implementations that return an
+        # empty string if attribute does not exist
+        if not name in self:
+            return None
+        return self.wrapper.get_node_attribute_value(
+            self.impl_element, name, ns_uri)
+
+    def __setitem__(self, name, value):
+        name, ns_uri = self._unpack_name(name)
+        if not isinstance(value, basestring):
+            value = unicode(value)
+        self.wrapper.set_node_attribute_value(
+            self.impl_element, name, value, ns_uri)
+
+    def __delitem__(self, name):
+        name, ns_uri = self._unpack_name(name)
+        self.wrapper.remove_node_attribute(self.impl_element, name, ns_uri)
+
+    def __iter__(self):
+        for k in self.keys():
+            yield k
+
+    iterkeys = __iter__  # Alias, per Python docs recommendation
+
+    def __contains__(self, name):
+        name, ns_uri = self._unpack_name(name)
+        return self.wrapper.has_node_attribute(self.impl_element, name, ns_uri)
+
+    def keys(self):
+        return [self.wrapper.get_node_name(a) for a in self.impl_attributes]
+
+    def values(self):
+        return [self.wrapper.get_node_value(a) for a in self.impl_attributes]
+
+    def namespace_uri(self, name):
+        a_node = self.wrapper.get_node_attribute_node(self.impl_element, name)
+        if a_node is None:
+            return None
+        return a_node.namespaceURI
+
+    @property
+    def element(self):
+        return self.wrapper.wrap_node(self.impl_element)
+
+    @property
+    def impl_attributes(self):
+        return self.wrapper.get_node_attributes(self.impl_element)
+

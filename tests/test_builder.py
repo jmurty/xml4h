@@ -95,21 +95,21 @@ class BaseBuilderNodesTest(object):
     def test_attributes(self):
         # Aliases
         xmlb = self.my_builder('DocRoot')
-        self.assertEqual(xmlb.set_attributes, xmlb.set_attrs)
-        self.assertEqual(xmlb.set_attributes, xmlb.set_as)
+        self.assertEqual(xmlb.build_attributes, xmlb.build_attrs)
+        self.assertEqual(xmlb.build_attributes, xmlb.build_as)
         # Add attributes
         xmlb = (
             self.my_builder('DocRoot')
-              .build_e('Elem1').set_as(x=1).up() # Add a single name/value pair
-              .build_e('Elem2').set_as(a='a', b='bee').up() # Add multiple
-              .build_e('Elem3').set_as([ # Add list of tuple pairs
+              .build_e('Elem1').build_as(x=1).up() # Add a single name/value pair
+              .build_e('Elem2').build_as(a='a', b='bee').up() # Add multiple
+              .build_e('Elem3').build_as([ # Add list of tuple pairs
                   ('hyphenated-name', 'v2'),
                   ]).up()
-              .build_e('Elem4').set_as({ # Add a dictionary
+              .build_e('Elem4').build_as({ # Add a dictionary
                   'twelve': 3 * 4,
                   }).up()
               # Attributes given in first arg trump same name in kwargs
-              .build_e('Elem5').set_as(
+              .build_e('Elem5').build_as(
                   {'test': 'value-in-first-arg'},
                   test='value-in-kwargs').up()
             )
@@ -267,14 +267,14 @@ class BaseBuilderNodesTest(object):
                     ns_uri='urn:custom').up()
                 # Attributes in namespace
                 .build_e('Attrs1')
-                    .set_as({'default-ns-implicit': 1})
-                    .set_as({'default-ns-explicit': 1},
+                    .build_as({'default-ns-implicit': 1})
+                    .build_as({'default-ns-explicit': 1},
                         ns_uri='urn:default').up()
                 .build_e('Attrs2')
-                    .set_as({'custom-ns-explicit': 1},
+                    .build_as({'custom-ns-explicit': 1},
                         ns_uri='urn:custom')
-                    .set_as({'myns:custom-ns-prefix-implicit': 1})
-                    .set_as({'myns:custom-ns-prefix-explicit': 1},
+                    .build_as({'myns:custom-ns-prefix-implicit': 1})
+                    .build_as({'myns:custom-ns-prefix-explicit': 1},
                         ns_uri='urn:custom')
             )
         self.assertEqual(

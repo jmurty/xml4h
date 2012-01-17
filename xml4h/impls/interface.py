@@ -11,7 +11,7 @@ class _XmlImplWrapper(object):
         wrapped_doc = nodes.Document(impl_doc, wrapper)
         # Automatically add namespace URI to root Element as attribute
         if ns_uri is not None:
-            wrapper.set_node_attribute(wrapped_doc.root.impl_node,
+            wrapper.set_node_attribute_value(wrapped_doc.root.impl_node,
                 'xmlns', ns_uri, ns_uri=nodes.Node.XMLNS_URI)
         return wrapped_doc
 
@@ -95,13 +95,31 @@ class _XmlImplWrapper(object):
     def get_node_name(self, node):
         raise NotImplementedError()
 
+    def set_node_name(self, node, name):
+        raise NotImplementedError()
+
     def get_node_value(self, node):
+        raise NotImplementedError()
+
+    def set_node_value(self, node, value):
         raise NotImplementedError()
 
     def get_node_attributes(self, element, ns_uri=None):
         raise NotImplementedError()
 
-    def set_node_attribute(self, element, name, value, ns_uri=None):
+    def has_node_attribute(self, element, name, ns_uri=None):
+        raise NotImplementedError()
+
+    def get_node_attribute_node(self, element, name, ns_uri=None):
+        raise NotImplementedError()
+
+    def get_node_attribute_value(self, element, name, ns_uri=None):
+        raise NotImplementedError()
+
+    def set_node_attribute_value(self, element, name, value, ns_uri=None):
+        raise NotImplementedError()
+
+    def remove_node_attribute(self, element, name, ns_uri=None):
         raise NotImplementedError()
 
     def add_node_child(self, parent, child, before_sibling=None):

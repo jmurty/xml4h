@@ -101,23 +101,28 @@ class BaseTestNodes(object):
         self.assertEqual('ns2:Element3', wrapped_elem.name)
         self.assertEqual('ns2', wrapped_elem.prefix)
         self.assertEqual('Element3', wrapped_elem.local_name)
-        # TODO Fix commented scenarios
-        # Namespace data for attribute without namespace
+        # Namespace data for attribute node without namespace
         wrapped_elem = XmlDomImplWrapper.wrap_node(self.elem1)
-#        self.assertEqual(None, wrapped_elem.attributes[0].namespace_uri)
-        self.assertEqual('a', wrapped_elem.attributes[0].name)
-        self.assertEqual(None, wrapped_elem.attributes[0].prefix)
-#        self.assertEqual('a', wrapped_elem.attributes[0].local_name)
-        # Namespace data for attribute with namespace
-#        self.assertEqual('urn:ns1', wrapped_elem.attributes[1].namespace_uri)
-        self.assertEqual('ns1:b', wrapped_elem.attributes[1].name)
-        self.assertEqual('ns1', wrapped_elem.attributes[1].prefix)
-        self.assertEqual('b', wrapped_elem.attributes[1].local_name)
+        self.assertEqual(None, wrapped_elem.attribute_nodes[0].namespace_uri)
+        self.assertEqual('a', wrapped_elem.attribute_nodes[0].name)
+        self.assertEqual(None, wrapped_elem.attribute_nodes[0].prefix)
+        self.assertEqual('a', wrapped_elem.attribute_nodes[0].local_name)
+        # Namespace data for attribute node with namespace
+        self.assertEqual('urn:ns1', wrapped_elem.attribute_nodes[1].namespace_uri)
+        self.assertEqual('ns1:b', wrapped_elem.attribute_nodes[1].name)
+        self.assertEqual('ns1', wrapped_elem.attribute_nodes[1].prefix)
+        self.assertEqual('b', wrapped_elem.attribute_nodes[1].local_name)
+        # Namespace data for attribute dict without namespace
+        wrapped_elem = XmlDomImplWrapper.wrap_node(self.elem1)
+        self.assertEqual(None, wrapped_elem.attributes.namespace_uri('a'))
+        # Namespace data for attribute dict with namespace
+        wrapped_elem = XmlDomImplWrapper.wrap_node(self.elem1)
+        self.assertEqual('urn:ns1', wrapped_elem.attributes.namespace_uri('ns1:b'))
 
     def test_name(self):
         wrapped_node = XmlDomImplWrapper.wrap_node(self.elem1)
         self.assertEqual('Element1', wrapped_node.name)
-        attribute_node = wrapped_node.attributes[0]
+        attribute_node = wrapped_node.attribute_nodes[0]
         self.assertEqual('a', attribute_node.name)
         wrapped_node = XmlDomImplWrapper.wrap_node(self.text_node)
         self.assertEqual('#text', wrapped_node.name)
@@ -129,8 +134,60 @@ class BaseTestNodes(object):
         self.assertEqual(wrapped_node.target, wrapped_node.name)
 
     def test_attributes(self):
-        # Get and set attributes on element
-        pass  # TODO
+        # Non-element nodes don't have attributes
+        self.assertEqual(None, self.wrapped_doc.attributes)
+        self.assertEqual(None, self.wrapped_text.attributes)
+        self.assertEqual(None, self.wrapped_doc.attribute_nodes)
+        self.assertEqual(None, self.wrapped_text.attribute_nodes)
+        # Get element's attribute nodes
+        wrapped_elem = XmlDomImplWrapper.wrap_node(self.elem1)
+        attr_nodes = wrapped_elem.attribute_nodes
+        self.assertEqual(2, len(attr_nodes))
+        self.assertEqual(['a', 'ns1:b'], [a.name for a in attr_nodes])
+        self.assertEqual(['1', '2'], [a.value for a in attr_nodes])
+        self.assertEqual(['a', 'b'], [a.local_name for a in attr_nodes])
+        self.assertEqual([None, 'ns1'], [a.prefix for a in attr_nodes])
+        self.assertEqual([None, 'urn:ns1'], [a.ns_uri for a in attr_nodes])
+        # Get element's attributes dict
+        wrapped_elem = XmlDomImplWrapper.wrap_node(self.elem1)
+        attrs_dict = wrapped_elem.attributes
+        self.assertEqual(2, len(attrs_dict))
+        self.assertEqual(['a', 'ns1:b'], attrs_dict.keys())
+        self.assertEqual(['1', '2'], attrs_dict.values())
+        # Set/change attributes via element methods
+        wrapped_elem.set_attributes({'a': 10, 'c': 3})
+        self.assertEqual(['10', '3', '2'],
+            [a.value for a in wrapped_elem.attribute_nodes])
+        # Set attributes via dict assignment (pre-existing attributes are deleted)
+        wrapped_elem.attributes = {
+            'a': 100,  # effectively replaces prior 'a' attribute
+            ('ns1:d', 'urn:ns1'): -3,  # attribute with namespace
+            }
+        self.assertEqual(['a', 'ns1:d'],
+            [a.name for a in wrapped_elem.attribute_nodes])
+        self.assertEqual('100', wrapped_elem.attributes['a'])
+        self.assertEqual('-3', wrapped_elem.attributes['ns1:d'])
+        # Set/replace attributes via dict modification
+        wrapped_elem.attributes['a'] = 200
+        wrapped_elem.attributes['e'] = 'E'
+        self.assertEqual(['a', 'e', 'ns1:d'],
+            [a.name for a in wrapped_elem.attribute_nodes])
+        self.assertEqual('200', wrapped_elem.attributes['a'])
+        self.assertEqual('-3', wrapped_elem.attributes['ns1:d'])
+        self.assertEqual('E', wrapped_elem.attributes['e'])
+        # In-place modifications to attribute reflected in element
+        attr_dict = wrapped_elem.attributes
+        attr_dict['a'] = 'A' # Modify
+        attr_dict['b'] = 'B' # Add
+        del(attr_dict['e']) # Delete
+        self.assertEqual(['a', 'b', 'ns1:d'],
+            [a.name for a in wrapped_elem.attribute_nodes])
+        self.assertEqual('A', wrapped_elem.attributes['a'])
+        self.assertEqual('-3', wrapped_elem.attributes['ns1:d'])
+        self.assertEqual(None, wrapped_elem.attributes['e'])
+        # Contains works on attribute dict
+        self.assertTrue('a' in wrapped_elem.attributes)
+        self.assertFalse('e' in wrapped_elem.attributes)
 
     def test_element_text(self):
         # Get text on element
@@ -255,4 +312,5 @@ class TestMinidomNodes(BaseTestNodes, unittest.TestCase):
         self.doc = doc
         self.wrapped_doc = XmlDomImplWrapper.wrap_document(doc)
         self.wrapped_root = self.wrapped_doc.root
+        self.wrapped_text = XmlDomImplWrapper.wrap_node(self.text_node)
 

@@ -62,7 +62,7 @@ def write(node, writer, encoding='utf-8',
         writer.write(indent * _depth)
         writer.write("<" + node.name)
 
-        for attr in node.attributes:
+        for attr in node.attribute_nodes:
             writer.write(" %s=%s" % (attr.name, quote_char))
             # TODO Handle CDATA nodes (don't munge data)
             writer.write(_sanitize_write_value(attr.value))
