@@ -1,6 +1,8 @@
 import codecs
 from StringIO import StringIO
 
+from xml4h.writer import write as write_func
+
 
 ELEMENT_NODE = 1
 ATTRIBUTE_NODE = 2
@@ -203,38 +205,10 @@ class Node(object):
         else:
             return None
 
-    def _sanitize_write_value(self, value):
-        if not value:
-            return value
-        return (value
-            .replace("&", "&amp;")
-            .replace("<", "&lt;")
-            .replace("\"", "&quot;")
-            .replace(">", "&gt;")
-            )
-
-    def _sanitize_write_params(self, indent='', newline=''):
-        if isinstance(indent, int):
-            indent = ' ' * indent
-        elif indent is True:
-            indent = ' ' * 4
-        elif indent is False:
-            indent = ''
-
-        if newline is True:
-            newline = '\n'
-        elif newline is False:
-            newline = ''
-
-        return (indent, newline)
-
     # Methods that operate on this Node implementation wrapper
 
-    def write(self, writer, encoding='utf-8',
-            indent=0, newline='', quote_char='"', omit_declaration=False,
-            _depth=0):
-        raise NotImplementedError(
-            'write is not implemented for %s' % self.__class__)
+    def write(self, writer, **kwargs):
+        write_func(self.document, writer, **kwargs)
 
     def xml(self, encoding='utf-8',
             indent=4, newline='\n', quote_char='"', omit_declaration=False,
@@ -306,26 +280,6 @@ class _NameValueNode(Node):
 
     value = property(get_value, set_value)
 
-    def write(self, writer, encoding='utf-8',
-            indent=0, newline='', quote_char='"', omit_declaration=False,
-            _depth=0):
-        indent, newline = self._sanitize_write_params(indent, newline)
-        if self.is_text:
-            writer.write(self._sanitize_write_value(self.value))
-        elif self.is_cdata:
-            if ']]>' in self.value:
-                raise Exception("']]>' is not allowed in CDATA node value")
-            writer.write("<![CDATA[%s]]>" % self.value)
-        #elif self.is_entity: # TODO
-        elif self.is_comment:
-            if '--' in self.value:
-                raise Exception("'--' is not allowed in COMMENT node value")
-            writer.write("<!--%s-->" % self.value)
-        #elif self.is_notation: # TODO
-        else:
-            raise Exception('write of node %s is not supported'
-                % self.__class__)
-
 
 class Text(_NameValueNode):
     _node_type = TEXT_NODE
@@ -367,14 +321,6 @@ class ProcessingInstruction(_NameValueNode):
     @property
     def data(self):
         return self.value
-
-    def write(self, writer, encoding='utf-8',
-            indent=0, newline='', quote_char='"', omit_declaration=False,
-            _depth=0):
-        indent, newline = self._sanitize_write_params(indent, newline)
-        writer.write(indent)
-        writer.write("<?%s %s?>" % (self.target, self.data))
-        writer.write(newline)
 
 
 class Element(_NameValueNode):
@@ -549,47 +495,3 @@ class Element(_NameValueNode):
     build_data = build_cdata  # Alias
 
     build_d = build_cdata  # Alias
-
-    # Adapted from standard library method xml.dom.minidom.writexml
-    def write(self, writer, encoding='utf-8',
-            indent=0, newline='', quote_char='"', omit_declaration=False,
-            _depth=0):
-
-        indent, newline = self._sanitize_write_params(indent, newline)
-
-        # Output document declaration if we're outputting the whole doc
-        if not omit_declaration and _depth < 1:
-            writer.write('<?xml version="1.0"')
-            if encoding:
-                writer.write(' encoding="%s"' % encoding)
-            writer.write('?>%s' % newline)
-
-        writer.write(indent * _depth)
-        writer.write("<" + self.name)
-
-        for attr in self.attributes:
-            writer.write(" %s=%s" % (attr.name, quote_char))
-            # TODO Handle CDATA nodes (don't munge data)
-            writer.write(self._sanitize_write_value(attr.value))
-            writer.write(quote_char)
-        if self.children:
-            found_indented_child = False
-            last_child_was_indented = False
-            writer.write(">")
-            for child in self.children:
-                if child.is_element or child.is_processing_instruction:
-                    if not last_child_was_indented:
-                        writer.write(newline)
-                    last_child_was_indented = True
-                    found_indented_child = True
-                else:
-                    last_child_was_indented = False
-                child.write(writer, encoding=encoding,
-                    indent=indent, newline=newline, quote_char=quote_char,
-                    omit_declaration=omit_declaration, _depth=_depth+1)
-            if found_indented_child:
-                writer.write(indent * _depth)
-            writer.write('</%s>' % self.name)
-        else:
-            writer.write('/>')
-        writer.write(newline)
