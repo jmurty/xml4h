@@ -125,11 +125,17 @@ class Node(object):
         else:
             return None
 
-    @property
-    def children(self, ns_uri=None):
-        nodelist = self.adpator.get_node_children(
-            self.impl_node, ns_uri=ns_uri)
+    def children_in_ns(self, ns_uri):
+        nodelist = self.adpator.get_node_children(self.impl_node)
+        if ns_uri is not None:
+            nodelist = filter(
+                lambda x: self.adpator.get_node_namespace_uri(x) == ns_uri,
+                nodelist)
         return self._convert_nodelist(nodelist)
+
+    @property
+    def children(self):
+        return self.children_in_ns(None)
 
     # TODO: Better to leave this undefined?
     @property
@@ -141,17 +147,18 @@ class Node(object):
     def attribute_nodes(self):
         return None
 
-    @property
-    def siblings(self, ns_uri=None):
-        nodelist = self.adpator.get_node_children(
-            self.parent.impl_node, ns_uri=ns_uri)
+    def siblings_in_ns(self, ns_uri):
+        nodelist = self.adpator.get_node_children(self.parent.impl_node)
         return self._convert_nodelist(
             [n for n in nodelist if n != self.impl_node])
 
     @property
-    def siblings_before(self, ns_uri=None):
-        nodelist = self.adpator.get_node_children(
-            self.parent.impl_node, ns_uri=ns_uri)
+    def siblings(self):
+        return self.siblings_in_ns(None)
+
+    @property
+    def siblings_before(self):
+        nodelist = self.adpator.get_node_children(self.parent.impl_node)
         before_nodelist = []
         for n in nodelist:
             if n == self.impl_node:
@@ -160,9 +167,8 @@ class Node(object):
         return self._convert_nodelist(before_nodelist)
 
     @property
-    def siblings_after(self, ns_uri=None):
-        nodelist = self.adpator.get_node_children(
-            self.parent.impl_node, ns_uri=ns_uri)
+    def siblings_after(self):
+        nodelist = self.adpator.get_node_children(self.parent.impl_node)
         after_nodelist = []
         is_after_myself = False
         for n in nodelist:
@@ -428,8 +434,10 @@ class Element(_NameValueNode):
                     break
         return self.adpator.wrap_node(elem)
 
-    def build_element(self, tagname, ns_uri=None,
+    def build_element(self, tagname, ns_uri=None, prefix=None,
             attributes=None, text=None, before=False):
+        if prefix is not None:
+            tagname = '%s:%s' % (prefix, tagname)
         elem = self.adpator.new_impl_element(tagname, ns_uri)
         # Automatically add namespace URI to Element as attribute
         if ns_uri is not None:
@@ -521,6 +529,8 @@ class Element(_NameValueNode):
 
     def _set_namespace(self, element, ns_uri, prefix=None):
         if not prefix:
+            # Apply default namespace to node
+            self.adpator.set_node_namespace_uri(element, ns_uri)
             ns_name = 'xmlns'
         else:
             ns_name = 'xmlns:%s' % prefix

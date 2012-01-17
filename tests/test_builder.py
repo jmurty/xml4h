@@ -253,6 +253,18 @@ class BaseBuilderNodesTest(object):
             '    <Elem2 xmlns:myns="urn:elem2"/>\n'
             '</DocRoot>\n',
             xmlb.xml())
+        # Test namespaces work as expected when searching/traversing DOM
+        self.assertEqual(1, len(xmlb.find(name='Elem1')))  # Ignore namespace
+        self.assertEqual(1, len(xmlb.find(name='Elem1', ns_uri='urn:elem1')))
+        self.assertEqual(1, len(xmlb.doc_find(ns_uri='urn:elem1')))
+        self.assertEqual(0, len(xmlb.find(name='Elem1', ns_uri='urn:wrong')))
+        self.assertEqual(['Elem1'],
+            [n.name for n in xmlb.children_in_ns('urn:elem1')])
+        # TODO
+        #self.assertEqual(['DocRoot', 'Elem2'],
+        #    [n.name for n in xmlb.doc_find(ns_uri='urn:default')])
+        #self.assertEqual(['Elem2'],
+        #    [n.name for n in xmlb.children_in_ns('urn:default')])
         # Set namespaces of elements and attributes on creation
         xmlb = (
             self.my_builder('DocRoot', ns_uri='urn:default')

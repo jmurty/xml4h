@@ -61,10 +61,13 @@ class XmlDomImplAdaptor(_XmlImplAdaptor):
     def get_node_namespace_uri(self, node):
         return node.namespaceURI
 
+    def set_node_namespace_uri(self, node, ns_uri):
+        node.namespaceURI = ns_uri
+
     def get_node_parent(self, element):
         return element.parentNode
 
-    def get_node_children(self, element, ns_uri=None):
+    def get_node_children(self, element):
         return element.childNodes
 
     def get_node_name(self, node):

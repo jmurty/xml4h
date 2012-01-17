@@ -86,10 +86,13 @@ class _XmlImplAdaptor(object):
     def get_node_namespace_uri(self, node):
         raise NotImplementedError()
 
+    def set_node_namespace_uri(self, node, ns_uri):
+        raise NotImplementedError()
+
     def get_node_parent(self, node):
         raise NotImplementedError()
 
-    def get_node_children(self, node, ns_uri=None):
+    def get_node_children(self, node):
         raise NotImplementedError()
 
     def get_node_name(self, node):
