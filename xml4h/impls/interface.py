@@ -1,34 +1,34 @@
 from xml4h import nodes
 
 
-class _XmlImplAdaptor(object):
+class _XmlImplAdapter(object):
 
     @classmethod
     def create_document(cls, root_tagname, ns_uri=None, **kwargs):
         # Use implementation's method to create base document and root element
         impl_doc = cls.new_impl_document(root_tagname, ns_uri, **kwargs)
-        adpator = cls(impl_doc)
-        wrapped_doc = nodes.Document(impl_doc, adpator)
+        adapter = cls(impl_doc)
+        wrapped_doc = nodes.Document(impl_doc, adapter)
         # Automatically add namespace URI to root Element as attribute
         if ns_uri is not None:
-            adpator.set_node_attribute_value(wrapped_doc.root.impl_node,
+            adapter.set_node_attribute_value(wrapped_doc.root.impl_node,
                 'xmlns', ns_uri, ns_uri=nodes.Node.XMLNS_URI)
         return wrapped_doc
 
     @classmethod
     def wrap_document(cls, document):
-        adpator = cls(document)
-        return nodes.Document(document, adpator)
+        adapter = cls(document)
+        return nodes.Document(document, adapter)
 
     @classmethod
     def wrap_node(cls, node, document=None):
         # Use document if it's provided rather than looking it up
         if document is not None:
-            adpator = cls(document)
+            adapter = cls(document)
         else:
-            adpator = cls(cls.get_impl_document(node))
-        impl_class = adpator.map_node_to_class(node)
-        return impl_class(node, adpator)
+            adapter = cls(cls.get_impl_document(node))
+        impl_class = adapter.map_node_to_class(node)
+        return impl_class(node, adapter)
 
     @classmethod
     def get_impl_document(self, node):
