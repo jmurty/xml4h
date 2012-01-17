@@ -43,10 +43,7 @@ class XmlDomImplWrapper(_XmlImplWrapper):
                 'Unrecognized type for implementation node: %s' % node)
 
     def new_impl_element(self, tagname, ns_uri=None):
-        if ns_uri is None:
-            return self.impl_document.createElement(tagname)
-        else:
-            return self.impl_document.createElementNS(ns_uri, tagname)
+        return self.impl_document.createElementNS(ns_uri, tagname)
 
     def new_impl_text(self, text):
         return self.impl_document.createTextNode(text)
@@ -87,13 +84,11 @@ class XmlDomImplWrapper(_XmlImplWrapper):
             return node.nodeValue
 
     def get_node_attributes(self, element, ns_uri=None):
+        # TODO Filter by namespace URI
         return element.attributes.items()
 
     def set_node_attribute(self, element, name, value, ns_uri=None):
-        if ns_uri is not None:
-            element.setAttributeNS(ns_uri, name, value)
-        else:
-            element.setAttribute(name, value)
+        element.setAttributeNS(ns_uri, name, value)
 
     def add_node_child(self, parent, child, before_sibling=None):
         if before_sibling is not None:
