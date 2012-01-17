@@ -7,7 +7,7 @@ from xml4h.impls.xml_dom import XmlDomImplWrapper
 class BaseTestNodes(object):
 
     def test_wrap_document(self):
-        wrapped_elem = XmlDomImplWrapper.wrap_document(self.doc)
+        wrapped_elem = XmlDomImplWrapper.wrap_node(self.root_elem)
         self.assertEqual(self.root_elem, wrapped_elem.impl_node)
         self.assertEqual('DocRoot', wrapped_elem.name)
         self.assertEqual(self.doc, wrapped_elem.impl_document)
@@ -253,5 +253,6 @@ class TestMinidomNodes(BaseTestNodes, unittest.TestCase):
         self.elem4.appendChild(self.elem3_second)
         self.elem3_second.appendChild(self.instruction_node)
         self.doc = doc
-        self.wrapped_root = XmlDomImplWrapper.wrap_document(doc)
+        self.wrapped_doc = XmlDomImplWrapper.wrap_document(doc)
+        self.wrapped_root = self.wrapped_doc.root
 

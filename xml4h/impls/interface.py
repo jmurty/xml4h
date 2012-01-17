@@ -1,4 +1,4 @@
-from xml4h.nodes import Node, Element
+from xml4h import nodes
 
 
 class _XmlImplWrapper(object):
@@ -8,18 +8,17 @@ class _XmlImplWrapper(object):
         # Use implementation's method to create base document and root element
         impl_doc = cls.new_impl_document(root_tagname, ns_uri, **kwargs)
         wrapper = cls(impl_doc)
-        # Wrap root Element in a wrapper object
-        wrapped_root_element = Element(wrapper.impl_root_element, wrapper)
+        wrapped_doc = nodes.Document(impl_doc, wrapper)
         # Automatically add namespace URI to root Element as attribute
         if ns_uri is not None:
-            wrapper.set_node_attribute(wrapper.impl_root_element,
-                'xmlns', ns_uri, ns_uri=Node.XMLNS_URI)
-        return wrapped_root_element
+            wrapper.set_node_attribute(wrapped_doc.root.impl_node,
+                'xmlns', ns_uri, ns_uri=nodes.Node.XMLNS_URI)
+        return wrapped_doc
 
     @classmethod
     def wrap_document(cls, document):
         wrapper = cls(document)
-        return Element(wrapper.impl_root_element, wrapper)
+        return nodes.Document(document, wrapper)
 
     @classmethod
     def wrap_node(cls, node, document=None):
