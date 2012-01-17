@@ -2,16 +2,19 @@ import codecs
 from StringIO import StringIO
 
 
-ELEMENT = 1
-ATTRIBUTE = 2
-TEXT = 3
-CDATA = 4
-ENTITY = 5
-PROCESSING_INSTRUCTION = 6
-COMMENT = 7
-DOCUMENT = 8
-DOCUMENT_TYPE = 9
-NOTATION = 10
+ELEMENT_NODE = 1
+ATTRIBUTE_NODE = 2
+TEXT_NODE = 3
+CDATA_NODE = 4
+ENTITY_REFERENCE_NODE = 5
+ENTITY_NODE = 6
+PROCESSING_INSTRUCTION_NODE = 7
+COMMENT_NODE = 8
+DOCUMENT_NODE = 9
+DOCUMENT_TYPE_NODE = 10
+DOCUMENT_FRAGMENT_NODE = 11
+NOTATION_NODE = 12
+
 
 class Node(object):
     XMLNS_URI = 'http://www.w3.org/2000/xmlns/'
@@ -35,50 +38,73 @@ class Node(object):
         return self.wrapper.impl_document
 
     @property
+    def document(self):
+        # Return self if this is the document node
+        if self.impl_node == self.wrapper.impl_document:
+            return self
+        return self.wrapper.wrap_node(self.wrapper.impl_document)
+
+    @property
     def root(self):
-        # Return self if this is the root node
+        # Return self if this is the root element node
         if self.impl_node == self.wrapper.impl_root_element:
             return self
-        return self.wrapper.wrap_impl_node(self.wrapper.impl_root_element)
+        return self.wrapper.wrap_node(self.wrapper.impl_root_element)
 
     @property
     def node_type(self):
-        return self.wrapper.map_node_type(self.impl_node)
+        return self._node_type
 
     def is_type(self, node_type_constant):
         return self.node_type == node_type_constant
 
     @property
     def is_element(self):
-        return self.is_type(ELEMENT)
+        return self.is_type(ELEMENT_NODE)
 
     @property
     def is_attribute(self):
-        return self.is_type(ATTRIBUTE)
+        return self.is_type(ATTRIBUTE_NODE)
 
     @property
     def is_text(self):
-        return self.is_type(TEXT)
+        return self.is_type(TEXT_NODE)
 
     @property
     def is_cdata(self):
-        return self.is_type(CDATA)
+        return self.is_type(CDATA_NODE)
+
+    @property
+    def is_entity_reference(self):
+        return self.is_type(ENTITY_REFERENCE_NODE)
 
     @property
     def is_entity(self):
-        return self.is_type(ENTITY)
+        return self.is_type(ENTITY_NODE)
 
     @property
     def is_processing_instruction(self):
-        return self.is_type(PROCESSING_INSTRUCTION)
+        return self.is_type(PROCESSING_INSTRUCTION_NODE)
 
     @property
     def is_comment(self):
-        return self.is_type(COMMENT)
+        return self.is_type(COMMENT_NODE)
+
+    @property
+    def is_document(self):
+        return self.is_type(DOCUMENT_NODE)
+
+    @property
+    def is_document_type(self):
+        return self.is_type(DOCUMENT_TYPE_NODE)
+
+    @property
+    def is_document_fragment(self):
+        return self.is_type(DOCUMENT_FRAGMENT_NODE)
 
     @property
     def is_notation(self):
-        return self.is_type(NOTATION)
+        return self.is_type(NOTATION_NODE)
 
     def __eq__(self, other):
         if self is other:
@@ -87,15 +113,15 @@ class Node(object):
 
     def _convert_nodelist(self, nodelist):
         # TODO Do something more efficient here, lazy wrapping?
-        return [self.wrapper.wrap_impl_node(n) for n in nodelist]
+        return [self.wrapper.wrap_node(n) for n in nodelist]
 
     @property
     def parent(self):
-        # Root Element has no parent element
-        if self.impl_node == self.wrapper.impl_root_element:
+        parent_impl_node = self.wrapper.get_node_parent(self.impl_node)
+        if parent_impl_node is not None:
+            return self.wrapper.wrap_node(parent_impl_node)
+        else:
             return None
-        return self.wrapper.wrap_impl_node(
-            self.wrapper.get_node_parent(self.impl_node))
 
     @property
     def children(self, ns_uri=None):
@@ -228,6 +254,40 @@ class Node(object):
         return self.xml()
 
 
+class Document(Node):
+    _node_type = DOCUMENT_NODE
+    # TODO: doc_type, document_element
+
+
+class DocumentType(Node):
+    _node_type = DOCUMENT_TYPE_NODE
+    # TODO: name, entities, notations, public_id, system_id
+
+
+class DocumentFragment(Node):
+    _node_type = DOCUMENT_FRAGMENT_NODE
+    # TODO
+
+
+class Notation(Node):
+    _node_type = NOTATION_NODE
+    # TODO: public_id, system_id
+
+
+class Entity(Node):
+    _node_type = ENTITY_NODE
+    # public_id, system_id
+
+    @property
+    def notation_name(self):
+        return self.name
+
+
+class EntityReference(Node):
+    _node_type = ENTITY_REFERENCE_NODE
+    # TODO
+
+
 class _NameValueNode(Node):
 
     def get_name(self):
@@ -250,40 +310,41 @@ class _NameValueNode(Node):
             indent=0, newline='', quote_char='"', omit_declaration=False,
             _depth=0):
         indent, newline = self._sanitize_write_params(indent, newline)
-        if self.is_type(TEXT):
+        if self.is_text:
             writer.write(self._sanitize_write_value(self.value))
-        elif self.is_type(CDATA):
+        elif self.is_cdata:
             if ']]>' in self.value:
                 raise Exception("']]>' is not allowed in CDATA node value")
             writer.write("<![CDATA[%s]]>" % self.value)
-        #elif self.is_type(ENTITY): # TODO
-        elif self.is_type(COMMENT):
+        #elif self.is_entity: # TODO
+        elif self.is_comment:
             if '--' in self.value:
                 raise Exception("'--' is not allowed in COMMENT node value")
             writer.write("<!--%s-->" % self.value)
-        #elif self.is_type(NOTATION): # TODO
+        #elif self.is_notation: # TODO
         else:
             raise Exception('write of node %s is not supported'
                 % self.__class__)
 
 
 class Text(_NameValueNode):
-    pass
+    _node_type = TEXT_NODE
 
 
 class CDATA(_NameValueNode):
-    pass
+    _node_type = CDATA_NODE
 
 
 class Entity(_NameValueNode):
-    pass
+    _node_type = ENTITY_NODE
 
 
 class Comment(_NameValueNode):
-    pass
+    _node_type = COMMENT_NODE
 
 
 class Attribute(_NameValueNode):
+    _node_type = ATTRIBUTE_NODE
 
     @property
     def prefix(self):
@@ -297,6 +358,7 @@ class Attribute(_NameValueNode):
 
 
 class ProcessingInstruction(_NameValueNode):
+    _node_type = PROCESSING_INSTRUCTION_NODE
 
     @property
     def target(self):
@@ -320,13 +382,14 @@ class Element(_NameValueNode):
     Wrap underlying XML document-building libarary/implementation and
     expose utility functions to easily build XML nodes.
     '''
+    _node_type = ELEMENT_NODE
 
     def _get_text(self):
         '''
         Return contatenated value of all text node children of this element
         '''
         # TODO Make this more efficient
-        text_children = [n.value for n in self.children if n.is_type(TEXT)]
+        text_children = [n.value for n in self.children if n.is_text]
         if text_children:
             return u''.join(text_children)
         else:
@@ -339,7 +402,7 @@ class Element(_NameValueNode):
         '''
         # Remove any existing Text node children
         for child in self.children:
-            if child.is_type(TEXT):
+            if child.is_text:
                 child.delete()
         if text is not None:
             text_node = self.wrapper.new_impl_text(text)
@@ -355,7 +418,7 @@ class Element(_NameValueNode):
             if (self.wrapper.get_node_parent(elem) is None
                 or self.wrapper.get_node_parent(elem) == self.impl_document):
 
-                return self.wrapper.wrap_impl_node(
+                return self.wrapper.wrap_node(
                     self.wrapper.impl_root_element)
             elem = self.wrapper.get_node_parent(elem)
             if to_tagname is None:
@@ -365,7 +428,7 @@ class Element(_NameValueNode):
             else:
                 if self.wrapper.get_node_name(elem) == to_tagname:
                     break
-        return self.wrapper.wrap_impl_node(elem)
+        return self.wrapper.wrap_node(elem)
 
     def build_element(self, tagname, ns_uri=None,
             attributes=None, text=None, before=False):
@@ -383,7 +446,7 @@ class Element(_NameValueNode):
                 elem, before_sibling=self.impl_node)
         else:
             self.wrapper.add_node_child(self.impl_node, elem)
-        return self.wrapper.wrap_impl_node(elem)
+        return self.wrapper.wrap_node(elem)
 
     build_elem = build_element  # Alias
 
@@ -411,7 +474,8 @@ class Element(_NameValueNode):
         attr_wrap_nodes = []
         for attr in self.wrapper.get_node_attributes(
                 self.impl_node, ns_uri=ns_uri):
-            attr_wrap_nodes.append(self.wrapper.wrap_impl_node(attr))
+            attr_wrap_nodes.append(
+                self.wrapper.wrap_node(attr, document=self.impl_document))
         return sorted(attr_wrap_nodes, key=lambda a: a.name)
 
     def set_attributes(self, attr_obj=None, ns_uri=None, **attr_dict):
@@ -513,8 +577,7 @@ class Element(_NameValueNode):
             last_child_was_indented = False
             writer.write(">")
             for child in self.children:
-                if (child.is_type(ELEMENT)
-                        or child.is_type(PROCESSING_INSTRUCTION)):
+                if child.is_element or child.is_processing_instruction:
                     if not last_child_was_indented:
                         writer.write(newline)
                     last_child_was_indented = True

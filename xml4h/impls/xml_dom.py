@@ -18,48 +18,29 @@ class XmlDomImplWrapper(_XmlImplWrapper):
         doc = factory.createDocument(ns_uri, root_tagname, doctype)
         return doc
 
-    def wrap_impl_node(self, impl_node):
+    def map_node_to_class(self, impl_node):
         if isinstance(impl_node, tuple):
-            return nodes.Attribute(impl_node, self)
+            return nodes.Attribute
         try:
-            impl_class = {
+            return {
                 xml.dom.Node.ELEMENT_NODE: nodes.Element,
                 xml.dom.Node.ATTRIBUTE_NODE: nodes.Attribute,
                 xml.dom.Node.TEXT_NODE: nodes.Text,
                 xml.dom.Node.CDATA_SECTION_NODE: nodes.CDATA,
+                # EntityReference not supported by minidom
+                #xml.dom.Node.ENTITY_REFERENCE: nodes.EntityReference,
                 xml.dom.Node.ENTITY_NODE: nodes.Entity,
                 xml.dom.Node.PROCESSING_INSTRUCTION_NODE:
                     nodes.ProcessingInstruction,
                 xml.dom.Node.COMMENT_NODE: nodes.Comment,
-                # TODO
-                #xml.dom.Node.DOCUMENT_NODE: ,
-                #xml.dom.Node.DOCUMENT_TYPE_NODE: ,
-                #xml.dom.Node.NOTATION_NODE: ,
+                xml.dom.Node.DOCUMENT_NODE: nodes.Document,
+                xml.dom.Node.DOCUMENT_TYPE_NODE: nodes.DocumentType,
+                xml.dom.Node.DOCUMENT_FRAGMENT_NODE: nodes.DocumentFragment,
+                xml.dom.Node.NOTATION_NODE: nodes.Notation,
                 }[impl_node.nodeType]
-            return impl_class(impl_node, self)
         except KeyError, e:
-            raise NotImplementedError(
-                'Wrapping of %s implementation nodes is not implemented'
-                % impl_node)
-
-    def map_node_type(self, node):
-        try:
-            return {
-                xml.dom.Node.ELEMENT_NODE: nodes.ELEMENT,
-                xml.dom.Node.ATTRIBUTE_NODE: nodes.ATTRIBUTE,
-                xml.dom.Node.TEXT_NODE: nodes.TEXT,
-                xml.dom.Node.CDATA_SECTION_NODE: nodes.CDATA,
-                xml.dom.Node.ENTITY_NODE: nodes.ENTITY,
-                xml.dom.Node.PROCESSING_INSTRUCTION_NODE:
-                    nodes.PROCESSING_INSTRUCTION,
-                xml.dom.Node.COMMENT_NODE: nodes.COMMENT,
-                xml.dom.Node.DOCUMENT_NODE: nodes.DOCUMENT,
-                xml.dom.Node.DOCUMENT_TYPE_NODE: nodes.DOCUMENT_TYPE,
-                xml.dom.Node.NOTATION_NODE: nodes.NOTATION,
-                }[node.nodeType]
-        except KeyError, e:
-            raise Exception('Unknown implementation node type: %s'
-                % node.nodeType)
+            raise Exception(
+                'Unrecognized type for implementation node: %s' % node)
 
     def new_impl_element(self, tagname, ns_uri=None):
         if ns_uri is None:

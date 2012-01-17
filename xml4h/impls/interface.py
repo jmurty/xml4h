@@ -22,14 +22,18 @@ class _XmlImplWrapper(object):
         return Element(wrapper.impl_root_element, wrapper)
 
     @classmethod
-    def wrap_node(cls, node):
-        wrapper = cls(cls.get_impl_document(node))
-        return wrapper.wrap_impl_node(node)
+    def wrap_node(cls, node, document=None):
+        # Use document if it's provided rather than looking it up
+        if document is not None:
+            wrapper = cls(document)
+        else:
+            wrapper = cls(cls.get_impl_document(node))
+        impl_class = wrapper.map_node_to_class(node)
+        return impl_class(node, wrapper)
 
     @classmethod
     def get_impl_document(self, node):
         return node.ownerDocument
-
 
     def __init__(self, document):
         self._impl_document = document
@@ -48,10 +52,7 @@ class _XmlImplWrapper(object):
     def new_impl_document(cls, root_tagname, ns_uri=None, **kwargs):
         raise NotImplementedError()
 
-    def wrap_impl_node(self, impl_node):
-        raise NotImplementedError()
-
-    def map_node_type(self, node):
+    def map_node_to_class(self, node):
         raise NotImplementedError()
 
     # Document implementation methods

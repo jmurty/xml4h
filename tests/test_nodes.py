@@ -18,37 +18,39 @@ class BaseTestNodes(object):
         self.assertEqual(self.root_elem, wrapped_node.impl_node)
         self.assertEqual('DocRoot', wrapped_node.name)
         self.assertEqual(self.doc, wrapped_node.impl_document)
-        self.assertTrue(wrapped_node.is_type(nodes.ELEMENT))
+        self.assertTrue(wrapped_node.is_type(nodes.ELEMENT_NODE))
         self.assertTrue(wrapped_node.is_element)
         # Wrap a non-root element
         wrapped_node = XmlDomImplWrapper.wrap_node(self.elem3_second)
         self.assertEqual(self.elem3_second, wrapped_node.impl_node)
         self.assertEqual('ns2:Element3', wrapped_node.name)
         self.assertEqual('Element4', wrapped_node.parent.name)
-        self.assertTrue(wrapped_node.is_type(nodes.ELEMENT))
+        self.assertTrue(wrapped_node.is_type(nodes.ELEMENT_NODE))
         self.assertTrue(wrapped_node.is_element)
         # Test node types
         wrapped_node = XmlDomImplWrapper.wrap_node(self.text_node)
         self.assertIsInstance(wrapped_node, nodes.Text)
-        self.assertTrue(wrapped_node.is_type(nodes.TEXT))
+        self.assertTrue(wrapped_node.is_type(nodes.TEXT_NODE))
         self.assertTrue(wrapped_node.is_text)
         wrapped_node = XmlDomImplWrapper.wrap_node(self.cdata_node)
         self.assertIsInstance(wrapped_node, nodes.CDATA)
-        self.assertTrue(wrapped_node.is_type(nodes.CDATA))
+        self.assertTrue(wrapped_node.is_type(nodes.CDATA_NODE))
         self.assertTrue(wrapped_node.is_cdata)
         wrapped_node =XmlDomImplWrapper.wrap_node(self.comment_node)
         self.assertIsInstance(wrapped_node, nodes.Comment)
-        self.assertTrue(wrapped_node.is_type(nodes.COMMENT))
+        self.assertTrue(wrapped_node.is_type(nodes.COMMENT_NODE))
         self.assertTrue(wrapped_node.is_comment)
         wrapped_node = XmlDomImplWrapper.wrap_node(self.instruction_node)
         self.assertIsInstance(wrapped_node, nodes.ProcessingInstruction)
-        self.assertTrue(wrapped_node.is_type(nodes.PROCESSING_INSTRUCTION))
+        self.assertTrue(wrapped_node.is_type(nodes.PROCESSING_INSTRUCTION_NODE))
         self.assertTrue(wrapped_node.is_processing_instruction)
 
     def test_parent(self):
-        # Root element has no parent
-        wrapped_elem = XmlDomImplWrapper.wrap_node(self.root_elem)
-        self.assertEqual(None, wrapped_elem.parent)
+        # Document node has no parent
+        wrapped_doc = XmlDomImplWrapper.wrap_node(self.doc)
+        self.assertEqual(None, wrapped_doc.parent)
+        # Root element has document as parent
+        self.assertIsInstance(self.wrapped_root.parent, nodes.Document)
         # Find parents of elements
         self.assertEqual(self.root_elem,
             XmlDomImplWrapper.wrap_node(self.elem1).parent.impl_node)
