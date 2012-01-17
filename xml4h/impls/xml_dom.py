@@ -1,10 +1,10 @@
-from xml4h.impls.interface import _XmlImplWrapper
+from xml4h.impls.interface import _XmlImplAdaptor
 from xml4h import nodes
 
 import xml.dom
 
 
-class XmlDomImplWrapper(_XmlImplWrapper):
+class XmlDomImplAdaptor(_XmlImplAdaptor):
 
     @classmethod
     def new_impl_document(self, root_tagname, ns_uri=None,

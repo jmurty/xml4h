@@ -21,37 +21,37 @@ NOTATION_NODE = 12
 class Node(object):
     XMLNS_URI = 'http://www.w3.org/2000/xmlns/'
 
-    def __init__(self, node, wrapper):
-        if node is None or wrapper is None:
-            raise Exception('Cannot instantiate without node and wrapper')
+    def __init__(self, node, adpator):
+        if node is None or adpator is None:
+            raise Exception('Cannot instantiate without node and adpator')
         self._impl_node = node
-        self._wrapper = wrapper
+        self._adpator = adpator
 
     @property
     def impl_node(self):
         return self._impl_node
 
     @property
-    def wrapper(self):
-        return self._wrapper
+    def adpator(self):
+        return self._adpator
 
     @property
     def impl_document(self):
-        return self.wrapper.impl_document
+        return self.adpator.impl_document
 
     @property
     def document(self):
         # Return self if this is the document node
-        if self.impl_node == self.wrapper.impl_document:
+        if self.impl_node == self.adpator.impl_document:
             return self
-        return self.wrapper.wrap_node(self.wrapper.impl_document)
+        return self.adpator.wrap_node(self.adpator.impl_document)
 
     @property
     def root(self):
         # Return self if this is the root element node
-        if self.impl_node == self.wrapper.impl_root_element:
+        if self.impl_node == self.adpator.impl_root_element:
             return self
-        return self.wrapper.wrap_node(self.wrapper.impl_root_element)
+        return self.adpator.wrap_node(self.adpator.impl_root_element)
 
     @property
     def node_type(self):
@@ -115,19 +115,19 @@ class Node(object):
 
     def _convert_nodelist(self, nodelist):
         # TODO Do something more efficient here, lazy wrapping?
-        return [self.wrapper.wrap_node(n) for n in nodelist]
+        return [self.adpator.wrap_node(n) for n in nodelist]
 
     @property
     def parent(self):
-        parent_impl_node = self.wrapper.get_node_parent(self.impl_node)
+        parent_impl_node = self.adpator.get_node_parent(self.impl_node)
         if parent_impl_node is not None:
-            return self.wrapper.wrap_node(parent_impl_node)
+            return self.adpator.wrap_node(parent_impl_node)
         else:
             return None
 
     @property
     def children(self, ns_uri=None):
-        nodelist = self.wrapper.get_node_children(
+        nodelist = self.adpator.get_node_children(
             self.impl_node, ns_uri=ns_uri)
         return self._convert_nodelist(nodelist)
 
@@ -143,14 +143,14 @@ class Node(object):
 
     @property
     def siblings(self, ns_uri=None):
-        nodelist = self.wrapper.get_node_children(
+        nodelist = self.adpator.get_node_children(
             self.parent.impl_node, ns_uri=ns_uri)
         return self._convert_nodelist(
             [n for n in nodelist if n != self.impl_node])
 
     @property
     def siblings_before(self, ns_uri=None):
-        nodelist = self.wrapper.get_node_children(
+        nodelist = self.adpator.get_node_children(
             self.parent.impl_node, ns_uri=ns_uri)
         before_nodelist = []
         for n in nodelist:
@@ -161,7 +161,7 @@ class Node(object):
 
     @property
     def siblings_after(self, ns_uri=None):
-        nodelist = self.wrapper.get_node_children(
+        nodelist = self.adpator.get_node_children(
             self.parent.impl_node, ns_uri=ns_uri)
         after_nodelist = []
         is_after_myself = False
@@ -187,8 +187,8 @@ class Node(object):
         return self.impl_node.localName
 
     def delete(self):
-        self.wrapper.remove_node_child(
-            self.wrapper.get_node_parent(self.impl_node), self.impl_node,
+        self.adpator.remove_node_child(
+            self.adpator.get_node_parent(self.impl_node), self.impl_node,
             destroy_node=True)
 
     def find(self, name=None, ns_uri=None, whole_document=False):
@@ -200,7 +200,7 @@ class Node(object):
             search_from_node = self.impl_document
         else:
             search_from_node = self.impl_node
-        nodelist = self.wrapper.find_node_elements(search_from_node,
+        nodelist = self.adpator.find_node_elements(search_from_node,
             name=name, ns_uri=ns_uri)
         return self._convert_nodelist(nodelist)
 
@@ -215,7 +215,7 @@ class Node(object):
         else:
             return None
 
-    # Methods that operate on this Node implementation wrapper
+    # Methods that operate on this Node implementation adpator
 
     def write(self, writer, **kwargs):
         write_func(self.document, writer, **kwargs)
@@ -275,7 +275,7 @@ class EntityReference(Node):
 class _NameValueNode(Node):
 
     def _get_name(self):
-        return self.wrapper.get_node_name(self.impl_node)
+        return self.adpator.get_node_name(self.impl_node)
 
     def _set_name(self, name):
         self.set_name(self.impl_node, name)
@@ -283,10 +283,10 @@ class _NameValueNode(Node):
     name = property(_get_name, _set_name)
 
     def _get_value(self):
-        return self.wrapper.get_node_value(self.impl_node)
+        return self.adpator.get_node_value(self.impl_node)
 
     def _set_value(self, value):
-        self.wrapper.set_node_value(self.impl_node, value)
+        self.adpator.set_node_value(self.impl_node, value)
 
     value = property(_get_value, _set_value)
 
@@ -375,20 +375,20 @@ class Element(_NameValueNode):
             if child.is_text:
                 child.delete()
         if text is not None:
-            text_node = self.wrapper.new_impl_text(text)
-            self.wrapper.add_node_child(self.impl_node, text_node)
+            text_node = self.adpator.new_impl_text(text)
+            self.adpator.add_node_child(self.impl_node, text_node)
 
     text = property(_get_text, _set_text)
 
     def _get_attributes(self, ns_uri=None):
-        attr_impl_nodes = self.wrapper.get_node_attributes(
+        attr_impl_nodes = self.adpator.get_node_attributes(
             self.impl_node, ns_uri=ns_uri)
-        return AttributeDict(attr_impl_nodes, self.impl_node, self.wrapper)
+        return AttributeDict(attr_impl_nodes, self.impl_node, self.adpator)
 
     def _set_attributes(self, attr_obj=None, ns_uri=None, **attr_dict):
         # Remove existing attributes
         for attr_name in self._get_attributes(ns_uri):
-            self.wrapper.remove_node_attribute(
+            self.adpator.remove_node_attribute(
                 self.impl_node, attr_name, ns_uri)
         # Add new attributes
         self._set_element_attributes(self.impl_node,
@@ -398,39 +398,39 @@ class Element(_NameValueNode):
 
     @property
     def attribute_nodes(self):
-        impl_attr_nodes = self.wrapper.get_node_attributes(self.impl_node)
-        wrapped_attr_nodes = [self.wrapper.wrap_node(a, self.impl_document)
+        impl_attr_nodes = self.adpator.get_node_attributes(self.impl_node)
+        wrapped_attr_nodes = [self.adpator.wrap_node(a, self.impl_document)
                               for a in impl_attr_nodes]
         return sorted(wrapped_attr_nodes, key=lambda x: x.name)
 
     def attribute_node(self, name, ns_uri=None):
-        attr_impl_node = self.wrapper.get_node_attribute_node(
+        attr_impl_node = self.adpator.get_node_attribute_node(
             self.impl_node, name, ns_uri)
-        return self.wrapper.wrap_node(attr_impl_node, self.impl_document)
+        return self.adpator.wrap_node(attr_impl_node, self.impl_document)
 
     def up(self, count=1, to_tagname=None):
         elem = self.impl_node
         up_count = 0
         while True:
             # Don't go up beyond the document root
-            if (self.wrapper.get_node_parent(elem) is None
-                or self.wrapper.get_node_parent(elem) == self.impl_document):
+            if (self.adpator.get_node_parent(elem) is None
+                or self.adpator.get_node_parent(elem) == self.impl_document):
 
-                return self.wrapper.wrap_node(
-                    self.wrapper.impl_root_element)
-            elem = self.wrapper.get_node_parent(elem)
+                return self.adpator.wrap_node(
+                    self.adpator.impl_root_element)
+            elem = self.adpator.get_node_parent(elem)
             if to_tagname is None:
                 up_count += 1
                 if up_count >= count:
                     break
             else:
-                if self.wrapper.get_node_name(elem) == to_tagname:
+                if self.adpator.get_node_name(elem) == to_tagname:
                     break
-        return self.wrapper.wrap_node(elem)
+        return self.adpator.wrap_node(elem)
 
     def build_element(self, tagname, ns_uri=None,
             attributes=None, text=None, before=False):
-        elem = self.wrapper.new_impl_element(tagname, ns_uri)
+        elem = self.adpator.new_impl_element(tagname, ns_uri)
         # Automatically add namespace URI to Element as attribute
         if ns_uri is not None:
             self._set_namespace(elem, ns_uri)
@@ -439,12 +439,12 @@ class Element(_NameValueNode):
         if text is not None:
             self._build_text(elem, text)
         if before:
-            self.wrapper.add_node_child(
-                self.wrapper.get_node_parent(self.impl_node),
+            self.adpator.add_node_child(
+                self.adpator.get_node_parent(self.impl_node),
                 elem, before_sibling=self.impl_node)
         else:
-            self.wrapper.add_node_child(self.impl_node, elem)
-        return self.wrapper.wrap_node(elem)
+            self.adpator.add_node_child(self.impl_node, elem)
+        return self.adpator.wrap_node(elem)
 
     build_elem = build_element  # Alias
 
@@ -469,7 +469,7 @@ class Element(_NameValueNode):
             # TODO Necessary? Desirable?
             if not isinstance(v, basestring):
                 v = unicode(v)
-            self.wrapper.set_node_attribute_value(
+            self.adpator.set_node_attribute_value(
                 element, n, v, ns_uri=my_ns_uri)
 
     def set_attributes(self, attr_obj=None, ns_uri=None, **attr_dict):
@@ -486,8 +486,8 @@ class Element(_NameValueNode):
     build_as = build_attributes  # Alias
 
     def _build_text(self, element, text):
-        text_node = self.wrapper.new_impl_text(text)
-        self.wrapper.add_node_child(element, text_node)
+        text_node = self.adpator.new_impl_text(text)
+        self.adpator.add_node_child(element, text_node)
 
     def build_text(self, text):
         self._build_text(self.impl_node, text)
@@ -498,8 +498,8 @@ class Element(_NameValueNode):
     # TODO set_text : replaces any existing text nodes
 
     def _build_comment(self, element, text):
-        comment_node = self.wrapper.new_impl_comment(text)
-        self.wrapper.add_node_child(element, comment_node)
+        comment_node = self.adpator.new_impl_comment(text)
+        self.adpator.add_node_child(element, comment_node)
 
     def build_comment(self, text):
         self._build_comment(self.impl_node, text)
@@ -508,8 +508,8 @@ class Element(_NameValueNode):
     build_c = build_comment  # Alias
 
     def _build_instruction(self, element, target, data):
-        instruction_node = self.wrapper.new_impl_instruction(target, data)
-        self.wrapper.add_node_child(element, instruction_node)
+        instruction_node = self.adpator.new_impl_instruction(target, data)
+        self.adpator.add_node_child(element, instruction_node)
 
     def build_instruction(self, target, data):
         self._build_instruction(self.impl_node, target, data)
@@ -535,8 +535,8 @@ class Element(_NameValueNode):
     set_ns = set_namespace  # Alias
 
     def _build_cdata(self, element, data):
-        cdata_node = self.wrapper.new_impl_cdata(data)
-        self.wrapper.add_node_child(element, cdata_node)
+        cdata_node = self.adpator.new_impl_cdata(data)
+        self.adpator.add_node_child(element, cdata_node)
 
     def build_cdata(self, data):
         self._build_cdata(self.impl_node, data)
@@ -554,9 +554,9 @@ class AttributeDict(object):
     modifications that will immediately affect the element.
     '''
 
-    def __init__(self, attr_impl_nodes, impl_element, wrapper):
+    def __init__(self, attr_impl_nodes, impl_element, adpator):
         self.impl_element = impl_element
-        self.wrapper = wrapper
+        self.adpator = adpator
 
     def _unpack_name(self, name):
         if isinstance(name, tuple):
@@ -574,19 +574,19 @@ class AttributeDict(object):
         # empty string if attribute does not exist
         if not name in self:
             return None
-        return self.wrapper.get_node_attribute_value(
+        return self.adpator.get_node_attribute_value(
             self.impl_element, name, ns_uri)
 
     def __setitem__(self, name, value):
         name, ns_uri = self._unpack_name(name)
         if not isinstance(value, basestring):
             value = unicode(value)
-        self.wrapper.set_node_attribute_value(
+        self.adpator.set_node_attribute_value(
             self.impl_element, name, value, ns_uri)
 
     def __delitem__(self, name):
         name, ns_uri = self._unpack_name(name)
-        self.wrapper.remove_node_attribute(self.impl_element, name, ns_uri)
+        self.adpator.remove_node_attribute(self.impl_element, name, ns_uri)
 
     def __iter__(self):
         for k in self.keys():
@@ -596,25 +596,25 @@ class AttributeDict(object):
 
     def __contains__(self, name):
         name, ns_uri = self._unpack_name(name)
-        return self.wrapper.has_node_attribute(self.impl_element, name, ns_uri)
+        return self.adpator.has_node_attribute(self.impl_element, name, ns_uri)
 
     def keys(self):
-        return [self.wrapper.get_node_name(a) for a in self.impl_attributes]
+        return [self.adpator.get_node_name(a) for a in self.impl_attributes]
 
     def values(self):
-        return [self.wrapper.get_node_value(a) for a in self.impl_attributes]
+        return [self.adpator.get_node_value(a) for a in self.impl_attributes]
 
     def namespace_uri(self, name):
-        a_node = self.wrapper.get_node_attribute_node(self.impl_element, name)
+        a_node = self.adpator.get_node_attribute_node(self.impl_element, name)
         if a_node is None:
             return None
         return a_node.namespaceURI
 
     @property
     def element(self):
-        return self.wrapper.wrap_node(self.impl_element)
+        return self.adpator.wrap_node(self.impl_element)
 
     @property
     def impl_attributes(self):
-        return self.wrapper.get_node_attributes(self.impl_element)
+        return self.adpator.get_node_attributes(self.impl_element)
 
