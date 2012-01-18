@@ -106,7 +106,7 @@ class BaseTestNodes(object):
         self.assertEqual(None, wrapped_elem.attribute_nodes[0].namespace_uri)
         self.assertEqual('a', wrapped_elem.attribute_nodes[0].name)
         self.assertEqual(None, wrapped_elem.attribute_nodes[0].prefix)
-        self.assertEqual('a', wrapped_elem.attribute_nodes[0].local_name)
+        self.assertEqual(None, wrapped_elem.attribute_nodes[0].local_name)
         # Namespace data for attribute node with namespace
         self.assertEqual('urn:ns1', wrapped_elem.attribute_nodes[1].namespace_uri)
         self.assertEqual('ns1:b', wrapped_elem.attribute_nodes[1].name)
@@ -145,7 +145,7 @@ class BaseTestNodes(object):
         self.assertEqual(2, len(attr_nodes))
         self.assertEqual(['a', 'ns1:b'], [a.name for a in attr_nodes])
         self.assertEqual(['1', '2'], [a.value for a in attr_nodes])
-        self.assertEqual(['a', 'b'], [a.local_name for a in attr_nodes])
+        self.assertEqual([None, 'b'], [a.local_name for a in attr_nodes])
         self.assertEqual([None, 'ns1'], [a.prefix for a in attr_nodes])
         self.assertEqual([None, 'urn:ns1'], [a.ns_uri for a in attr_nodes])
         # Get element's attributes dict
@@ -224,9 +224,9 @@ class BaseTestNodes(object):
 
     def test_find_methods(self):
         # Find all elements in document
-        elems = self.wrapped_root.find(whole_document=True)
-        self.assertEqual(7, len(elems))
         elems = self.wrapped_root.doc_find()
+        self.assertEqual(7, len(elems))
+        elems = self.wrapped_root.document.find()
         self.assertEqual(7, len(elems))
         # Find all element descendants of root
         elems = self.wrapped_root.find()

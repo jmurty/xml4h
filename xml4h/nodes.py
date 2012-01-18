@@ -217,29 +217,26 @@ class Node(object):
             self.adapter.get_node_parent(self.impl_node), self.impl_node,
             destroy_node=True)
 
-    def find(self, name=None, ns_uri=None, whole_document=False):
+    def find(self, name=None, ns_uri=None, first_only=False):
         if name is None:
             name = '*'  # Match all element names
         if ns_uri is None:
             ns_uri = '*'  # Match all namespaces
-        if whole_document:
-            search_from_node = self.impl_document
-        else:
-            search_from_node = self.impl_node
-        nodelist = self.adapter.find_node_elements(search_from_node,
-            name=name, ns_uri=ns_uri)
+        nodelist = self.adapter.find_node_elements(
+            self.impl_node, name=name, ns_uri=ns_uri)
+        if first_only:
+            if nodelist:
+                return self.adapter.wrap_node(nodelist[0])
+            else:
+                return None
         return self._convert_nodelist(nodelist)
 
-    def doc_find(self, name=None, ns_uri=None):
-        return self.find(name=name, ns_uri=ns_uri, whole_document=True)
+    def find_first(self, name=None, ns_uri=None):
+        return self.find(name=name, ns_uri=ns_uri, first_only=True)
 
-    def find_first(self, name=None, ns_uri=None, whole_document=False):
-        results = self.find(
-            name=name, ns_uri=ns_uri, whole_document=whole_document)
-        if results:
-            return results[0]
-        else:
-            return None
+    def doc_find(self, name=None, ns_uri=None, first_only=False):
+        return self.document.find(name=name, ns_uri=ns_uri,
+            first_only=first_only)
 
     # Methods that operate on this Node implementation adapter
 
@@ -366,19 +363,15 @@ class Attribute(_NameValueNode):
         if ':' in self.name:
             return self.name.split(':')[1]
         else:
-            return self.name
+            None
 
 
 class ProcessingInstruction(_NameValueNode):
     _node_type = PROCESSING_INSTRUCTION_NODE
 
-    @property
-    def target(self):
-        return self.name
+    target = _NameValueNode.name
 
-    @property
-    def data(self):
-        return self.value
+    data = _NameValueNode.value
 
 
 class Element(_NameValueNode):
@@ -421,83 +414,6 @@ class Element(_NameValueNode):
     def _get_attributes(self):
         return self.attributes_by_ns(None)
 
-    def _set_attributes(self, attr_obj=None, ns_uri=None, **attr_dict):
-        # Remove existing attributes
-        for attr_name in self._get_attributes():
-            self.adapter.remove_node_attribute(
-                self.impl_node, attr_name, ns_uri)
-        # Add new attributes
-        self._set_element_attributes(self.impl_node,
-            attr_obj=attr_obj, ns_uri=ns_uri, **attr_dict)
-
-    attributes = property(_get_attributes, _set_attributes)
-
-    @property
-    def attribute_nodes(self):
-        impl_attr_nodes = self.adapter.get_node_attributes(self.impl_node)
-        wrapped_attr_nodes = [self.adapter.wrap_node(a)
-                              for a in impl_attr_nodes]
-        return sorted(wrapped_attr_nodes, key=lambda x: x.name)
-
-    def attribute_node(self, name, ns_uri=None):
-        attr_impl_node = self.adapter.get_node_attribute_node(
-            self.impl_node, name, ns_uri)
-        return self.adapter.wrap_node(attr_impl_node)
-
-    def up(self, count=1, to_tagname=None):
-        elem = self.impl_node
-        up_count = 0
-        while True:
-            # Don't go up beyond the document root
-            if (self.adapter.get_node_parent(elem) is None
-                or self.adapter.get_node_parent(elem) == self.impl_document):
-
-                return self.adapter.wrap_node(
-                    self.adapter.impl_root_element)
-            elem = self.adapter.get_node_parent(elem)
-            if to_tagname is None:
-                up_count += 1
-                if up_count >= count:
-                    break
-            else:
-                if self.adapter.get_node_name(elem) == to_tagname:
-                    break
-        return self.adapter.wrap_node(elem)
-
-    def build_element(self, tagname, ns_uri=None, prefix=None,
-            attributes=None, text=None, before=False):
-        if prefix is not None:
-            tagname = '%s:%s' % (prefix, tagname)
-        elif ':' in tagname:
-            prefix = tagname.split(':')[0]
-        elem = self.adapter.new_impl_element(tagname, ns_uri)
-        # Apply prefix-named namespace URI to element
-        if prefix:
-            ns_for_prefix = self.ns_uri_for_prefix(prefix)
-            self.adapter.set_node_namespace_uri(elem, ns_for_prefix)
-        # Automatically add namespace URI to Element as attribute
-        if ns_uri is not None:
-            self._set_namespace(elem, ns_uri)
-        elif not prefix:
-            # Apply default namespace to node (not redefined)
-            self.adapter.set_node_namespace_uri(
-                elem, self.current_namespace_uri)
-        if attributes is not None:
-            self._set_element_attributes(elem, attr_obj=attributes)
-        if text is not None:
-            self._build_text(elem, text)
-        if before:
-            self.adapter.add_node_child(
-                self.adapter.get_node_parent(self.impl_node),
-                elem, before_sibling=self.impl_node)
-        else:
-            self.adapter.add_node_child(self.impl_node, elem)
-        return self.adapter.wrap_node(elem)
-
-    build_elem = build_element  # Alias
-
-    build_e = build_element  # Alias
-
     def _set_element_attributes(self, element,
             attr_obj=None, ns_uri=None, **attr_dict):
         if attr_obj is not None:
@@ -530,6 +446,94 @@ class Element(_NameValueNode):
     def set_attributes(self, attr_obj=None, ns_uri=None, **attr_dict):
         self._set_element_attributes(self.impl_node,
             attr_obj=attr_obj, ns_uri=ns_uri, **attr_dict)
+
+    def _set_attributes(self, attr_obj=None, ns_uri=None, **attr_dict):
+        # Remove existing attributes
+        for attr_name in self._get_attributes():
+            self.adapter.remove_node_attribute(
+                self.impl_node, attr_name, ns_uri)
+        # Add new attributes
+        self._set_element_attributes(self.impl_node,
+            attr_obj=attr_obj, ns_uri=ns_uri, **attr_dict)
+
+    attributes = property(_get_attributes, _set_attributes)
+
+    @property
+    def attribute_nodes(self):
+        impl_attr_nodes = self.adapter.get_node_attributes(self.impl_node)
+        wrapped_attr_nodes = [self.adapter.wrap_node(a)
+                              for a in impl_attr_nodes]
+        return sorted(wrapped_attr_nodes, key=lambda x: x.name)
+
+    def attribute_node(self, name, ns_uri=None):
+        attr_impl_node = self.adapter.get_node_attribute_node(
+            self.impl_node, name, ns_uri)
+        return self.adapter.wrap_node(attr_impl_node)
+
+    def add_element(self, tagname, ns_uri=None, prefix=None,
+            attributes=None, text=None, before_this_element=False):
+        if prefix is not None:
+            tagname = '%s:%s' % (prefix, tagname)
+        elif ':' in tagname:
+            prefix = tagname.split(':')[0]
+        elem = self.adapter.new_impl_element(tagname, ns_uri)
+        # Apply prefix-named namespace URI to element
+        if prefix:
+            ns_for_prefix = self.ns_uri_for_prefix(prefix)
+            self.adapter.set_node_namespace_uri(elem, ns_for_prefix)
+        # Automatically add namespace URI to Element as attribute
+        if ns_uri is not None:
+            self._set_namespace(elem, ns_uri)
+        elif not prefix:
+            # Apply default namespace to node (not redefined)
+            self.adapter.set_node_namespace_uri(
+                elem, self.current_namespace_uri)
+        if attributes is not None:
+            self._set_element_attributes(elem, attr_obj=attributes)
+        if text is not None:
+            self._build_text(elem, text)
+        if before_this_element:
+            self.adapter.add_node_child(
+                self.adapter.get_node_parent(self.impl_node),
+                elem, before_sibling=self.impl_node)
+        else:
+            self.adapter.add_node_child(self.impl_node, elem)
+        return elem
+
+    ###########################
+    # Element builder methods #
+    ###########################
+
+    def up(self, count=1, to_tagname=None):
+        elem = self.impl_node
+        up_count = 0
+        while True:
+            # Don't go up beyond the document root
+            if (self.adapter.get_node_parent(elem) is None
+                or self.adapter.get_node_parent(elem) == self.impl_document):
+
+                return self.adapter.wrap_node(
+                    self.adapter.impl_root_element)
+            elem = self.adapter.get_node_parent(elem)
+            if to_tagname is None:
+                up_count += 1
+                if up_count >= count:
+                    break
+            else:
+                if self.adapter.get_node_name(elem) == to_tagname:
+                    break
+        return self.adapter.wrap_node(elem)
+
+    def build_element(self, tagname, ns_uri=None, prefix=None,
+            attributes=None, text=None, before_this_element=False):
+        impl_elem = self.add_element(tagname, ns_uri=ns_uri, prefix=prefix,
+            attributes=attributes, text=text,
+            before_this_element=before_this_element)
+        return self.adapter.wrap_node(impl_elem)
+
+    build_elem = build_element  # Alias
+
+    build_e = build_element  # Alias
 
     def build_attributes(self, attr_obj=None, ns_uri=None, **attr_dict):
         self._set_element_attributes(self.impl_node,

@@ -410,8 +410,8 @@ class BaseBuilderNodesTest(object):
         xmlb = (
             self.my_builder('DocRoot')
                 .build_e('FinalElement')
-                .build_e('PenultimateElement', before=True)
-                .build_e('ThirdLastElement', before=True)
+                .build_e('PenultimateElement', before_this_element=True)
+                .build_e('ThirdLastElement', before_this_element=True)
             )
         self.assertEqual(
             '<?xml version="1.0" encoding="utf-8"?>\n'
