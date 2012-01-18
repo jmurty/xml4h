@@ -2,6 +2,7 @@ import unittest
 import re
 import xml.dom
 from functools import partial
+from StringIO import StringIO
 
 from xml4h import builder, builder_xmldom, nodes
 
@@ -47,7 +48,7 @@ class BaseBuilderNodesTest(object):
             '        </AndDeeper>\n'
             '    </Deeper>\n'
             '</DocRoot>\n',
-            xmlb.xml())
+            xmlb.doc_xml())
 
     def test_root(self):
         xmlb = (
@@ -122,14 +123,16 @@ class BaseBuilderNodesTest(object):
             '    <Elem4 twelve="12"/>\n'
             '    <Elem5 test="value-in-first-arg"/>\n'
             '</DocRoot>\n',
-            xmlb.xml())
+            xmlb.doc_xml())
 
-    def test_to_xml(self):
+    def test_xml(self):
         xmlb = (
             self.my_builder('DocRoot')
                 .build_e('Elem1').up()
                 .build_e('Elem2'))
-        # Default printed output is utf-8, and pretty-printed
+        # xml() method outputs current node content and descendents only
+        self.assertEqual('<Elem2/>\n', xmlb.xml())
+        # Default string output is utf-8, and pretty-printed
         xml = (
             '<?xml version="1.0" encoding="utf-8"?>\n'
             '<DocRoot>\n'
@@ -137,33 +140,76 @@ class BaseBuilderNodesTest(object):
             '    <Elem2/>\n'
             '</DocRoot>\n'
             )
-        self.assertEqual(xml, str(xmlb))
-        self.assertEqual(xml, unicode(xmlb))
-        self.assertEqual(xml, xmlb.xml())
+        self.assertEqual(xml, xmlb.doc_xml())
         # Mix it up a bit
         self.assertEqual(
             '<DocRoot>\n'
             '    <Elem1/>\n'
             '    <Elem2/>\n'
             '</DocRoot>\n',
-            xmlb.xml(omit_declaration=True))
+            xmlb.doc_xml(omit_declaration=True))
         self.assertEqual(
             '<?xml version="1.0" encoding="latin1"?>\n'
             '<DocRoot>\n'
             '  <Elem1/>\n'
             '  <Elem2/>\n'
             '</DocRoot>\n',
-            xmlb.xml(encoding='latin1', indent=2))
+            xmlb.doc_xml(encoding='latin1', indent=2))
         self.assertEqual(
             '<?xml version="1.0"?>\t'
             '<DocRoot>\t'
             '        <Elem1/>\t'
             '        <Elem2/>\t'
             '</DocRoot>\t',
-            xmlb.xml(encoding=None, indent=8, newline='\t'))
+            xmlb.doc_xml(encoding=None, indent=8, newline='\t'))
 
-    def test_writer(self):
-        pass # TODO
+    def test_write(self):
+        xmlb = (
+            self.my_builder('DocRoot')
+                .build_e('Elem1').up()
+                .build_e('Elem2'))
+        # write() method outputs only current node and descendents
+        writer = StringIO()
+        xmlb.write(writer)
+        self.assertEqual('<Elem2/>', writer.getvalue())
+        # Default write output is utf-8, with no pretty-printing
+        xml = (
+            '<?xml version="1.0" encoding="utf-8"?>'
+            '<DocRoot>'
+                '<Elem1/>'
+                '<Elem2/>'
+            '</DocRoot>'
+            )
+        writer = StringIO()
+        xmlb.doc_write(writer)
+        self.assertEqual(xml, writer.getvalue())
+        # Mix it up a bit
+        writer = StringIO()
+        xmlb.doc_write(writer, omit_declaration=True)
+        self.assertEqual(
+            '<DocRoot>'
+                '<Elem1/>'
+                '<Elem2/>'
+            '</DocRoot>',
+            writer.getvalue())
+        writer = StringIO()
+        xmlb.doc_write(writer, encoding='latin1', indent=2)
+        self.assertEqual(
+            '<?xml version="1.0" encoding="latin1"?>'
+            '<DocRoot>'
+            '  <Elem1/>'
+            '  <Elem2/>'
+            '</DocRoot>',
+            writer.getvalue())
+        writer = StringIO()
+        xmlb.doc_write(writer, encoding=None, indent=8, newline='\t')
+        self.assertEqual(
+            '<?xml version="1.0"?>\t'
+            '<DocRoot>\t'
+            '        <Elem1/>\t'
+            '        <Elem2/>\t'
+            '</DocRoot>\t',
+            writer.getvalue())
 
     def test_text(self):
         # Aliases
@@ -181,7 +227,7 @@ class BaseBuilderNodesTest(object):
             '    <Elem1>A text value</Elem1>\n'
             '    <Elem2>Seven equals 7</Elem2>\n'
             '</DocRoot>\n',
-            xmlb.xml())
+            xmlb.doc_xml())
         # Multiple text nodes, and text node next to nested element
         xmlb = (
             self.my_builder('DocRoot')
@@ -201,7 +247,7 @@ class BaseBuilderNodesTest(object):
             '        <Nested>Text in nested</Nested>\n'
             '    </Elem2>\n'
             '</DocRoot>\n',
-            xmlb.xml())
+            xmlb.doc_xml())
 
     def test_comment(self):
         # Aliases
@@ -217,7 +263,7 @@ class BaseBuilderNodesTest(object):
             '<DocRoot>\n'
             '    <Elem1><!--Here is my comment--></Elem1>\n'
             '</DocRoot>\n',
-            xmlb.xml())
+            xmlb.doc_xml())
 
     def test_instruction(self):
         # Aliases
@@ -234,7 +280,7 @@ class BaseBuilderNodesTest(object):
             '<DocRoot>\n'
             '    <?inst-target inst-data?>\n'
             '</DocRoot>\n',
-            xmlb.xml())
+            xmlb.doc_xml())
 
     def test_namespace(self):
         # Aliases
@@ -252,7 +298,7 @@ class BaseBuilderNodesTest(object):
             '    <Elem1 xmlns="urn:elem1"/>\n'
             '    <Elem2 xmlns:myns="urn:elem2"/>\n'
             '</DocRoot>\n',
-            xmlb.xml())
+            xmlb.doc_xml())
         # Test namespaces work as expected when searching/traversing DOM
         self.assertEqual(1, len(xmlb.find(name='Elem1')))  # Ignore namespace
         self.assertEqual(1, len(xmlb.find(name='Elem1', ns_uri='urn:elem1')))
@@ -300,7 +346,7 @@ class BaseBuilderNodesTest(object):
                        ' myns:custom-ns-prefix-explicit="1"'
                        ' myns:custom-ns-prefix-implicit="1"/>\n'
                        '</DocRoot>\n',
-            xmlb.xml())
+            xmlb.doc_xml())
         # Test namespaces work as expected when searching/traversing DOM
         self.assertEqual(
             ['DocRoot', 'NSDefaultImplicit', 'NSDefaultExplicit', 'Attrs1', 'Attrs2'],
@@ -338,7 +384,7 @@ class BaseBuilderNodesTest(object):
             '    <Elem1>&lt;content/&gt; as text</Elem1>\n'
             '    <Elem2><![CDATA[<content/> as cdata]]></Elem2>\n'
             '</DocRoot>\n',
-            xmlb.xml())
+            xmlb.doc_xml())
 
     def test_element_with_extra_kwargs(self):
         xmlb = (
@@ -359,7 +405,7 @@ class BaseBuilderNodesTest(object):
             '    <Elem>Text value</Elem>\n'
             '    <Elem x="1">More text</Elem>\n'
             '</DocRoot>\n',
-            xmlb.xml())
+            xmlb.doc_xml())
         # Insert a new element before another
         xmlb = (
             self.my_builder('DocRoot')
@@ -374,7 +420,7 @@ class BaseBuilderNodesTest(object):
             '    <PenultimateElement/>\n'
             '    <FinalElement/>\n'
             '</DocRoot>\n',
-            xmlb.xml())
+            xmlb.doc_xml())
 
     def test_unicode(self):
         pass # TODO

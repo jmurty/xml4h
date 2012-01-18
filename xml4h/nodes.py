@@ -245,25 +245,33 @@ class Node(object):
 
     # Methods that operate on this Node implementation adapter
 
-    def write(self, writer, **kwargs):
-        write_func(self.document, writer, **kwargs)
+    def write(self, writer, encoding='utf-8', indent=False, newline=False,
+            quote_char='"', omit_declaration=False, _depth=0):
+        write_func(self, writer, encoding=encoding,
+            indent=indent, newline=newline, quote_char=quote_char,
+            omit_declaration=omit_declaration, _depth=_depth)
 
-    def xml(self, encoding='utf-8',
-            indent=4, newline='\n', quote_char='"', omit_declaration=False,
-            _depth=0):
+    def doc_write(self, writer, encoding='utf-8', indent=False, newline=False,
+            quote_char='"', omit_declaration=False, _depth=0):
+        self.document.write(writer, encoding=encoding,
+            indent=indent, newline=newline, quote_char=quote_char,
+            omit_declaration=omit_declaration, _depth=_depth)
+
+    def xml(self, encoding='utf-8', indent=4, newline='\n',
+            quote_char='"', omit_declaration=False, _depth=0):
         writer = StringIO()
         if encoding is not None:
             codecs.getwriter(encoding)(writer)
-        self.root.write(writer, encoding=encoding,
+        self.write(writer, encoding=encoding,
             indent=indent, newline=newline, quote_char=quote_char,
             omit_declaration=omit_declaration, _depth=_depth)
         return writer.getvalue()
 
-    def __str__(self):
-        return self.__unicode__()
-
-    def __unicode__(self):
-        return self.xml()
+    def doc_xml(self, encoding='utf-8', indent=4, newline='\n',
+            quote_char='"', omit_declaration=False, _depth=0):
+        return self.document.xml(encoding=encoding,
+            indent=indent, newline=newline, quote_char=quote_char,
+            omit_declaration=omit_declaration, _depth=_depth)
 
 
 class Document(Node):
