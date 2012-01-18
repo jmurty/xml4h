@@ -137,12 +137,10 @@ class Node(object):
     def children(self):
         return self.children_in_ns(None)
 
-    # TODO: Better to leave this undefined?
     @property
     def attributes(self):
         return None
 
-    # TODO: Better to leave this undefined?
     @property
     def attribute_nodes(self):
         return None
@@ -394,7 +392,6 @@ class Element(_NameValueNode):
         '''
         Return contatenated value of all text node children of this element
         '''
-        # TODO Make this more efficient
         text_children = [n.value for n in self.children if n.is_text]
         if text_children:
             return u''.join(text_children)
@@ -524,7 +521,7 @@ class Element(_NameValueNode):
                     my_ns_uri = None
             if ' ' in n:
                 raise Exception("Invalid attribute name value contains space")
-            # TODO Necessary? Desirable?
+            # Forcibly convert all data to unicode text
             if not isinstance(v, basestring):
                 v = unicode(v)
             self.adapter.set_node_attribute_value(
@@ -552,8 +549,6 @@ class Element(_NameValueNode):
         return self
 
     build_t = build_text  # Alias
-
-    # TODO set_text : replaces any existing text nodes
 
     def _build_comment(self, element, text):
         comment_node = self.adapter.new_impl_comment(text)
