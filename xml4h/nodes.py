@@ -185,6 +185,15 @@ class Node(object):
     ns_uri = namespace_uri  # Alias
 
     @property
+    def current_namespace_uri(self):
+        curr_node = self
+        while curr_node:
+            if curr_node.namespace_uri is not None:
+                return self.namespace_uri
+            curr_node = curr_node.parent
+        return None
+
+    @property
     def prefix(self):
         return self.impl_node.prefix
 
@@ -386,14 +395,17 @@ class Element(_NameValueNode):
 
     text = property(_get_text, _set_text)
 
-    def _get_attributes(self, ns_uri=None):
+    def attributes_by_ns(self, ns_uri):
         attr_impl_nodes = self.adapter.get_node_attributes(
             self.impl_node, ns_uri=ns_uri)
         return AttributeDict(attr_impl_nodes, self.impl_node, self.adapter)
 
+    def _get_attributes(self):
+        return self.attributes_by_ns(None)
+
     def _set_attributes(self, attr_obj=None, ns_uri=None, **attr_dict):
         # Remove existing attributes
-        for attr_name in self._get_attributes(ns_uri):
+        for attr_name in self._get_attributes():
             self.adapter.remove_node_attribute(
                 self.impl_node, attr_name, ns_uri)
         # Add new attributes
@@ -442,6 +454,10 @@ class Element(_NameValueNode):
         # Automatically add namespace URI to Element as attribute
         if ns_uri is not None:
             self._set_namespace(elem, ns_uri)
+        else:
+            # Apply default namespace to node (not redefined)
+            self.adapter.set_node_namespace_uri(
+                elem, self.current_namespace_uri)
         if attributes is not None:
             self._set_element_attributes(elem, attr_obj=attributes)
         if text is not None:
@@ -472,6 +488,8 @@ class Element(_NameValueNode):
             my_ns_uri = ns_uri
             if isinstance(n, tuple):
                 n, my_ns_uri = n
+            if my_ns_uri is None:
+                my_ns_uri = self.current_namespace_uri
             if ' ' in n:
                 raise Exception("Invalid attribute name value contains space")
             # TODO Necessary? Desirable?
