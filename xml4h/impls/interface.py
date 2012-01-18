@@ -16,25 +16,27 @@ class _XmlImplAdapter(object):
         return wrapped_doc
 
     @classmethod
-    def wrap_document(cls, document):
-        adapter = cls(document)
-        return nodes.Document(document, adapter)
+    def wrap_document(cls, document_node):
+        adapter = cls(document_node)
+        return nodes.Document(document_node, adapter)
 
     @classmethod
-    def wrap_node(cls, node, document=None):
-        # Use document if it's provided rather than looking it up
-        if document is not None:
-            adapter = cls(document)
-        else:
-            adapter = cls(cls.get_impl_document(node))
+    def wrap_node(cls, node):
+        adapter = cls(cls.get_impl_document(node))
         impl_class = adapter.map_node_to_class(node)
         return impl_class(node, adapter)
 
     @classmethod
     def get_impl_document(self, node):
+        if node.nodeType == node.DOCUMENT_NODE:
+            return node
         return node.ownerDocument
 
     def __init__(self, document):
+        if not document:
+            raise Exception(
+                'Cannot instantiate adapter with invalid document: %s'
+                % document)
         self._impl_document = document
 
     @property

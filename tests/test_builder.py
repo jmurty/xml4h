@@ -3,7 +3,7 @@ import re
 import xml.dom
 from functools import partial
 
-from xml4h import builder, builder_xmldom
+from xml4h import builder, builder_xmldom, nodes
 
 
 class TestBuilderMethods(unittest.TestCase):
@@ -282,8 +282,6 @@ class BaseBuilderNodesTest(object):
                     .build_as({'default-ns-explicit': 1},
                         ns_uri='urn:default').up()
                 .build_e('Attrs2')
-                    .build_as({'custom-ns-explicit': 1},
-                        ns_uri='urn:custom')
                     .build_as({'myns:custom-ns-prefix-implicit': 1})
                     .build_as({'myns:custom-ns-prefix-explicit': 1},
                         ns_uri='urn:custom')
@@ -299,13 +297,29 @@ class BaseBuilderNodesTest(object):
             '    <Attrs1 default-ns-explicit="1"'
                        ' default-ns-implicit="1"/>\n'
             '    <Attrs2'
-                       # TODO Shouldn't this have a namespace prefix?
-                       ' custom-ns-explicit="1"'
                        ' myns:custom-ns-prefix-explicit="1"'
                        ' myns:custom-ns-prefix-implicit="1"/>\n'
-            '</DocRoot>\n',
+                       '</DocRoot>\n',
             xmlb.xml())
-        # TODO Test namespaces work as expected when searching/traversing DOM
+        # Test namespaces work as expected when searching/traversing DOM
+        self.assertEqual(
+            ['DocRoot', 'NSDefaultImplicit', 'NSDefaultExplicit', 'Attrs1', 'Attrs2'],
+            [n.name for n in xmlb.doc_find(ns_uri='urn:default')])
+        self.assertEqual(
+            ['NSCustomExplicit', 'myns:NSCustomWithPrefixImplicit', 'myns:NSCustomWithPrefixExplicit'],
+            [n.name for n in xmlb.doc_find(ns_uri='urn:custom')])
+        self.assertEqual(
+            ['NSCustomExplicit', 'NSCustomWithPrefixImplicit', 'NSCustomWithPrefixExplicit'],
+            [n.local_name for n in xmlb.doc_find(ns_uri='urn:custom')])
+        # Check attribute namespaces
+        self.assertEqual([nodes.Node.XMLNS_URI, nodes.Node.XMLNS_URI],
+            [n.namespace_uri for n in xmlb.root.attribute_nodes])
+        attrs1_elem = xmlb.document.find_first('Attrs1')
+        self.assertEqual([None, None],
+            [n.namespace_uri for n in attrs1_elem.attribute_nodes])
+        attrs2_elem = xmlb.document.find_first('Attrs2')
+        self.assertEqual(['urn:custom', 'urn:custom'],
+            [n.namespace_uri for n in attrs2_elem.attribute_nodes])
 
     def test_cdata(self):
         # Aliases
