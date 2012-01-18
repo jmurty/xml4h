@@ -351,20 +351,6 @@ class Attribute(_NameValueNode):
     def value(self):
         return self._get_value()
 
-    @property
-    def prefix(self):
-        if ':' in self.name:
-            return self.name.split(':')[0]
-        else:
-            return None
-
-    @property
-    def local_name(self):
-        if ':' in self.name:
-            return self.name.split(':')[1]
-        else:
-            None
-
 
 class ProcessingInstruction(_NameValueNode):
     _node_type = PROCESSING_INSTRUCTION_NODE
