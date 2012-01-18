@@ -129,15 +129,18 @@ class BaseBuilderNodesTest(object):
         xmlb = (
             self.my_builder('DocRoot')
                 .build_e('Elem1').up()
-                .build_e('Elem2'))
+                .build_e('Elem2')
+                    .build_e('Elem3').up())
         # xml() method outputs current node content and descendents only
-        self.assertEqual('<Elem2/>\n', xmlb.xml())
+        self.assertEqual('<Elem2>\n    <Elem3/>\n</Elem2>', xmlb.xml())
         # Default string output is utf-8, and pretty-printed
         xml = (
             '<?xml version="1.0" encoding="utf-8"?>\n'
             '<DocRoot>\n'
             '    <Elem1/>\n'
-            '    <Elem2/>\n'
+            '    <Elem2>\n'
+            '        <Elem3/>\n'
+            '    </Elem2>\n'
             '</DocRoot>\n'
             )
         self.assertEqual(xml, xmlb.doc_xml())
@@ -145,21 +148,27 @@ class BaseBuilderNodesTest(object):
         self.assertEqual(
             '<DocRoot>\n'
             '    <Elem1/>\n'
-            '    <Elem2/>\n'
+            '    <Elem2>\n'
+            '        <Elem3/>\n'
+            '    </Elem2>\n'
             '</DocRoot>\n',
             xmlb.doc_xml(omit_declaration=True))
         self.assertEqual(
             '<?xml version="1.0" encoding="latin1"?>\n'
             '<DocRoot>\n'
             '  <Elem1/>\n'
-            '  <Elem2/>\n'
+            '  <Elem2>\n'
+            '    <Elem3/>\n'
+            '  </Elem2>\n'
             '</DocRoot>\n',
             xmlb.doc_xml(encoding='latin1', indent=2))
         self.assertEqual(
             '<?xml version="1.0"?>\t'
             '<DocRoot>\t'
             '        <Elem1/>\t'
-            '        <Elem2/>\t'
+            '        <Elem2>\t'
+            '                <Elem3/>\t'
+            '        </Elem2>\t'
             '</DocRoot>\t',
             xmlb.doc_xml(encoding=None, indent=8, newline='\t'))
 

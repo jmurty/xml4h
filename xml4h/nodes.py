@@ -41,17 +41,19 @@ class Node(object):
 
     @property
     def document(self):
-        # Return self if this is the document node
-        if self.impl_node == self.adapter.impl_document:
+        if self.is_document:
             return self
         return self.adapter.wrap_node(self.adapter.impl_document)
 
     @property
     def root(self):
-        # Return self if this is the root element node
-        if self.impl_node == self.adapter.impl_root_element:
+        if self.is_root:
             return self
         return self.adapter.wrap_node(self.adapter.impl_root_element)
+
+    @property
+    def is_root(self):
+        return self.impl_node == self.adapter.impl_root_element
 
     @property
     def node_type(self):
