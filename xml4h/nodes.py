@@ -458,6 +458,25 @@ class Element(_NameValueNode):
             self.impl_node, name, ns_uri)
         return self.adapter.wrap_node(attr_impl_node)
 
+    def _set_namespace(self, element, ns_uri, prefix=None):
+        if prefix is None:
+            ns_name = 'xmlns'
+            self.adapter.set_node_namespace_uri(element, ns_uri)
+        else:
+            ns_name = 'xmlns:%s' % prefix
+            # Apply namespace to element if it shares the prefix
+            elem_name = self.adapter.get_node_name(element)
+            if ':' in elem_name and prefix == elem_name.split(':')[0]:
+                self.adapter.set_node_namespace_uri(element, ns_uri)
+        self._set_element_attributes(element,
+            {ns_name: ns_uri}, ns_uri=self.XMLNS_URI)
+
+    def set_namespace(self, ns_uri, prefix=None):
+        self._set_namespace(self.impl_node, ns_uri, prefix=prefix)
+        return self
+
+    set_ns = set_namespace  # Alias
+
     def add_element(self, tagname, ns_uri=None, prefix=None,
             attributes=None, text=None, before_this_element=False):
         if prefix is not None:
@@ -479,7 +498,7 @@ class Element(_NameValueNode):
         if attributes is not None:
             self._set_element_attributes(elem, attr_obj=attributes)
         if text is not None:
-            self._build_text(elem, text)
+            self._add_text(elem, text)
         if before_this_element:
             self.adapter.add_node_child(
                 self.adapter.get_node_parent(self.impl_node),
@@ -487,6 +506,34 @@ class Element(_NameValueNode):
         else:
             self.adapter.add_node_child(self.impl_node, elem)
         return elem
+
+    def _add_text(self, element, text):
+        text_node = self.adapter.new_impl_text(text)
+        self.adapter.add_node_child(element, text_node)
+
+    def add_text(self, text):
+        self._add_text(self.impl_node, text)
+
+    def _add_comment(self, element, text):
+        comment_node = self.adapter.new_impl_comment(text)
+        self.adapter.add_node_child(element, comment_node)
+
+    def add_comment(self, text):
+        self._add_comment(self.impl_node, text)
+
+    def _add_instruction(self, element, target, data):
+        instruction_node = self.adapter.new_impl_instruction(target, data)
+        self.adapter.add_node_child(element, instruction_node)
+
+    def add_instruction(self, target, data):
+        self._add_instruction(self.impl_node, target, data)
+
+    def _add_cdata(self, element, data):
+        cdata_node = self.adapter.new_impl_cdata(data)
+        self.adapter.add_node_child(element, cdata_node)
+
+    def add_cdata(self, data):
+        self._add_cdata(self.impl_node, data)
 
     ###########################
     # Element builder methods #
@@ -532,63 +579,28 @@ class Element(_NameValueNode):
 
     build_as = build_attributes  # Alias
 
-    def _build_text(self, element, text):
-        text_node = self.adapter.new_impl_text(text)
-        self.adapter.add_node_child(element, text_node)
-
     def build_text(self, text):
-        self._build_text(self.impl_node, text)
+        self.add_text(text)
         return self
 
     build_t = build_text  # Alias
 
-    def _build_comment(self, element, text):
-        comment_node = self.adapter.new_impl_comment(text)
-        self.adapter.add_node_child(element, comment_node)
-
     def build_comment(self, text):
-        self._build_comment(self.impl_node, text)
+        self.add_comment(text)
         return self
 
     build_c = build_comment  # Alias
 
-    def _build_instruction(self, element, target, data):
-        instruction_node = self.adapter.new_impl_instruction(target, data)
-        self.adapter.add_node_child(element, instruction_node)
-
     def build_instruction(self, target, data):
-        self._build_instruction(self.impl_node, target, data)
+        self.add_instruction(target, data)
         return self
 
     build_processing_instruction = build_instruction  # Alias
 
     build_i = build_instruction  # Alias
 
-    def _set_namespace(self, element, ns_uri, prefix=None):
-        if prefix is None:
-            ns_name = 'xmlns'
-            self.adapter.set_node_namespace_uri(element, ns_uri)
-        else:
-            ns_name = 'xmlns:%s' % prefix
-            # Apply namespace to element if it shares the prefix
-            elem_name = self.adapter.get_node_name(element)
-            if ':' in elem_name and prefix == elem_name.split(':')[0]:
-                self.adapter.set_node_namespace_uri(element, ns_uri)
-        self._set_element_attributes(element,
-            {ns_name: ns_uri}, ns_uri=self.XMLNS_URI)
-
-    def set_namespace(self, ns_uri, prefix=None):
-        self._set_namespace(self.impl_node, ns_uri, prefix=prefix)
-        return self
-
-    set_ns = set_namespace  # Alias
-
-    def _build_cdata(self, element, data):
-        cdata_node = self.adapter.new_impl_cdata(data)
-        self.adapter.add_node_child(element, cdata_node)
-
-    def build_cdata(self, data):
-        self._build_cdata(self.impl_node, data)
+    def build_cdata(self, text):
+        self.add_cdata(text)
         return self
 
     build_data = build_cdata  # Alias
