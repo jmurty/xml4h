@@ -208,11 +208,11 @@ class Node(object):
 
     @property
     def prefix(self):
-        return self.impl_node.prefix
+        return self.adapter.get_node_name_prefix(self.impl_node)
 
     @property
     def local_name(self):
-        return self.impl_node.localName
+        return self.adapter.get_node_local_name(self.impl_node)
 
     def delete(self):
         self.adapter.remove_node_child(

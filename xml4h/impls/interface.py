@@ -26,12 +26,6 @@ class _XmlImplAdapter(object):
         impl_class = adapter.map_node_to_class(node)
         return impl_class(node, adapter)
 
-    @classmethod
-    def get_impl_document(self, node):
-        if node.nodeType == node.DOCUMENT_NODE:
-            return node
-        return node.ownerDocument
-
     def __init__(self, document):
         if not document:
             raise Exception(
@@ -45,7 +39,7 @@ class _XmlImplAdapter(object):
 
     @property
     def impl_root_element(self):
-        return self.impl_document.documentElement
+        return self.get_impl_root(self.impl_document)
 
     # Utility implementation methods
 
@@ -53,7 +47,14 @@ class _XmlImplAdapter(object):
     def new_impl_document(cls, root_tagname, ns_uri=None, **kwargs):
         raise NotImplementedError()
 
+    @classmethod
+    def get_impl_document(self, node):
+        raise NotImplementedError()
+
     def map_node_to_class(self, node):
+        raise NotImplementedError()
+
+    def get_impl_root(self, node):
         raise NotImplementedError()
 
     # Document implementation methods
@@ -101,6 +102,12 @@ class _XmlImplAdapter(object):
         raise NotImplementedError()
 
     def set_node_name(self, node, name):
+        raise NotImplementedError()
+
+    def get_node_local_name(self, node):
+        raise NotImplementedError()
+
+    def get_node_name_prefix(self, node):
         raise NotImplementedError()
 
     def get_node_value(self, node):

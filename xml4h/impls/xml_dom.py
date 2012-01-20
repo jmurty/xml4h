@@ -17,6 +17,12 @@ class XmlDomImplAdapter(_XmlImplAdapter):
         doc = factory.createDocument(ns_uri, root_tagname, doctype)
         return doc
 
+    @classmethod
+    def get_impl_document(self, node):
+        if node.nodeType == node.DOCUMENT_NODE:
+            return node
+        return node.ownerDocument
+
     def map_node_to_class(self, impl_node):
         try:
             return {
@@ -38,6 +44,9 @@ class XmlDomImplAdapter(_XmlImplAdapter):
         except KeyError, e:
             raise Exception(
                 'Unrecognized type for implementation node: %s' % impl_node)
+
+    def get_impl_root(self, node):
+        return node.documentElement
 
     def new_impl_element(self, tagname, ns_uri=None):
         return self.impl_document.createElementNS(ns_uri, tagname)
@@ -71,6 +80,12 @@ class XmlDomImplAdapter(_XmlImplAdapter):
 
     def get_node_name(self, node):
         return node.nodeName
+
+    def get_node_local_name(self, node):
+        return node.localName
+
+    def get_node_name_prefix(self, node):
+        return node.prefix
 
     def get_node_value(self, node):
         return node.nodeValue
