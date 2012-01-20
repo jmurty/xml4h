@@ -90,8 +90,34 @@ class XmlDomImplAdapter(_XmlImplAdapter):
     def get_node_value(self, node):
         return node.nodeValue
 
+    def get_node_text(self, node):
+        '''
+        Return contatenated value of all text node children of this element
+        '''
+        text_children = [n.nodeValue for n in self.get_node_children(node)
+                         if n.nodeType == xml.dom.Node.TEXT_NODE]
+        if text_children:
+            return u''.join(text_children)
+        else:
+            return None
+
+    def set_node_text(self, node, text):
+        '''
+        Set text value as sole Text child node of element; any existing
+        Text nodes are removed
+        '''
+        # Remove any existing Text node children
+        for child in self.get_node_children(node):
+            if child.nodeType == xml.dom.Node.TEXT_NODE:
+                self.remove_node_child(node, child, True)
+        if text is not None:
+            text_node = self.new_impl_text(text)
+            self.add_node_child(node, text_node)
+
     def get_node_attributes(self, element, ns_uri=None):
         attr_nodes = []
+        if not element.attributes:
+            return attr_nodes
         for attr_name in element.attributes.keys():
             if self.has_node_attribute(element, attr_name, ns_uri):
                 attr_nodes.append(
@@ -112,9 +138,13 @@ class XmlDomImplAdapter(_XmlImplAdapter):
 
     def get_node_attribute_value(self, element, name, ns_uri=None):
         if ns_uri is not None:
-            return element.getAttributeNS(ns_uri, name)
+            result = element.getAttributeNS(ns_uri, name)
         else:
-            return element.getAttribute(name)
+            result = element.getAttribute(name)
+        # Minidom returns empty string for non-existent nodes, correct this
+        if result == '' and not name in element.attributes.keys():
+            return None
+        return result
 
     def set_node_attribute_value(self, element, name, value, ns_uri=None):
         element.setAttributeNS(ns_uri, name, value)
@@ -135,3 +165,25 @@ class XmlDomImplAdapter(_XmlImplAdapter):
         parent.removeChild(child)
         if destroy_node:
             child.unlink()
+
+    def lookup_ns_uri_by_attr_name(self, node, name):
+        curr_node = node
+        while curr_node:
+            attr = self.get_node_attribute_node(node, name)
+            if attr and self.get_node_name(attr) == name:
+                return self.get_node_value(attr)
+            curr_node = self.get_node_parent(curr_node)
+        return None
+
+    def lookup_ns_prefix_for_uri(self, node, uri):
+        curr_node = node
+        while curr_node:
+            attrs = self.get_node_attributes(curr_node)
+            if not attrs:
+                pass
+            else:
+                for attr in attrs:
+                    if attr.value == uri:
+                        return attr.name.split(':')[1]
+            curr_node = self.get_node_parent(curr_node)
+        return None

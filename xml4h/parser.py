@@ -12,15 +12,15 @@ def parse_file_xmldom(xml_file, ignore_whitespace_text_nodes=True):
     from xml.dom.minidom import parse
     impl_doc = parse(xml_file)
     from xml4h.impls.xml_dom import XmlDomImplAdapter
-    wrapped_doc = XmlDomImplAdapter.wrap_node(impl_doc)
+    wrapped_doc = XmlDomImplAdapter.wrap_document(impl_doc)
     if ignore_whitespace_text_nodes:
         _ignore_whitespace_text_nodes(wrapped_doc)
     return wrapped_doc
 
 def parse_string_lxml(xml_str, ignore_whitespace_text_nodes=True):
     from lxml import etree
-    impl_doc = etree.fromstring(xml_str)
-    wrapped_doc = LXMLAdapter.wrap_node(impl_doc)
+    impl_root_elem = etree.fromstring(xml_str)
+    wrapped_doc = LXMLAdapter.wrap_document(impl_root_elem.getroottree())
     if ignore_whitespace_text_nodes:
         _ignore_whitespace_text_nodes(wrapped_doc)
     return wrapped_doc
@@ -28,7 +28,7 @@ def parse_string_lxml(xml_str, ignore_whitespace_text_nodes=True):
 def parse_file_lxml(xml_file, ignore_whitespace_text_nodes=True):
     from lxml import etree
     impl_doc = etree.parse(xml_file)
-    wrapped_doc = LXMLAdapter.wrap_node(impl_doc)
+    wrapped_doc = LXMLAdapter.wrap_document(impl_doc)
     if ignore_whitespace_text_nodes:
         _ignore_whitespace_text_nodes(wrapped_doc)
     return wrapped_doc

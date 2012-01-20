@@ -21,9 +21,8 @@ class _XmlImplAdapter(object):
         return nodes.Document(document_node, adapter)
 
     @classmethod
-    def wrap_node(cls, node):
-        impl_doc = cls.get_impl_document(node)
-        adapter = cls(impl_doc)
+    def wrap_node(cls, node, document):
+        adapter = cls(document)
         impl_class = adapter.map_node_to_class(node)
         return impl_class(node, adapter)
 
@@ -42,14 +41,28 @@ class _XmlImplAdapter(object):
     def impl_root_element(self):
         return self.get_impl_root(self.impl_document)
 
+    def get_ns_uri_for_prefix(self, node, prefix):
+        if prefix == 'xmlns':
+            return nodes.Node.XMLNS_URI
+        attr_name = 'xmlns:%s' % prefix
+        uri = self.lookup_ns_uri_by_attr_name(node, attr_name)
+        if uri is None:
+            raise Exception(
+                "Unknown namespace URI for attribute name '%s'" % attr_name)
+        return uri
+
+    def get_ns_prefix_for_uri(self, node, uri):
+        if uri == nodes.Node.XMLNS_URI:
+            return 'xmlns'
+        prefix = self.lookup_ns_prefix_for_uri(node, uri)
+        if not prefix:
+            raise Exception("Unknown prefix for namespace URI '%s'" % uri)
+        return prefix
+
     # Utility implementation methods
 
     @classmethod
     def new_impl_document(cls, root_tagname, ns_uri=None, **kwargs):
-        raise NotImplementedError()
-
-    @classmethod
-    def get_impl_document(self, node):
         raise NotImplementedError()
 
     def map_node_to_class(self, node):
@@ -117,6 +130,12 @@ class _XmlImplAdapter(object):
     def set_node_value(self, node, value):
         raise NotImplementedError()
 
+    def get_node_text(self, node):
+        raise NotImplementedError()
+
+    def set_node_text(self, node, text):
+        raise NotImplementedError()
+
     def get_node_attributes(self, element, ns_uri=None):
         raise NotImplementedError()
 
@@ -138,6 +157,12 @@ class _XmlImplAdapter(object):
     def add_node_child(self, parent, child, before_sibling=None):
         raise NotImplementedError()
 
-    def remove_node_child(self, parent, child):
+    def remove_node_child(self, parent, child, destroy_node=True):
+        raise NotImplementedError()
+
+    def lookup_ns_uri_by_attr_name(self, node, name):
+        raise NotImplementedError()
+
+    def lookup_ns_prefix_for_uri(slef, node, uri):
         raise NotImplementedError()
 

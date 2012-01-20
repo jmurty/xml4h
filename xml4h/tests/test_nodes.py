@@ -1,66 +1,68 @@
 import unittest
-import xml.dom
 
 from xml4h import nodes
 from xml4h.impls.xml_dom import XmlDomImplAdapter
+from xml4h.impls.lxml_etree import LXMLAdapter
+
 
 class BaseTestNodes(object):
 
     def test_wrap_document(self):
-        wrapped_elem = self.my_adapter.wrap_node(self.root_elem)
+        wrapped_elem = self.my_adapter.wrap_node(self.root_elem, self.doc)
         self.assertEqual(self.root_elem, wrapped_elem.impl_node)
         self.assertEqual('DocRoot', wrapped_elem.name)
         self.assertEqual(self.doc, wrapped_elem.impl_document)
 
     def test_wrap_node_and_is_type_methods(self):
         # Wrap root element
-        wrapped_node = self.my_adapter.wrap_node(self.root_elem)
+        wrapped_node = self.my_adapter.wrap_node(self.root_elem, self.doc)
         self.assertEqual(self.root_elem, wrapped_node.impl_node)
         self.assertEqual('DocRoot', wrapped_node.name)
         self.assertEqual(self.doc, wrapped_node.impl_document)
         self.assertTrue(wrapped_node.is_type(nodes.ELEMENT_NODE))
         self.assertTrue(wrapped_node.is_element)
         # Wrap a non-root element
-        wrapped_node = self.my_adapter.wrap_node(self.elem3_second)
+        wrapped_node = self.my_adapter.wrap_node(self.elem3_second, self.doc)
         self.assertEqual(self.elem3_second, wrapped_node.impl_node)
         self.assertEqual('ns2:Element3', wrapped_node.name)
         self.assertEqual('Element4', wrapped_node.parent.name)
         self.assertTrue(wrapped_node.is_type(nodes.ELEMENT_NODE))
         self.assertTrue(wrapped_node.is_element)
         # Test node types
-        wrapped_node = self.my_adapter.wrap_node(self.text_node)
+        wrapped_node = self.my_adapter.wrap_node(self.text_node, self.doc)
         self.assertIsInstance(wrapped_node, nodes.Text)
         self.assertTrue(wrapped_node.is_type(nodes.TEXT_NODE))
         self.assertTrue(wrapped_node.is_text)
-        wrapped_node = self.my_adapter.wrap_node(self.cdata_node)
+        wrapped_node = self.my_adapter.wrap_node(self.cdata_node, self.doc)
         self.assertIsInstance(wrapped_node, nodes.CDATA)
         self.assertTrue(wrapped_node.is_type(nodes.CDATA_NODE))
         self.assertTrue(wrapped_node.is_cdata)
-        wrapped_node =self.my_adapter.wrap_node(self.comment_node)
+        wrapped_node = self.my_adapter.wrap_node(self.comment_node, self.doc)
         self.assertIsInstance(wrapped_node, nodes.Comment)
         self.assertTrue(wrapped_node.is_type(nodes.COMMENT_NODE))
         self.assertTrue(wrapped_node.is_comment)
-        wrapped_node = self.my_adapter.wrap_node(self.instruction_node)
+        wrapped_node = self.my_adapter.wrap_node(self.instruction_node, self.doc)
         self.assertIsInstance(wrapped_node, nodes.ProcessingInstruction)
         self.assertTrue(wrapped_node.is_type(nodes.PROCESSING_INSTRUCTION_NODE))
         self.assertTrue(wrapped_node.is_processing_instruction)
 
     def test_parent(self):
         # Document node has no parent
-        wrapped_doc = self.my_adapter.wrap_node(self.doc)
+        wrapped_doc = self.my_adapter.wrap_node(self.doc, self.doc)
         self.assertEqual(None, wrapped_doc.parent)
         # Root element has document as parent
         self.assertIsInstance(self.wrapped_root.parent, nodes.Document)
         # Find parents of elements
         self.assertEqual(self.root_elem,
-            self.my_adapter.wrap_node(self.elem1).parent.impl_node)
+            self.my_adapter.wrap_node(self.elem1, self.doc).parent.impl_node)
         self.assertEqual(self.elem3,
-            self.my_adapter.wrap_node(self.elem2_second).parent.impl_node)
-        # Parent of text node
-        self.assertEqual(self.elem1,
-            self.my_adapter.wrap_node(self.text_node).parent.impl_node)
+            self.my_adapter.wrap_node(self.elem2_second, self.doc).parent.impl_node)
+        # Parent of text node (Text not stored as node in lxml)
+        if not isinstance(self, TestLXMLNodes):
+            self.assertEqual(self.elem1,
+                self.my_adapter.wrap_node(self.text_node, self.doc).parent.impl_node)
         # Chain parent calls
-        wrapped_elem = self.my_adapter.wrap_node(self.elem3_second)
+        wrapped_elem = self.my_adapter.wrap_node(self.elem3_second, self.doc)
         self.assertEqual(self.root_elem, wrapped_elem.parent.parent.impl_node)
 
     def test_children(self):
@@ -84,25 +86,25 @@ class BaseTestNodes(object):
 
     def test_namespace_data(self):
         # Namespace data for element without namespace
-        wrapped_elem = self.my_adapter.wrap_node(self.elem1)
+        wrapped_elem = self.my_adapter.wrap_node(self.elem1, self.doc)
         self.assertEqual(None, wrapped_elem.namespace_uri)
         self.assertEqual('Element1', wrapped_elem.name)
         self.assertEqual(None, wrapped_elem.prefix)
         self.assertEqual('Element1', wrapped_elem.local_name)
         # Namespace data for ns element without prefix
-        wrapped_elem = self.my_adapter.wrap_node(self.elem3)
+        wrapped_elem = self.my_adapter.wrap_node(self.elem3, self.doc)
         self.assertEqual('urn:ns1', wrapped_elem.namespace_uri)
         self.assertEqual('Element3', wrapped_elem.name)
         self.assertEqual(None, wrapped_elem.prefix)
         self.assertEqual('Element3', wrapped_elem.local_name)
         # Namespace data for ns element with prefix
-        wrapped_elem = self.my_adapter.wrap_node(self.elem3_second)
+        wrapped_elem = self.my_adapter.wrap_node(self.elem3_second, self.doc)
         self.assertEqual('urn:ns2', wrapped_elem.namespace_uri)
         self.assertEqual('ns2:Element3', wrapped_elem.name)
         self.assertEqual('ns2', wrapped_elem.prefix)
         self.assertEqual('Element3', wrapped_elem.local_name)
         # Namespace data for attribute node without namespace
-        wrapped_elem = self.my_adapter.wrap_node(self.elem1)
+        wrapped_elem = self.my_adapter.wrap_node(self.elem1, self.doc)
         self.assertEqual(None, wrapped_elem.attribute_nodes[0].namespace_uri)
         self.assertEqual('a', wrapped_elem.attribute_nodes[0].name)
         self.assertEqual(None, wrapped_elem.attribute_nodes[0].prefix)
@@ -113,64 +115,71 @@ class BaseTestNodes(object):
         self.assertEqual('ns1', wrapped_elem.attribute_nodes[1].prefix)
         self.assertEqual('b', wrapped_elem.attribute_nodes[1].local_name)
         # Namespace data for attribute dict without namespace
-        wrapped_elem = self.my_adapter.wrap_node(self.elem1)
+        wrapped_elem = self.my_adapter.wrap_node(self.elem1, self.doc)
         self.assertEqual(None, wrapped_elem.attributes.namespace_uri('a'))
         # Namespace data for attribute dict with namespace
-        wrapped_elem = self.my_adapter.wrap_node(self.elem1)
+        wrapped_elem = self.my_adapter.wrap_node(self.elem1, self.doc)
         self.assertEqual('urn:ns1', wrapped_elem.attributes.namespace_uri('ns1:b'))
 
     def test_name(self):
-        wrapped_node = self.my_adapter.wrap_node(self.elem1)
+        wrapped_node = self.my_adapter.wrap_node(self.elem1, self.doc)
         self.assertEqual('Element1', wrapped_node.name)
         attribute_node = wrapped_node.attribute_nodes[0]
         self.assertEqual('a', attribute_node.name)
-        wrapped_node = self.my_adapter.wrap_node(self.text_node)
+        wrapped_node = self.my_adapter.wrap_node(self.text_node, self.doc)
         self.assertEqual('#text', wrapped_node.name)
-        wrapped_node = self.my_adapter.wrap_node(self.cdata_node)
+        wrapped_node = self.my_adapter.wrap_node(self.cdata_node, self.doc)
         self.assertEqual('#cdata-section', wrapped_node.name)
-        wrapped_node =self.my_adapter.wrap_node(self.comment_node)
+        wrapped_node =self.my_adapter.wrap_node(self.comment_node, self.doc)
         self.assertEqual('#comment', wrapped_node.name)
-        wrapped_node = self.my_adapter.wrap_node(self.instruction_node)
+        wrapped_node = self.my_adapter.wrap_node(self.instruction_node, self.doc)
         self.assertEqual(wrapped_node.target, wrapped_node.name)
 
     def test_attributes(self):
         # Non-element nodes don't have attributes
         self.assertEqual(None, self.wrapped_doc.attributes)
-        self.assertEqual(None, self.wrapped_text.attributes)
         self.assertEqual(None, self.wrapped_doc.attribute_nodes)
+        self.assertEqual(None, self.wrapped_text.attributes)
         self.assertEqual(None, self.wrapped_text.attribute_nodes)
         # Get element's attribute nodes
-        wrapped_elem = self.my_adapter.wrap_node(self.elem1)
+        wrapped_elem = self.my_adapter.wrap_node(self.elem1, self.doc)
         attr_nodes = wrapped_elem.attribute_nodes
-        self.assertEqual(2, len(attr_nodes))
-        self.assertEqual(['a', 'ns1:b'], [a.name for a in attr_nodes])
-        self.assertEqual(['1', '2'], [a.value for a in attr_nodes])
-        self.assertEqual(['a', 'b'], [a.local_name for a in attr_nodes])
-        self.assertEqual([None, 'ns1'], [a.prefix for a in attr_nodes])
-        self.assertEqual([None, 'urn:ns1'], [a.ns_uri for a in attr_nodes])
+        self.assertEqual(
+            ['a', 'ns1:b', 'xmlns:ns1'],
+            [a.name for a in attr_nodes])
+        self.assertEqual(['1', '2', 'urn:ns1'], [a.value for a in attr_nodes])
+        self.assertEqual(['a', 'b', 'ns1'], [a.local_name for a in attr_nodes])
+        self.assertEqual([None, 'ns1', 'xmlns'], [a.prefix for a in attr_nodes])
+        self.assertEqual(
+            [None, 'urn:ns1', 'http://www.w3.org/2000/xmlns/'],
+            [a.ns_uri for a in attr_nodes])
         # Get element's attributes dict
-        wrapped_elem = self.my_adapter.wrap_node(self.elem1)
+        wrapped_elem = self.my_adapter.wrap_node(self.elem1, self.doc)
         attrs_dict = wrapped_elem.attributes
-        self.assertEqual(2, len(attrs_dict))
-        self.assertEqual(['a', 'ns1:b'], attrs_dict.keys())
-        self.assertEqual(['1', '2'], attrs_dict.values())
+        self.assertEqual(['a', 'ns1:b', 'xmlns:ns1'], attrs_dict.keys())
+        self.assertEqual(['1', '2', 'urn:ns1'], attrs_dict.values())
         # Set/change attributes via element methods
         wrapped_elem.set_attributes({'a': 10, 'c': 3})
-        self.assertEqual(['10', '3', '2'],
+        self.assertEqual(['10', '3', '2', 'urn:ns1'],
             [a.value for a in wrapped_elem.attribute_nodes])
         # Set attributes via dict assignment (pre-existing attributes are deleted)
         wrapped_elem.attributes = {
             'a': 100,  # effectively replaces prior 'a' attribute
-            ('ns1:d', 'urn:ns1'): -3,  # attribute with namespace
+            'xmlns:ns1': 'urn:ns1',  # namespace definition
+            'ns1:d': -3,  # attribute with namespace prefix
+            '{urn:ns1}x': -5  # attribute with etree-style namespace URI
             }
-        self.assertEqual(['a', 'ns1:d'],
+        self.assertEqual(['a', 'ns1:d', 'ns1:x', 'xmlns:ns1'],
             [a.name for a in wrapped_elem.attribute_nodes])
         self.assertEqual('100', wrapped_elem.attributes['a'])
         self.assertEqual('-3', wrapped_elem.attributes['ns1:d'])
+        self.assertEqual('urn:ns1', wrapped_elem.attributes['xmlns:ns1'])
+        self.assertEqual('-5', wrapped_elem.attributes['ns1:x'])
+        self.assertEqual('-5', wrapped_elem.attributes['{urn:ns1}x'])
         # Set/replace attributes via dict modification
         wrapped_elem.attributes['a'] = 200
         wrapped_elem.attributes['e'] = 'E'
-        self.assertEqual(['a', 'e', 'ns1:d'],
+        self.assertEqual(['a', 'e', 'ns1:d', 'ns1:x', 'xmlns:ns1'],
             [a.name for a in wrapped_elem.attribute_nodes])
         self.assertEqual('200', wrapped_elem.attributes['a'])
         self.assertEqual('-3', wrapped_elem.attributes['ns1:d'])
@@ -180,7 +189,7 @@ class BaseTestNodes(object):
         attr_dict['a'] = 'A' # Modify
         attr_dict['b'] = 'B' # Add
         del(attr_dict['e']) # Delete
-        self.assertEqual(['a', 'b', 'ns1:d'],
+        self.assertEqual(['a', 'b', 'ns1:d', 'ns1:x', 'xmlns:ns1'],
             [a.name for a in wrapped_elem.attribute_nodes])
         self.assertEqual('A', wrapped_elem.attributes['a'])
         self.assertEqual('-3', wrapped_elem.attributes['ns1:d'])
@@ -191,14 +200,11 @@ class BaseTestNodes(object):
 
     def test_element_text(self):
         # Get text on element
-        wrapped_node = self.my_adapter.wrap_node(self.elem1)
+        wrapped_node = self.my_adapter.wrap_node(self.elem1, self.doc)
         self.assertEqual('Some text', wrapped_node.text)
         # Set text on element
         wrapped_node.text = 'Different text'
         self.assertEqual('Different text', wrapped_node.text)
-        self.assertEqual(
-            wrapped_node.children[0].value,
-            wrapped_node.children[0].impl_node.nodeValue)
         # Unset text on element (removes any text children)
         wrapped_node.text = None
         self.assertEqual(None, wrapped_node.text)
@@ -284,6 +290,7 @@ class TestMinidomNodes(BaseTestNodes, unittest.TestCase):
         return XmlDomImplAdapter
 
     def setUp(self):
+        import xml.dom
         # Build a DOM using minidom for testing
         factory = xml.dom.getDOMImplementation('minidom')
         ns_uri = 'urn:test'
@@ -293,6 +300,7 @@ class TestMinidomNodes(BaseTestNodes, unittest.TestCase):
         self.elem1 = doc.createElement('Element1')
         self.elem1.setAttribute('a', '1')
         self.elem1.setAttributeNS('urn:ns1', 'ns1:b', '2')
+        self.elem1.setAttributeNS(nodes.Node.XMLNS_URI, 'xmlns:ns1', 'urn:ns1')
         self.elem2 = doc.createElement('Element2')
         self.elem3 = doc.createElementNS('urn:ns1', 'Element3')
         self.elem4 = doc.createElementNS('urn:ns1', 'Element4')
@@ -316,5 +324,53 @@ class TestMinidomNodes(BaseTestNodes, unittest.TestCase):
         self.doc = doc
         self.wrapped_doc = XmlDomImplAdapter.wrap_document(doc)
         self.wrapped_root = self.wrapped_doc.root
-        self.wrapped_text = XmlDomImplAdapter.wrap_node(self.text_node)
+        self.wrapped_text = XmlDomImplAdapter.wrap_node(self.text_node, self.doc)
+
+
+class TestLXMLNodes(BaseTestNodes, unittest.TestCase):
+
+    @property
+    def my_adapter(self):
+        return LXMLAdapter
+
+    def setUp(self):
+        from lxml import etree
+        # Build a DOM using minidom for testing
+        self.root_elem = etree.Element('{urn:test}DocRoot', nsmap={
+            None: 'urn:test'})
+        doc = etree.ElementTree(self.root_elem)
+
+        self.elem1 = etree.Element('Element1', nsmap={
+            'ns1': 'urn:ns1'})
+        self.elem1.attrib['a'] = '1'
+        self.elem1.attrib['{urn:ns1}b'] = '2'
+        self.elem2 = etree.Element('Element2')
+        self.elem3 = etree.Element('{urn:ns1}Element3',
+            nsmap={None: 'urn:ns1'})
+        self.elem4 = etree.Element('{urn:ns1}Element4',
+            nsmap={None: 'urn:ns1'})
+        self.elem2_second = etree.Element('Element2')
+        self.elem3_second = etree.Element('{urn:ns2}Element3',
+            nsmap={'ns2': 'urn:ns2'})
+
+        self.text_node = 'Some text'
+        self.elem1.text = self.text_node
+        self.cdata_node = etree.CDATA('Some cdata')
+        self.elem2.text = self.cdata_node
+        self.comment_node = etree.Comment('A comment')
+        self.instruction_node = etree.ProcessingInstruction(
+           'pi-target', 'pi-data')
+        self.root_elem.append(self.elem1)
+        self.root_elem.append(self.elem2)
+        self.root_elem.append(self.elem3)
+        self.root_elem.append(self.elem4)
+        self.elem3.append(self.elem2_second)
+        self.elem2_second.append(self.comment_node)
+        self.elem4.append(self.elem3_second)
+        self.elem3_second.append(self.instruction_node)
+
+        self.doc = doc
+        self.wrapped_doc = LXMLAdapter.wrap_document(doc)
+        self.wrapped_root = self.wrapped_doc.root
+        self.wrapped_text = LXMLAdapter.wrap_node(self.text_node, self.doc)
 

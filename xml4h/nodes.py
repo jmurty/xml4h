@@ -43,13 +43,14 @@ class Node(object):
     def document(self):
         if self.is_document:
             return self
-        return self.adapter.wrap_node(self.adapter.impl_document)
+        return self.adapter.wrap_document(self.adapter.impl_document)
 
     @property
     def root(self):
         if self.is_root:
             return self
-        return self.adapter.wrap_node(self.adapter.impl_root_element)
+        return self.adapter.wrap_node(
+            self.adapter.impl_root_element, self.adapter.impl_document)
 
     @property
     def is_root(self):
@@ -117,13 +118,15 @@ class Node(object):
 
     def _convert_nodelist(self, nodelist):
         # TODO Do something more efficient here, lazy wrapping?
-        return [self.adapter.wrap_node(n) for n in nodelist]
+        return [self.adapter.wrap_node(n, self.adapter.impl_document)
+                for n in nodelist]
 
     @property
     def parent(self):
         parent_impl_node = self.adapter.get_node_parent(self.impl_node)
         if parent_impl_node is not None:
-            return self.adapter.wrap_node(parent_impl_node)
+            return self.adapter.wrap_node(
+                parent_impl_node, self.adapter.impl_document)
         else:
             return None
 
@@ -184,19 +187,6 @@ class Node(object):
 
     ns_uri = namespace_uri  # Alias
 
-    def ns_uri_for_prefix(self, prefix):
-        if prefix == 'xmlns':
-            return self.XMLNS_URI
-        prefix_attr_name = 'xmlns:%s' % prefix
-        curr_node = self
-        while curr_node:
-            if curr_node.attributes is None:
-                pass
-            elif prefix_attr_name in curr_node.attributes:
-                return curr_node.attributes[prefix_attr_name]
-            curr_node = curr_node.parent
-        raise Exception("Unknown namespace URI for prefix '%s'" % prefix)
-
     @property
     def current_namespace_uri(self):
         curr_node = self
@@ -228,7 +218,8 @@ class Node(object):
             self.impl_node, name=name, ns_uri=ns_uri)
         if first_only:
             if nodelist:
-                return self.adapter.wrap_node(nodelist[0])
+                return self.adapter.wrap_node(
+                    nodelist[0], self.adapter.impl_document)
             else:
                 return None
         return self._convert_nodelist(nodelist)
@@ -370,27 +361,10 @@ class Element(_NameValueNode):
     _node_type = ELEMENT_NODE
 
     def _get_text(self):
-        '''
-        Return contatenated value of all text node children of this element
-        '''
-        text_children = [n.value for n in self.children if n.is_text]
-        if text_children:
-            return u''.join(text_children)
-        else:
-            return None
+        return self.adapter.get_node_text(self.impl_node)
 
     def _set_text(self, text):
-        '''
-        Set text value as sole Text child node of element; any existing
-        Text nodes are removed
-        '''
-        # Remove any existing Text node children
-        for child in self.children:
-            if child.is_text:
-                child.delete()
-        if text is not None:
-            text_node = self.adapter.new_impl_text(text)
-            self.adapter.add_node_child(self.impl_node, text_node)
+        self.adapter.set_node_text(self.impl_node, text)
 
     text = property(_get_text, _set_text)
 
@@ -412,13 +386,32 @@ class Element(_NameValueNode):
                     attr_dict[n] = v
             else:
                 raise Exception('Attribute data must be a dictionary or list')
-        for n, v in attr_dict.items():
+        # Always process 'xmlns' namespace definitions first, in case other
+        # attributes are members of a newly-defined namespace
+        def _xmlns_first(x, y):
+            nx, ny = x[0], y[0]
+            if nx.startswith('xmlns') and ny.startswith('xmlns'):
+                return cmp(nx, ny)
+            elif nx.startswith('xmlns'):
+                return -1
+            elif ny.startswith('xmlns'):
+                return 1
+            else:
+                return cmp(nx, ny)
+        attr_list = sorted(attr_dict.items(), cmp=_xmlns_first)
+        # Add attributes
+        for n, v in attr_list:
             my_ns_uri = ns_uri
-            if isinstance(n, tuple):
-                n, my_ns_uri = n
+            if '}' in n:
+                my_ns_uri, n = n.split('}')
+                my_ns_uri = my_ns_uri[1:]
+                prefix = self.adapter.get_ns_prefix_for_uri(
+                    self.impl_node, my_ns_uri)
+                n = '%s:%s' % (prefix, n)
             elif ':' in n:
                 prefix  = n.split(':')[0]
-                my_ns_uri = self.ns_uri_for_prefix(prefix)
+                my_ns_uri = self.adapter.get_ns_uri_for_prefix(
+                    self.impl_node, prefix)
             elif ns_uri is not None:
                 # Apply attribute namespace URI if different from owning elem
                 if ns_uri == self.adapter.get_node_namespace_uri(element):
@@ -449,14 +442,16 @@ class Element(_NameValueNode):
     @property
     def attribute_nodes(self):
         impl_attr_nodes = self.adapter.get_node_attributes(self.impl_node)
-        wrapped_attr_nodes = [self.adapter.wrap_node(a)
-                              for a in impl_attr_nodes]
+        wrapped_attr_nodes = [
+            self.adapter.wrap_node(a, self.adapter.impl_document)
+            for a in impl_attr_nodes]
         return sorted(wrapped_attr_nodes, key=lambda x: x.name)
 
     def attribute_node(self, name, ns_uri=None):
         attr_impl_node = self.adapter.get_node_attribute_node(
             self.impl_node, name, ns_uri)
-        return self.adapter.wrap_node(attr_impl_node)
+        return self.adapter.wrap_node(
+            attr_impl_node, self.adapter.impl_document)
 
     def _set_namespace(self, element, ns_uri, prefix=None):
         if prefix is None:
@@ -486,7 +481,8 @@ class Element(_NameValueNode):
         elem = self.adapter.new_impl_element(tagname, ns_uri)
         # Apply prefix-named namespace URI to element
         if prefix:
-            ns_for_prefix = self.ns_uri_for_prefix(prefix)
+            ns_for_prefix = self.adapter.get_ns_uri_for_prefix(
+                self.impl_node, prefix)
             self.adapter.set_node_namespace_uri(elem, ns_for_prefix)
         # Automatically add namespace URI to Element as attribute
         if ns_uri is not None:
@@ -548,7 +544,8 @@ class Element(_NameValueNode):
                 or self.adapter.get_node_parent(elem) == self.impl_document):
 
                 return self.adapter.wrap_node(
-                    self.adapter.impl_root_element)
+                    self.adapter.impl_root_element,
+                    self.adapter.impl_document)
             elem = self.adapter.get_node_parent(elem)
             if to_tagname is None:
                 up_count += 1
@@ -557,14 +554,15 @@ class Element(_NameValueNode):
             else:
                 if self.adapter.get_node_name(elem) == to_tagname:
                     break
-        return self.adapter.wrap_node(elem)
+        return self.adapter.wrap_node(elem, self.adapter.impl_document)
 
     def build_element(self, tagname, ns_uri=None, prefix=None,
             attributes=None, text=None, before_this_element=False):
         impl_elem = self.add_element(tagname, ns_uri=ns_uri, prefix=prefix,
             attributes=attributes, text=text,
             before_this_element=before_this_element)
-        return self.adapter.wrap_node(impl_elem)
+        return self.adapter.wrap_node(
+            impl_elem, self.adapter.impl_document)
 
     build_elem = build_element  # Alias
 
@@ -620,8 +618,9 @@ class AttributeDict(object):
         self.adapter = adapter
 
     def _unpack_name(self, name):
-        if isinstance(name, tuple):
-            name, ns_uri = name
+        if '}' in name:
+            ns_uri, name = name.split('}')
+            ns_uri = ns_uri[1:]
             return name, ns_uri
         else:
             return name, None
@@ -631,10 +630,6 @@ class AttributeDict(object):
 
     def __getitem__(self, name):
         name, ns_uri = self._unpack_name(name)
-        # Override behavior of some (all?) implementations that return an
-        # empty string if attribute does not exist
-        if not name in self:
-            return None
         return self.adapter.get_node_attribute_value(
             self.impl_element, name, ns_uri)
 
@@ -669,11 +664,12 @@ class AttributeDict(object):
         a_node = self.adapter.get_node_attribute_node(self.impl_element, name)
         if a_node is None:
             return None
-        return a_node.namespaceURI
+        return self.adapter.get_node_namespace_uri(a_node)
 
     @property
     def element(self):
-        return self.adapter.wrap_node(self.impl_element)
+        return self.adapter.wrap_node(
+            self.impl_element, self.adapter.impl_document)
 
     @property
     def impl_attributes(self):

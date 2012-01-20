@@ -14,25 +14,26 @@ class LXMLAdapter(_XmlImplAdapter):
         doc = etree.ElementTree(root_elem)
         return doc
 
-    @classmethod
-    def get_impl_document(self, node):
-        if isinstance(node, etree._ElementTree):  # TODO Weird!
-            return node
-        else:
-            return node.getroottree()
-
     def map_node_to_class(self, node):
-        if isinstance(node, etree._ElementTree):
+        if isinstance(node, etree._ProcessingInstruction):
+            return nodes.ProcessingInstruction
+        elif isinstance(node, etree._Comment):
+            return nodes.Comment
+        elif isinstance(node, etree._ElementTree):
             return nodes.Document
-        elif hasattr(node, 'makeelement'):  # TODO
+        elif isinstance(node, etree._Element):
             return nodes.Element
+        elif isinstance(node, etree.CDATA):
+            return nodes.CDATA
         elif isinstance(node, LXMLAttribute):
             return nodes.Attribute
+        elif isinstance(node, basestring):
+            return nodes.Text
         raise Exception(
             'Unrecognized type for implementation node: %s' % node)
 
     def get_impl_root(self, node):
-        return self.get_impl_document(node).getroot()
+        return self._impl_document.getroot()
 
     # Document implementation methods
 
@@ -43,10 +44,10 @@ class LXMLAdapter(_XmlImplAdapter):
         raise NotImplementedError()
 
     def new_impl_comment(self, text):
-        raise NotImplementedError()
+        return etree.Comment(text)
 
     def new_impl_instruction(self, target, data):
-        raise NotImplementedError()
+        return etree.ProcessingInstruction(target, data)
 
     def new_impl_cdata(self, text):
         raise NotImplementedError()
@@ -64,9 +65,15 @@ class LXMLAdapter(_XmlImplAdapter):
         # Filter nodes by name and ns_uri if necessary
         results = []
         for n in name_match_nodes:
+            # Ignore the current node
+            if n == node:
+                continue
+            # Ignore non-Elements
+            if not n.__class__ == etree._Element:
+                continue
             if ns_uri != '*' and self.get_node_namespace_uri(n) != ns_uri:
                 continue
-            if name != '*' and self.get_node_name(n) != name:
+            if name != '*' and self.get_node_local_name(n) != name:
                 continue
             results.append(n)
         return results
@@ -85,7 +92,14 @@ class LXMLAdapter(_XmlImplAdapter):
         raise NotImplementedError()
 
     def get_node_parent(self, node):
-        return node.getparent()
+        if isinstance(node, etree._ElementTree):
+            return None
+        else:
+            parent = node.getparent()
+            # Return ElementTree as root element's parent
+            if parent is None:
+                return self.impl_document
+            return parent
 
     def get_node_children(self, node):
         if isinstance(node, etree._ElementTree):
@@ -94,7 +108,15 @@ class LXMLAdapter(_XmlImplAdapter):
             return node.getchildren()
 
     def get_node_name(self, node):
-        if node.prefix is not None:
+        if isinstance(node, basestring):
+            return '#text'
+        elif isinstance(node, etree.CDATA):
+            return '#cdata-section'
+        elif isinstance(node, etree._Comment):
+            return '#comment'
+        elif isinstance(node, etree._ProcessingInstruction):
+            return node.target
+        elif node.prefix is not None:
             return '%s:%s' % (node.prefix, self.get_node_local_name(node))
         else:
             return self.get_node_local_name(node)
@@ -114,7 +136,14 @@ class LXMLAdapter(_XmlImplAdapter):
     def set_node_value(self, node, value):
         node.value = value
 
+    def get_node_text(self, node):
+        return node.text
+
+    def set_node_text(self, node, text):
+        node.text = text
+
     def get_node_attributes(self, element, ns_uri=None):
+        # TODO: Filter by ns_uri
         attribs = []
         for n, v in element.attrib.items():
             attribs.append(LXMLAttribute(n, v, element))
@@ -133,25 +162,76 @@ class LXMLAdapter(_XmlImplAdapter):
         return attribs
 
     def has_node_attribute(self, element, name, ns_uri=None):
-        raise NotImplementedError()
+        return name in [a.qname for a
+                        in self.get_node_attributes(element, ns_uri)]
 
     def get_node_attribute_node(self, element, name, ns_uri=None):
-        raise NotImplementedError()
+        for attr in self.get_node_attributes(element, ns_uri):
+            if attr.qname == name:
+                return attr
+        return None
 
     def get_node_attribute_value(self, element, name, ns_uri=None):
-        raise NotImplementedError()
+        if ns_uri is not None:
+            prefix = self.lookup_ns_prefix_for_uri(element, ns_uri)
+            name = '%s:%s' % (prefix, name)
+        for attr in self.get_node_attributes(element, ns_uri):
+            if attr.qname == name:
+                return attr.value
+        return None
 
     def set_node_attribute_value(self, element, name, value, ns_uri=None):
-        raise NotImplementedError()
+        if ns_uri is not None:
+            if ':' in name:
+                prefix, name = name.split(':')
+            name = '{%s}%s' % (ns_uri, name)
+        elif ':' in name:
+            prefix, name = name.split(':')
+            ns_uri = self.lookup_ns_uri_by_attr_name(element, prefix)
+            name = '{%s}%s' % (ns_uri, name)
+        # For lxml, namespace definitions are not applied as attributes
+        if name.startswith('{%s}' % nodes.Node.XMLNS_URI):
+            prefix = name.split('}')[1]
+            if prefix == 'xmlns':
+                prefix = None
+            element.nsmap[prefix] = value
+        else:
+            element.attrib[name] = value
 
     def remove_node_attribute(self, element, name, ns_uri=None):
-        raise NotImplementedError()
+        if ns_uri is not None:
+            name = '{%s}%s' % (ns_uri, name)
+        elif ':' in name:
+            prefix, name = name.split(':')
+            if prefix == 'xmlns':
+                prefix = None
+            name = '{%s}%s' % (element.nsmap[prefix], name)
+        if name in element.attrib:
+            del(element.attrib[name])
 
     def add_node_child(self, parent, child, before_sibling=None):
         parent.append(child)
 
-    def remove_node_child(self, parent, child):
-        raise NotImplementedError()
+    def remove_node_child(self, parent, child, destroy_node=True):
+        if destroy_node:
+            child.clear()
+        parent.remove(child)
+
+    def lookup_ns_uri_by_attr_name(self, node, name):
+        if name == 'xmlns':
+            name = None
+        elif name.startswith('xmlns:'):
+            _, name = name.split(':')
+        if name in node.nsmap:
+            return node.nsmap[name]
+        return None
+
+    def lookup_ns_prefix_for_uri(self, node, uri):
+        if uri in node.nsmap.values():
+            for n, v in node.nsmap.items():
+                if v == uri:
+                    return n
+        return None
 
     def _is_ns_in_ancestor(self, node, name, value):
         '''
@@ -161,7 +241,9 @@ class LXMLAdapter(_XmlImplAdapter):
         '''
         curr_node = self.get_node_parent(node)
         while curr_node is not None:
-            if name in curr_node.nsmap and curr_node.nsmap[name] == value:
+            if (hasattr(curr_node, 'nsmap')
+                    and name in curr_node.nsmap
+                    and curr_node.nsmap[name] == value):
                 return True
             curr_node = self.get_node_parent(curr_node)
         return False
@@ -187,9 +269,9 @@ class LXMLAttribute(object):
             self._ns_uri = nodes.Node.XMLNS_URI
         elif self._name.startswith('xmlns:'):
             self._ns_uri = nodes.Node.XMLNS_URI
-            self._prefix, self._name = self._name.split(':')
         if ':' in self._name:
             self._prefix, self._name = self._name.split(':')
+            #self._ns_uri = element.nsmap['xmlns:%s' % self._name]
 
     def getroottree(self):
         return self._element.getroottree()
@@ -201,6 +283,15 @@ class LXMLAttribute(object):
     @property
     def tag(self):
         return self._name
+
+    name = tag  # Alias
+
+    @property
+    def qname(self):
+        if self.prefix:
+            return '%s:%s' % (self.prefix, self.name)
+        else:
+            return self.name
 
     @property
     def value(self):
