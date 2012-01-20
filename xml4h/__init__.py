@@ -2,7 +2,7 @@ __title__ = 'xml4h'
 __version__ = '0.0.1'
 
 
-from .builder import builder, builder_xmldom
+from .builder import builder, builder_xmldom, builder_lxml
 
 # Detect which XML libraries are available, we only handle a subset
 

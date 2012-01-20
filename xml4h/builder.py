@@ -10,3 +10,9 @@ def builder_xmldom(root_tagname, ns_uri=None,
         ns_uri=ns_uri, impl_name=None, impl_features=None)
     return wrapped_doc.root
 
+def builder_lxml(root_tagname, ns_uri=None):
+    from xml4h.impls.lxml_etree import LXMLAdapter
+    wrapped_doc = LXMLAdapter.create_document(
+        root_tagname, ns_uri=ns_uri)
+    return wrapped_doc.root
+

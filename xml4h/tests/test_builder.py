@@ -4,7 +4,7 @@ import xml.dom
 from functools import partial
 from StringIO import StringIO
 
-from xml4h import builder, builder_xmldom, nodes
+from xml4h import builder, nodes, builder_xmldom, builder_lxml
 
 
 class TestBuilderMethods(unittest.TestCase):
@@ -444,4 +444,15 @@ class TestXmlDomBuilder(BaseBuilderNodesTest, unittest.TestCase):
     @property
     def my_builder(self):
         return partial(builder_xmldom, impl_name='minidom')
+
+
+class TestLXMLBuilder(BaseBuilderNodesTest, unittest.TestCase):
+    '''
+    Tests building with the standard library xml.dom module, or with any
+    library that augments/clobbers this module.
+    '''
+
+    @property
+    def my_builder(self):
+        return builder_lxml
 

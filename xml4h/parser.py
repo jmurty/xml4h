@@ -1,5 +1,9 @@
 from StringIO import StringIO
 
+from xml4h.impls.xml_dom import XmlDomImplAdapter
+from xml4h.impls.lxml_etree import LXMLAdapter
+
+
 def parse_string_xmldom(xml_str, ignore_whitespace_text_nodes=True):
     string_io = StringIO(xml_str)
     return parse_file_xmldom(string_io, ignore_whitespace_text_nodes)
@@ -12,6 +16,23 @@ def parse_file_xmldom(xml_file, ignore_whitespace_text_nodes=True):
     if ignore_whitespace_text_nodes:
         _ignore_whitespace_text_nodes(wrapped_doc)
     return wrapped_doc
+
+def parse_string_lxml(xml_str, ignore_whitespace_text_nodes=True):
+    from lxml import etree
+    impl_doc = etree.fromstring(xml_str)
+    wrapped_doc = LXMLAdapter.wrap_node(impl_doc)
+    if ignore_whitespace_text_nodes:
+        _ignore_whitespace_text_nodes(wrapped_doc)
+    return wrapped_doc
+
+def parse_file_lxml(xml_file, ignore_whitespace_text_nodes=True):
+    from lxml import etree
+    impl_doc = etree.parse(xml_file)
+    wrapped_doc = LXMLAdapter.wrap_node(impl_doc)
+    if ignore_whitespace_text_nodes:
+        _ignore_whitespace_text_nodes(wrapped_doc)
+    return wrapped_doc
+
 
 def _ignore_whitespace_text_nodes(wrapped_node):
     '''

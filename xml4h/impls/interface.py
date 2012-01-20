@@ -22,7 +22,8 @@ class _XmlImplAdapter(object):
 
     @classmethod
     def wrap_node(cls, node):
-        adapter = cls(cls.get_impl_document(node))
+        impl_doc = cls.get_impl_document(node)
+        adapter = cls(impl_doc)
         impl_class = adapter.map_node_to_class(node)
         return impl_class(node, adapter)
 

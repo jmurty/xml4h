@@ -27,6 +27,7 @@ class BaseParserTest(object):
         self.assertEqual([nodes.Node.XMLNS_URI, nodes.Node.XMLNS_URI],
             [n.namespace_uri for n in wrapped_doc.root.attribute_nodes])
         attrs1_elem = wrapped_doc.find_first('Attrs1')
+        self.assertNotEqual(None, attrs1_elem)
         self.assertEqual([None, None],
             [n.namespace_uri for n in attrs1_elem.attribute_nodes])
         attrs2_elem = wrapped_doc.find_first('Attrs2')
@@ -47,3 +48,12 @@ class TestXmlDomParser(unittest.TestCase, BaseParserTest):
 
     def parse_file(self, xml_file):
         return parser.parse_file_xmldom(xml_file)
+
+
+class TestLXMLParser(unittest.TestCase, BaseParserTest):
+
+    def parse_string(self, xml_str):
+        return parser.parse_string_lxml(xml_str)
+
+    def parse_file(self, xml_file):
+        return parser.parse_file_lxml(xml_file)
