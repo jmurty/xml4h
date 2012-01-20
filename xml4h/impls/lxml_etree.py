@@ -109,10 +109,10 @@ class LXMLAdapter(_XmlImplAdapter):
         return node.prefix
 
     def get_node_value(self, node):
-        raise NotImplementedError()
+        return node.value
 
     def set_node_value(self, node, value):
-        raise NotImplementedError()
+        node.value = value
 
     def get_node_attributes(self, element, ns_uri=None):
         attribs = []
@@ -122,6 +122,9 @@ class LXMLAdapter(_XmlImplAdapter):
         if element.nsmap:
             # TODO Exclude namespace items defined by parent
             for n, v in element.nsmap.items():
+                # Only add namespace as attribute if not defined in parent
+                if self._is_ns_in_ancestor(element, n, v):
+                    continue
                 if n is None:
                     attr_name = 'xmlns'
                 else:
@@ -150,33 +153,60 @@ class LXMLAdapter(_XmlImplAdapter):
     def remove_node_child(self, parent, child):
         raise NotImplementedError()
 
+    def _is_ns_in_ancestor(self, node, name, value):
+        '''
+        Return True if the given namespace name/value is defined in an
+        ancestor of the given node, meaning that the given node need not
+        have its own attributes to apply that namespacing.
+        '''
+        curr_node = self.get_node_parent(node)
+        while curr_node is not None:
+            if name in curr_node.nsmap and curr_node.nsmap[name] == value:
+                return True
+            curr_node = self.get_node_parent(curr_node)
+        return False
+
 
 class LXMLAttribute(object):
 
-    def __init__(self, name, value, element, ns_uri=None):
+    def __init__(self, name, value, element):
         self._name, self._value, self._element = name, value, element
+        # Determine attribute's namespace and prefix
         self._ns_uri = None
+        self._prefix = None
+        if '}' in self.tag:
+            self._ns_uri = self._name.split('}')[0][1:]
+            self._name = self._name.split('}')[1]
+            # Attribute is namespaced, find prefix defined for its URI
+            if element.nsmap:
+                for n, v in element.nsmap.items():
+                    if self._ns_uri == v:
+                        self._prefix = n
+                        break;
+        elif self._name == 'xmlns':
+            self._ns_uri = nodes.Node.XMLNS_URI
+        elif self._name.startswith('xmlns:'):
+            self._ns_uri = nodes.Node.XMLNS_URI
+            self._prefix, self._name = self._name.split(':')
+        if ':' in self._name:
+            self._prefix, self._name = self._name.split(':')
 
     def getroottree(self):
         return self._element.getroottree()
 
     @property
     def prefix(self):
-        if ':' in self.tag:
-            return self.tag.split(':')[0]
-        else:
-            return None
+        return self._prefix
 
     @property
     def tag(self):
         return self._name
 
     @property
+    def value(self):
+        return self._value
+
+    @property
     def namespace_uri(self):
-        if self._ns_uri is not None:
-            return self._ns_uri
-        elif self.tag == 'xmlns' or self.prefix == 'xmlns':
-            return nodes.Node.XMLNS_URI
-        else:
-            return None
+        return self._ns_uri
 
