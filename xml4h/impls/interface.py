@@ -44,9 +44,15 @@ class _XmlImplAdapter(object):
     def get_ns_uri_for_prefix(self, node, prefix):
         if prefix == 'xmlns':
             return nodes.Node.XMLNS_URI
-        attr_name = 'xmlns:%s' % prefix
+        elif prefix is None:
+            attr_name = 'xmlns'
+        else:
+            attr_name = 'xmlns:%s' % prefix
         uri = self.lookup_ns_uri_by_attr_name(node, attr_name)
         if uri is None:
+            if attr_name == 'xmlns':
+                # Default namespace URI
+                return nodes.Node.XMLNS_URI
             raise Exception(
                 "Unknown namespace URI for attribute name '%s'" % attr_name)
         return uri

@@ -2,7 +2,7 @@ import unittest
 
 from xml4h import nodes
 from xml4h.impls.xml_dom import XmlDomImplAdapter
-from xml4h.impls.lxml_etree import LXMLAdapter
+from xml4h.impls.lxml_etree import LXMLAdapter, LXMLText
 
 
 class BaseTestNodes(object):
@@ -205,6 +205,10 @@ class BaseTestNodes(object):
         # Set text on element
         wrapped_node.text = 'Different text'
         self.assertEqual('Different text', wrapped_node.text)
+        self.assertEqual(
+            wrapped_node.children[0].value,
+            self.my_adapter(self.doc).get_node_value(
+                wrapped_node.children[0].impl_node))
         # Unset text on element (removes any text children)
         wrapped_node.text = None
         self.assertEqual(None, wrapped_node.text)
@@ -353,10 +357,10 @@ class TestLXMLNodes(BaseTestNodes, unittest.TestCase):
         self.elem3_second = etree.Element('{urn:ns2}Element3',
             nsmap={'ns2': 'urn:ns2'})
 
-        self.text_node = 'Some text'
-        self.elem1.text = self.text_node
-        self.cdata_node = etree.CDATA('Some cdata')
-        self.elem2.text = self.cdata_node
+        self.text_node = LXMLText('Some text', self.elem1)
+        self.elem1.text = self.text_node.text
+        self.cdata_node = LXMLText('Some cdata', self.elem2, is_cdata=True)
+        self.elem2.text = self.cdata_node.text
         self.comment_node = etree.Comment('A comment')
         self.instruction_node = etree.ProcessingInstruction(
            'pi-target', 'pi-data')

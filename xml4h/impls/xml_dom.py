@@ -48,7 +48,7 @@ class XmlDomImplAdapter(_XmlImplAdapter):
     def get_impl_root(self, node):
         return node.documentElement
 
-    def new_impl_element(self, tagname, ns_uri=None):
+    def new_impl_element(self, tagname, ns_uri=None, parent=None):
         return self.impl_document.createElementNS(ns_uri, tagname)
 
     def new_impl_text(self, text):
@@ -137,6 +137,8 @@ class XmlDomImplAdapter(_XmlImplAdapter):
             return element.getAttributeNode(name)
 
     def get_node_attribute_value(self, element, name, ns_uri=None):
+        if isinstance(element, xml.dom.minidom.Document):
+            return None
         if ns_uri is not None:
             result = element.getAttributeNS(ns_uri, name)
         else:
@@ -168,10 +170,10 @@ class XmlDomImplAdapter(_XmlImplAdapter):
 
     def lookup_ns_uri_by_attr_name(self, node, name):
         curr_node = node
-        while curr_node:
-            attr = self.get_node_attribute_node(node, name)
-            if attr and self.get_node_name(attr) == name:
-                return self.get_node_value(attr)
+        while curr_node is not None:
+            value = self.get_node_attribute_value(curr_node, name)
+            if value is not None:
+                return value
             curr_node = self.get_node_parent(curr_node)
         return None
 
@@ -184,6 +186,9 @@ class XmlDomImplAdapter(_XmlImplAdapter):
             else:
                 for attr in attrs:
                     if attr.value == uri:
-                        return attr.name.split(':')[1]
+                        if ':' in attr.name:
+                            return attr.name.split(':')[1]
+                        else:
+                            return attr.name
             curr_node = self.get_node_parent(curr_node)
         return None

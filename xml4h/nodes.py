@@ -453,24 +453,18 @@ class Element(_NameValueNode):
         return self.adapter.wrap_node(
             attr_impl_node, self.adapter.impl_document)
 
-    def _set_namespace(self, element, ns_uri, prefix=None):
+    def _add_ns_prefix_attr(self, element, prefix, ns_uri):
         if prefix is None:
             ns_name = 'xmlns'
             self.adapter.set_node_namespace_uri(element, ns_uri)
         else:
             ns_name = 'xmlns:%s' % prefix
-            # Apply namespace to element if it shares the prefix
-            elem_name = self.adapter.get_node_name(element)
-            if ':' in elem_name and prefix == elem_name.split(':')[0]:
-                self.adapter.set_node_namespace_uri(element, ns_uri)
         self._set_element_attributes(element,
             {ns_name: ns_uri}, ns_uri=self.XMLNS_URI)
 
-    def set_namespace(self, ns_uri, prefix=None):
-        self._set_namespace(self.impl_node, ns_uri, prefix=prefix)
+    def set_ns_prefix(self, prefix, ns_uri):
+        self._add_ns_prefix_attr(self.impl_node, prefix, ns_uri)
         return self
-
-    set_ns = set_namespace  # Alias
 
     def add_element(self, tagname, ns_uri=None, prefix=None,
             attributes=None, text=None, before_this_element=False):
@@ -478,19 +472,26 @@ class Element(_NameValueNode):
             tagname = '%s:%s' % (prefix, tagname)
         elif ':' in tagname:
             prefix = tagname.split(':')[0]
-        elem = self.adapter.new_impl_element(tagname, ns_uri)
-        # Apply prefix-named namespace URI to element
+
+        # Apply prefix-named namespace URI to element (overrides ns_uri param)
         if prefix:
-            ns_for_prefix = self.adapter.get_ns_uri_for_prefix(
+            node_ns_uri = self.adapter.get_ns_uri_for_prefix(
                 self.impl_node, prefix)
-            self.adapter.set_node_namespace_uri(elem, ns_for_prefix)
-        # Automatically add namespace URI to Element as attribute
+        # Apply default namespace to node if none is explicitly defined
+        elif ns_uri is None:
+            node_ns_uri = self.adapter.get_ns_uri_for_prefix(
+                self.impl_node, None)
+        else:
+            node_ns_uri = ns_uri
+
+        elem = self.adapter.new_impl_element(tagname, node_ns_uri,
+            parent=self.impl_node)
+
+        # If namespace URI is explicitly set, also apply it as xmlns attribute
         if ns_uri is not None:
-            self._set_namespace(elem, ns_uri)
-        elif not prefix:
-            # Apply default namespace to node (not redefined)
-            self.adapter.set_node_namespace_uri(
-                elem, self.current_namespace_uri)
+            self._set_element_attributes(elem,
+                {'xmlns': ns_uri}, ns_uri=self.XMLNS_URI)
+
         if attributes is not None:
             self._set_element_attributes(elem, attr_obj=attributes)
         if text is not None:

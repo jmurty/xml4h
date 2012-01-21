@@ -292,14 +292,11 @@ class BaseBuilderNodesTest(object):
             xmlb.doc_xml())
 
     def test_namespace(self):
-        # Aliases
-        xmlb = self.my_builder('DocRoot')
-        self.assertEqual(xmlb.set_namespace, xmlb.set_ns)
         # Define namespaces on elements after creation
         xmlb = (
-            self.my_builder('DocRoot').set_ns('urn:default')
-                .build_e('Elem1').set_ns('urn:elem1').up()
-                .build_e('Elem2').set_ns('urn:elem2', prefix='myns').up()
+            self.my_builder('DocRoot', ns_uri='urn:default')
+                .build_e('Elem1', ns_uri='urn:elem1').up()
+                .build_e('Elem2').set_ns_prefix('myns', 'urn:elem2').up()
             )
         self.assertEqual(
             '<?xml version="1.0" encoding="utf-8"?>\n'
@@ -322,7 +319,7 @@ class BaseBuilderNodesTest(object):
         # Set namespaces of elements and attributes on creation
         xmlb = (
             self.my_builder('DocRoot', ns_uri='urn:default')
-                .set_ns('urn:custom', 'myns')
+                .set_ns_prefix('myns', 'urn:custom')
                 # Elements in default namespace
                 .build_e('NSDefaultImplicit').up()
                 .build_e('NSDefaultExplicit', ns_uri='urn:default').up()
@@ -387,13 +384,23 @@ class BaseBuilderNodesTest(object):
                 .build_e('Elem1').build_t('<content/> as text').up()
                 .build_e('Elem2').build_d('<content/> as cdata').up()
             )
-        self.assertEqual(
-            '<?xml version="1.0" encoding="utf-8"?>\n'
-            '<DocRoot>\n'
-            '    <Elem1>&lt;content/&gt; as text</Elem1>\n'
-            '    <Elem2><![CDATA[<content/> as cdata]]></Elem2>\n'
-            '</DocRoot>\n',
-            xmlb.doc_xml())
+        if isinstance(self, TestLXMLBuilder):
+            # lxml library does not distinguish between plain versus cdata text values
+            self.assertEqual(
+                '<?xml version="1.0" encoding="utf-8"?>\n'
+                '<DocRoot>\n'
+                '    <Elem1>&lt;content/&gt; as text</Elem1>\n'
+                '    <Elem2>&lt;content/&gt; as cdata</Elem2>\n'
+                '</DocRoot>\n',
+                xmlb.doc_xml())
+        else:
+            self.assertEqual(
+                '<?xml version="1.0" encoding="utf-8"?>\n'
+                '<DocRoot>\n'
+                '    <Elem1>&lt;content/&gt; as text</Elem1>\n'
+                '    <Elem2><![CDATA[<content/> as cdata]]></Elem2>\n'
+                '</DocRoot>\n',
+                xmlb.doc_xml())
 
     def test_element_with_extra_kwargs(self):
         xmlb = (
