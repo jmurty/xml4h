@@ -338,12 +338,12 @@ class BaseBuilderNodesTest(object):
                     .build_as({'myns:custom-ns-prefix-explicit': 1},
                         ns_uri='urn:custom')
             )
-        self.assertEqual(
+        xml = (
             '<?xml version="1.0" encoding="utf-8"?>\n'
             '<DocRoot xmlns="urn:default" xmlns:myns="urn:custom">\n'
             '    <NSDefaultImplicit/>\n'
             '    <NSDefaultExplicit xmlns="urn:default"/>\n'
-            '    <NSCustomExplicit xmlns="urn:custom"/>\n'
+            '    <%sNSCustomExplicit xmlns="urn:custom"/>\n'
             '    <myns:NSCustomWithPrefixImplicit/>\n'
             '    <myns:NSCustomWithPrefixExplicit xmlns="urn:custom"/>\n'
             '    <Attrs1 default-ns-explicit="1"'
@@ -351,15 +351,22 @@ class BaseBuilderNodesTest(object):
             '    <Attrs2'
                        ' myns:custom-ns-prefix-explicit="1"'
                        ' myns:custom-ns-prefix-implicit="1"/>\n'
-                       '</DocRoot>\n',
-            xmlb.doc_xml())
+            '</DocRoot>\n'
+            % (isinstance(self, TestLXMLBuilder) and 'myns:' or ''))
+            # TODO: lxml outputs prefix in more situations than minidom
+        self.assertEqual(xml, xmlb.doc_xml())
         # Test namespaces work as expected when searching/traversing DOM
         self.assertEqual(
             ['DocRoot', 'NSDefaultImplicit', 'NSDefaultExplicit', 'Attrs1', 'Attrs2'],
             [n.name for n in xmlb.doc_find(ns_uri='urn:default')])
-        self.assertEqual(
-            ['NSCustomExplicit', 'myns:NSCustomWithPrefixImplicit', 'myns:NSCustomWithPrefixExplicit'],
-            [n.name for n in xmlb.doc_find(ns_uri='urn:custom')])
+        if isinstance(self, TestLXMLBuilder): # TODO: Differing prefix output
+            self.assertEqual(
+                ['myns:NSCustomExplicit', 'myns:NSCustomWithPrefixImplicit', 'myns:NSCustomWithPrefixExplicit'],
+                [n.name for n in xmlb.doc_find(ns_uri='urn:custom')])
+        else:
+            self.assertEqual(
+                ['NSCustomExplicit', 'myns:NSCustomWithPrefixImplicit', 'myns:NSCustomWithPrefixExplicit'],
+                [n.name for n in xmlb.doc_find(ns_uri='urn:custom')])
         self.assertEqual(
             ['NSCustomExplicit', 'NSCustomWithPrefixImplicit', 'NSCustomWithPrefixExplicit'],
             [n.local_name for n in xmlb.doc_find(ns_uri='urn:custom')])
@@ -385,7 +392,7 @@ class BaseBuilderNodesTest(object):
                 .build_e('Elem2').build_d('<content/> as cdata').up()
             )
         if isinstance(self, TestLXMLBuilder):
-            # lxml library does not distinguish between plain versus cdata text values
+            # TODO: lxml library does not distinguish between plain versus cdata text values?
             self.assertEqual(
                 '<?xml version="1.0" encoding="utf-8"?>\n'
                 '<DocRoot>\n'

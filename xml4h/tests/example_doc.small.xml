@@ -5,6 +5,6 @@
     <NSCustomExplicit xmlns="urn:custom"/>
     <myns:NSCustomWithPrefixImplicit/>
     <myns:NSCustomWithPrefixExplicit xmlns="urn:custom"/>
-    <Attrs1 default-ns-explicit="1" default-ns-implicit="1"/>
-    <Attrs2 myns:custom-ns-prefix-explicit="1" myns:custom-ns-prefix-implicit="1"/>
+    <Attrs1 default-ns-implicit="1"/>
+    <Attrs2 myns:custom-ns-prefix-explicit="1"/>
 </DocRoot>

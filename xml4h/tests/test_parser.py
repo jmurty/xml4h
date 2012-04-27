@@ -29,20 +29,20 @@ class BaseParserTest(object):
             [n.namespace_uri for n in wrapped_doc.root.attribute_nodes])
         attrs1_elem = wrapped_doc.find_first('Attrs1')
         self.assertNotEqual(None, attrs1_elem)
-        self.assertEqual([None, None],
+        self.assertEqual([None],
             [n.namespace_uri for n in attrs1_elem.attribute_nodes])
         attrs2_elem = wrapped_doc.find_first('Attrs2')
-        self.assertEqual(['urn:custom', 'urn:custom'],
+        self.assertEqual(['urn:custom'],
             [n.namespace_uri for n in attrs2_elem.attribute_nodes])
 
-    def test_roundtip(self):
+    def test_roundtrip(self):
         orig_xml = open(self.small_xml_file_path).read()
-        roundtrip_xml = self.parse_string(orig_xml).doc_xml()
         doc = self.parse_string(orig_xml)
+        roundtrip_xml = doc.doc_xml()
         if isinstance(self, TestLXMLParser):
             # lxml parser does not make it possible to retain semantically
             # unnecessary 'xmlns' namespace definitions in all elements.
-            # It's not worth failing the roundtrip test for this
+            # It's not worth failing the roundtrip test just for this
             orig_xml = re.sub(
                 '<NSDefaultExplicit xmlns="urn:default"/>',
                 '<NSDefaultExplicit/>', orig_xml)

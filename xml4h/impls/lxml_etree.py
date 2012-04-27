@@ -351,7 +351,7 @@ class LXMLAdapter(_XmlImplAdapter):
         curr_node = self.get_node_parent(node)
         while curr_node.__class__ == etree._Element:
             if (hasattr(curr_node, 'nsmap')
-                    and value in curr_node.nsmap.values()):
+                    and curr_node.nsmap.get(name) == value):
                 return True
             for n, v in curr_node.attrib.items():
                 if v == value and '{%s}' % nodes.Node.XMLNS_URI in n:
