@@ -376,6 +376,21 @@ class Element(_NameValueNode):
     def _get_attributes(self):
         return self.attributes_by_ns(None)
 
+    def _unpack_name(self, name):
+        if '}' in name:
+            ns_uri, name = name.split('}')
+            ns_uri = ns_uri[1:]
+            prefix = self.adapter.get_ns_prefix_for_uri(
+                self.impl_node, ns_uri)
+            name = '%s:%s' % (prefix, name)
+        elif ':' in name:
+            prefix  = name.split(':')[0]
+            ns_uri = self.adapter.get_ns_uri_for_prefix(
+                self.impl_node, prefix)
+        else:
+            prefix, ns_uri = None, None
+        return prefix, name, ns_uri
+
     def _set_element_attributes(self, element,
             attr_obj=None, ns_uri=None, **attr_dict):
         if attr_obj is not None:
@@ -401,18 +416,11 @@ class Element(_NameValueNode):
         attr_list = sorted(attr_dict.items(), cmp=_xmlns_first)
         # Add attributes
         for n, v in attr_list:
-            my_ns_uri = ns_uri
-            if '}' in n:
-                my_ns_uri, n = n.split('}')
-                my_ns_uri = my_ns_uri[1:]
-                prefix = self.adapter.get_ns_prefix_for_uri(
-                    self.impl_node, my_ns_uri)
-                n = '%s:%s' % (prefix, n)
-            elif ':' in n:
-                prefix  = n.split(':')[0]
-                my_ns_uri = self.adapter.get_ns_uri_for_prefix(
-                    self.impl_node, prefix)
-            elif ns_uri is not None:
+            prefix, n, my_ns_uri = self._unpack_name(n)
+            # Apply kw-specified namespace if not overridden by prefix name
+            if my_ns_uri is None:
+                my_ns_uri = ns_uri
+            if ns_uri is not None:
                 # Apply attribute namespace URI if different from owning elem
                 if ns_uri == self.adapter.get_node_namespace_uri(element):
                     my_ns_uri = None
@@ -468,10 +476,17 @@ class Element(_NameValueNode):
 
     def add_element(self, tagname, ns_uri=None, prefix=None,
             attributes=None, text=None, before_this_element=False):
-        if prefix is not None:
+        if '}' in tagname:  # TODO More precise regexp for {uri} prefixes
+            node_ns_uri, tagname = tagname.split('}')
+            node_ns_uri = node_ns_uri[1:]  # Strip leading '{'
+            # TODO Doesn't work for lxml after set_ns_prefix, see test_element_creation_with_namespace
+            prefix = self.adapter.get_ns_prefix_for_uri(
+                self.impl_node, node_ns_uri)
             tagname = '%s:%s' % (prefix, tagname)
         elif ':' in tagname:
             prefix = tagname.split(':')[0]
+        elif prefix is not None:
+            tagname = '%s:%s' % (prefix, tagname)
 
         # Apply prefix-named namespace URI to element (overrides ns_uri param)
         if prefix:
@@ -666,6 +681,12 @@ class AttributeDict(object):
         if a_node is None:
             return None
         return self.adapter.get_node_namespace_uri(a_node)
+
+    def prefix(self, name):
+        a_node = self.adapter.get_node_attribute_node(self.impl_element, name)
+        if a_node is None:
+            return None
+        return a_node.prefix
 
     @property
     def element(self):
