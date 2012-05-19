@@ -18,6 +18,24 @@ DOCUMENT_FRAGMENT_NODE = 11
 NOTATION_NODE = 12
 
 
+# TODO Move this somewhere more sensible
+def _unpack_name(name, adapter, impl_node):
+    if '}' in name:
+        ns_uri, name = name.split('}')
+        ns_uri = ns_uri[1:]
+        prefix = adapter.get_ns_prefix_for_uri(impl_node, ns_uri)
+    elif ':' in name:
+        prefix, name  = name.split(':')
+        ns_uri = adapter.get_ns_uri_for_prefix(impl_node, prefix)
+        if ns_uri is None:
+            raise Exception(
+                "Prefix '%s' does not have a defined namespace URI"
+                % prefix)
+    else:
+        prefix, ns_uri = None, None
+    return prefix, name, ns_uri
+
+
 class Node(object):
     XMLNS_URI = 'http://www.w3.org/2000/xmlns/'
 
@@ -376,21 +394,6 @@ class Element(_NameValueNode):
     def _get_attributes(self):
         return self.attributes_by_ns(None)
 
-    def _unpack_name(self, name):
-        if '}' in name:
-            ns_uri, name = name.split('}')
-            ns_uri = ns_uri[1:]
-            prefix = self.adapter.get_ns_prefix_for_uri(
-                self.impl_node, ns_uri)
-            name = '%s:%s' % (prefix, name)
-        elif ':' in name:
-            prefix  = name.split(':')[0]
-            ns_uri = self.adapter.get_ns_uri_for_prefix(
-                self.impl_node, prefix)
-        else:
-            prefix, ns_uri = None, None
-        return prefix, name, ns_uri
-
     def _set_element_attributes(self, element,
             attr_obj=None, ns_uri=None, **attr_dict):
         if attr_obj is not None:
@@ -415,8 +418,19 @@ class Element(_NameValueNode):
                 return cmp(nx, ny)
         attr_list = sorted(attr_dict.items(), cmp=_xmlns_first)
         # Add attributes
-        for n, v in attr_list:
-            prefix, n, my_ns_uri = self._unpack_name(n)
+        for name, v in attr_list:
+            # Remember whether a literal ns definition was used
+            if '}' in name:
+                is_literal_ns_defn = True
+            else:
+                is_literal_ns_defn = False
+            prefix, name, my_ns_uri = _unpack_name(name, self.adapter, element)
+            # If necessary, add an xmlns definition for literally defined namespaces
+            if is_literal_ns_defn and not prefix:
+                prefix = self.adapter.get_ns_prefix_for_uri(
+                    element, my_ns_uri, auto_generate_prefix=True)
+                self.adapter.set_node_attribute_value(element,
+                    'xmlns:%s' % prefix, my_ns_uri, ns_uri=self.XMLNS_URI)
             # Apply kw-specified namespace if not overridden by prefix name
             if my_ns_uri is None:
                 my_ns_uri = ns_uri
@@ -424,13 +438,15 @@ class Element(_NameValueNode):
                 # Apply attribute namespace URI if different from owning elem
                 if ns_uri == self.adapter.get_node_namespace_uri(element):
                     my_ns_uri = None
-            if ' ' in n:
+            if ' ' in name:
                 raise Exception("Invalid attribute name value contains space")
             # Forcibly convert all data to unicode text
             if not isinstance(v, basestring):
                 v = unicode(v)
+            if prefix:
+                name = '%s:%s' % (prefix, name)
             self.adapter.set_node_attribute_value(
-                element, n, v, ns_uri=my_ns_uri)
+                element, name, v, ns_uri=my_ns_uri)
 
     def set_attributes(self, attr_obj=None, ns_uri=None, **attr_dict):
         self._set_element_attributes(self.impl_node,
@@ -476,31 +492,33 @@ class Element(_NameValueNode):
 
     def add_element(self, tagname, ns_uri=None, prefix=None,
             attributes=None, text=None, before_this_element=False):
-        if '}' in tagname:  # TODO More precise regexp for {uri} prefixes
-            node_ns_uri, tagname = tagname.split('}')
-            node_ns_uri = node_ns_uri[1:]  # Strip leading '{'
-            # TODO Doesn't work for lxml after set_ns_prefix, see test_element_creation_with_namespace
-            prefix = self.adapter.get_ns_prefix_for_uri(
-                self.impl_node, node_ns_uri)
-            tagname = '%s:%s' % (prefix, tagname)
-        elif ':' in tagname:
-            prefix = tagname.split(':')[0]
-        elif prefix is not None:
-            tagname = '%s:%s' % (prefix, tagname)
-
-        # Apply prefix-named namespace URI to element (overrides ns_uri param)
-        if prefix:
-            node_ns_uri = self.adapter.get_ns_uri_for_prefix(
-                self.impl_node, prefix)
-        # Apply default namespace to node if none is explicitly defined
-        elif ns_uri is None:
-            node_ns_uri = self.adapter.get_ns_uri_for_prefix(
-                self.impl_node, None)
+        # Remember whether a literal ns definition was used
+        if '}' in tagname:
+            is_literal_ns_defn = True
         else:
-            node_ns_uri = ns_uri
+            is_literal_ns_defn = False
 
-        elem = self.adapter.new_impl_element(tagname, node_ns_uri,
-            parent=self.impl_node)
+        prefix, tagname, node_ns_uri = _unpack_name(
+            tagname, self.adapter, self.impl_node)
+        if prefix:
+            tagname = '%s:%s' % (prefix, tagname)
+
+        # If necessary, add an xmlns definition for literally defined namespaces
+        if is_literal_ns_defn and not prefix:
+            if attributes is None:
+                attributes = {}
+            attributes['xmlns'] = node_ns_uri
+
+        if node_ns_uri is None:
+            # Apply default namespace to node if none is explicitly defined
+            if ns_uri is None:
+                node_ns_uri = self.adapter.get_ns_uri_for_prefix(
+                    self.impl_node, None)
+            else:
+                node_ns_uri = ns_uri
+
+        elem = self.adapter.new_impl_element(
+            tagname, node_ns_uri, parent=self.impl_node)
 
         # If namespace URI is explicitly set, also apply it as xmlns attribute
         if ns_uri is not None:
@@ -633,31 +651,26 @@ class AttributeDict(object):
         self.impl_element = impl_element
         self.adapter = adapter
 
-    def _unpack_name(self, name):
-        if '}' in name:
-            ns_uri, name = name.split('}')
-            ns_uri = ns_uri[1:]
-            return name, ns_uri
-        else:
-            return name, None
-
     def __len__(self):
         return len(self.impl_attributes)
 
-    def __getitem__(self, name):
-        name, ns_uri = self._unpack_name(name)
+    def __getitem__(self, attr_name):
+        prefix, name, ns_uri = _unpack_name(
+            attr_name, self.adapter, self.impl_element)
         return self.adapter.get_node_attribute_value(
             self.impl_element, name, ns_uri)
 
     def __setitem__(self, name, value):
-        name, ns_uri = self._unpack_name(name)
+        prefix, name, ns_uri = _unpack_name(
+            name, self.adapter, self.impl_element)
         if not isinstance(value, basestring):
             value = unicode(value)
         self.adapter.set_node_attribute_value(
             self.impl_element, name, value, ns_uri)
 
     def __delitem__(self, name):
-        name, ns_uri = self._unpack_name(name)
+        prefix, name, ns_uri = _unpack_name(
+            name, self.adapter, self.impl_element)
         self.adapter.remove_node_attribute(self.impl_element, name, ns_uri)
 
     def __iter__(self):
@@ -667,7 +680,8 @@ class AttributeDict(object):
     iterkeys = __iter__  # Alias, per Python docs recommendation
 
     def __contains__(self, name):
-        name, ns_uri = self._unpack_name(name)
+        prefix, name, ns_uri = _unpack_name(
+            name, self.adapter, self.impl_element)
         return self.adapter.has_node_attribute(self.impl_element, name, ns_uri)
 
     def keys(self):

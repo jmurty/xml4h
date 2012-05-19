@@ -227,10 +227,15 @@ class LXMLAdapter(_XmlImplAdapter):
             ns_uri = self.lookup_ns_uri_by_attr_name(element, prefix)
             name = '{%s}%s' % (ns_uri, name)
         if name.startswith('{%s}' % nodes.Node.XMLNS_URI):
-            # Ideally we would apply namespace (xmlns) attributes to the
-            # element's `nsmap` only, but the lxml/etree nsmap attribute is
-            # immutable and there's no non-hacky way around this.
-            # TODO Is there a better way?
+            if element.nsmap.get(name) == value:
+                # No need to apply namespace attribute
+                pass
+            else:
+                # Ideally we would apply namespace (xmlns) attributes to the
+                # element's `nsmap` only, but the lxml/etree nsmap attribute
+                # is immutable and there's no non-hacky way around this.
+                # TODO Is there a better way?
+                pass
             if name.split('}')[1] == 'xmlns':
                 # Hack to remove namespace URI from 'xmlns' attributes so
                 # the name is just a simple string
@@ -294,6 +299,8 @@ class LXMLAdapter(_XmlImplAdapter):
         return None
 
     def lookup_ns_prefix_for_uri(self, node, uri):
+        if uri == nodes.Node.XMLNS_URI:
+            return 'xmlns'
         result = None
         if hasattr(node, 'nsmap') and uri in node.nsmap.values():
             for n, v in node.nsmap.items():

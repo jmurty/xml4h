@@ -381,9 +381,6 @@ class BaseBuilderNodesTest(object):
             [n.namespace_uri for n in attrs2_elem.attribute_nodes])
 
     def test_element_creation_with_namespace(self):
-        # TODO Fix for lxml set_ns_prefix implementation required
-        if isinstance(self, TestLXMLBuilder):
-            return
         # Define namespaces on elements using prefixes
         xmlb = (
             self.my_builder('DocRoot', ns_uri='urn:default')
@@ -408,6 +405,7 @@ class BaseBuilderNodesTest(object):
         self.assertEqual('testns', attrs_elem.attributes.prefix('testns:attrib2'))
         self.assertEqual('urn:test', attrs_elem.attributes.namespace_uri('testns:attrib1'))
         self.assertEqual('urn:test', attrs_elem.attributes.namespace_uri('testns:attrib2'))
+        if isinstance(self, TestLXMLBuilder): return # TODO fix for lxml
         self.assertEqual(
             '<?xml version="1.0" encoding="utf-8"?>\n'
             '<DocRoot xmlns="urn:default" xmlns:testns="urn:test">\n'
@@ -416,17 +414,23 @@ class BaseBuilderNodesTest(object):
             '    <Attrs testns:attrib1="value1" testns:attrib2="value2"/>\n'
             '</DocRoot>\n',
             xmlb.doc_xml())
-        # Attempt to use undefined namespace prefixes
+        # Attempts to use undefined namespace prefixes will fail
         xmlb = self.my_builder('DocRoot', ns_uri='urn:default')
         self.assertRaises(Exception,
-            xmlb.build_e, ['testns:Elem1'] )
+            xmlb.build_e, ['missingns:Elem1'] )
         self.assertRaises(Exception,
-            xmlb.build_e, ['{urn:test}Elem2'] )
-        # TODO Should raise exceptions since namespace isn't defined
-        #self.assertRaises(Exception,
-        #    xmlb.build_as, [], {'testns:attrib1': 'value1'})
-        #self.assertRaises(Exception,
-        #    xmlb.build_as, [], {'{urn:test}attrib2': 'value2'})
+            xmlb.build_as, [{'missingns:attrib1': 'value1'}])
+        # Element with literal namespace definition uses the ns as default
+        xmlb = self.my_builder('DocRoot', ns_uri='urn:default')
+        xmlb.build_e('{urn:missing}Elem1')
+        self.assertEqual(None, xmlb.root.find_first(name='Elem1').prefix)
+        self.assertEqual('urn:missing', xmlb.root.find_first(name='Elem1').namespace_uri)
+        self.assertEqual('urn:missing', xmlb.root.find_first(name='Elem1').attributes['xmlns'])
+        # Automatically define prefix for attribute with literal namespace
+        xmlb.build_as({'{urn:missing2}attrib1': 'value2'})
+        self.assertEqual('autoprefix0', xmlb.root.attributes.prefix('autoprefix0:attrib1'))
+        self.assertEqual('urn:missing2', xmlb.root.attributes.namespace_uri('autoprefix0:attrib1'))
+        self.assertEqual('urn:missing2', xmlb.root.attributes['xmlns:autoprefix0'])
 
     def test_cdata(self):
         # Aliases

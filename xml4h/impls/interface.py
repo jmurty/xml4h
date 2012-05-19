@@ -1,3 +1,5 @@
+import re
+
 from xml4h import nodes
 
 
@@ -32,6 +34,7 @@ class _XmlImplAdapter(object):
                 'Cannot instantiate adapter with invalid document: %s'
                 % document)
         self._impl_document = document
+        self._auto_ns_prefix_count = 0
 
     @property
     def impl_document(self):
@@ -57,12 +60,13 @@ class _XmlImplAdapter(object):
                 "Unknown namespace URI for attribute name '%s'" % attr_name)
         return uri
 
-    def get_ns_prefix_for_uri(self, node, uri):
+    def get_ns_prefix_for_uri(self, node, uri, auto_generate_prefix=False):
         if uri == nodes.Node.XMLNS_URI:
             return 'xmlns'
         prefix = self.lookup_ns_prefix_for_uri(node, uri)
-        if not prefix:
-            raise Exception("Unknown prefix for namespace URI '%s'" % uri)
+        if not prefix and auto_generate_prefix:
+            prefix = 'autoprefix%d' % self._auto_ns_prefix_count
+            self._auto_ns_prefix_count += 1
         return prefix
 
     # Utility implementation methods
@@ -113,6 +117,10 @@ class _XmlImplAdapter(object):
         raise NotImplementedError()
 
     def get_node_parent(self, node):
+        raise NotImplementedError()
+
+    # TODO
+    def get_node_ancestors(self, node):
         raise NotImplementedError()
 
     def get_node_children(self, node):
