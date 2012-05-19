@@ -405,7 +405,6 @@ class BaseBuilderNodesTest(object):
         self.assertEqual('testns', attrs_elem.attributes.prefix('testns:attrib2'))
         self.assertEqual('urn:test', attrs_elem.attributes.namespace_uri('testns:attrib1'))
         self.assertEqual('urn:test', attrs_elem.attributes.namespace_uri('testns:attrib2'))
-        if isinstance(self, TestLXMLBuilder): return # TODO fix for lxml
         self.assertEqual(
             '<?xml version="1.0" encoding="utf-8"?>\n'
             '<DocRoot xmlns="urn:default" xmlns:testns="urn:test">\n'
@@ -420,7 +419,7 @@ class BaseBuilderNodesTest(object):
             xmlb.build_e, ['missingns:Elem1'] )
         self.assertRaises(Exception,
             xmlb.build_as, [{'missingns:attrib1': 'value1'}])
-        # Element with literal namespace definition uses the ns as default
+        # Element with literal namespace defn will use the ns as its default
         xmlb = self.my_builder('DocRoot', ns_uri='urn:default')
         xmlb.build_e('{urn:missing}Elem1')
         self.assertEqual(None, xmlb.root.find_first(name='Elem1').prefix)
@@ -431,6 +430,10 @@ class BaseBuilderNodesTest(object):
         self.assertEqual('autoprefix0', xmlb.root.attributes.prefix('autoprefix0:attrib1'))
         self.assertEqual('urn:missing2', xmlb.root.attributes.namespace_uri('autoprefix0:attrib1'))
         self.assertEqual('urn:missing2', xmlb.root.attributes['xmlns:autoprefix0'])
+        xmlb.build_as({'{urn:missing3}attrib2': 'value3'})
+        self.assertEqual('autoprefix1', xmlb.root.attributes.prefix('autoprefix1:attrib2'))
+        self.assertEqual('urn:missing3', xmlb.root.attributes.namespace_uri('autoprefix1:attrib2'))
+        self.assertEqual('urn:missing3', xmlb.root.attributes['xmlns:autoprefix1'])
 
     def test_cdata(self):
         # Aliases

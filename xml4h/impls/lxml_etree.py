@@ -307,12 +307,13 @@ class LXMLAdapter(_XmlImplAdapter):
                 if v == uri:
                     result = n
                     break
-        # TODO Ugly hack to retain human-entered 'xmlns' prefix definitions
-        if result is not None and re.match('ns\d', result):
-            # We have a namespace prefix that was probably assigned
-            # automatically by lxml, see if we can do better by looking
-            # through our ancestors for an xmlns definition for this URI
-            curr_node = self.get_node_parent(node)
+        # TODO This is a slow hack necessary due to lxml's immutable nsmap
+        if result is None or re.match('ns\d', result):
+            # We either have no namespace prefix in the nsmap, in which case we
+            # will try looking for a matching xmlns attribute, or we have
+            # a namespace prefix that was probably assigned automatically by
+            # lxml and we'd rather use a human-assigned prefix if available.
+            curr_node = node  # self.get_node_parent(node)
             while curr_node.__class__ == etree._Element:
                 for n, v in curr_node.attrib.items():
                     if v == uri and ('{%s}' % nodes.Node.XMLNS_URI) in n:
