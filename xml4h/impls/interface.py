@@ -24,6 +24,8 @@ class _XmlImplAdapter(object):
 
     @classmethod
     def wrap_node(cls, node, document):
+        if node is None:
+            return None
         adapter = cls(document)
         impl_class = adapter.map_node_to_class(node)
         return impl_class(node, adapter)
@@ -117,10 +119,6 @@ class _XmlImplAdapter(object):
         raise NotImplementedError()
 
     def get_node_parent(self, node):
-        raise NotImplementedError()
-
-    # TODO
-    def get_node_ancestors(self, node):
         raise NotImplementedError()
 
     def get_node_children(self, node):

@@ -65,6 +65,23 @@ class BaseTestNodes(object):
         wrapped_elem = self.my_adapter.wrap_node(self.elem3_second, self.doc)
         self.assertEqual(self.root_elem, wrapped_elem.parent.parent.impl_node)
 
+    def test_ancestors(self):
+        # Document node has no ancestors
+        wrapped_doc = self.my_adapter.wrap_node(self.doc, self.doc)
+        self.assertEqual([], wrapped_doc.ancestors)
+        # Find ancestors of elements
+        self.assertEqual(['DocRoot'],
+            [a.name for a in
+             self.my_adapter.wrap_node(self.elem1, self.doc).ancestors
+             if a.is_element])
+        self.assertEqual(['Element4', 'DocRoot'],
+            [a.name for a in
+             self.my_adapter.wrap_node(self.elem3_second, self.doc).ancestors
+             if a.is_element])
+        # Document root node (not Element) is included in ancestors list
+        self.assertTrue(
+            self.my_adapter.wrap_node(self.elem3_second, self.doc).ancestors[-1].is_document)
+
     def test_children(self):
         self.assertEquals(self.elem1, self.wrapped_root.children[0].impl_node)
         self.assertEquals(['Element1', 'Element2', 'Element3', 'Element4'],

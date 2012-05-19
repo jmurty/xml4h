@@ -142,11 +142,21 @@ class Node(object):
     @property
     def parent(self):
         parent_impl_node = self.adapter.get_node_parent(self.impl_node)
-        if parent_impl_node is not None:
-            return self.adapter.wrap_node(
-                parent_impl_node, self.adapter.impl_document)
-        else:
-            return None
+        return self.adapter.wrap_node(
+            parent_impl_node, self.adapter.impl_document)
+
+    @property
+    def ancestors(self):
+        '''
+        Return the ancestors of this node in an ordered list with this node's
+        parent, grand-parent, great-grand-parent etc.
+        '''
+        ancestors = []
+        p = self.parent
+        while p:
+            ancestors.append(p)
+            p = p.parent
+        return ancestors
 
     def children_in_ns(self, ns_uri):
         nodelist = self.adapter.get_node_children(self.impl_node)
