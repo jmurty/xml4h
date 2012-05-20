@@ -1,3 +1,4 @@
+# -*- coding: utf-8 name> -*-
 import unittest
 import os
 import re
@@ -9,6 +10,10 @@ class BaseParserTest(object):
     @property
     def small_xml_file_path(self):
         return os.path.join(os.path.dirname(__file__), 'example_doc.small.xml')
+
+    @property
+    def unicode_xml_file_path(self):
+        return os.path.join(os.path.dirname(__file__), 'example_doc.unicode.xml')
 
     def test_parse_file(self):
         wrapped_doc = self.parse_file(self.small_xml_file_path)
@@ -48,6 +53,8 @@ class BaseParserTest(object):
                 '<NSDefaultExplicit/>', orig_xml)
         self.assertEqual(orig_xml, roundtrip_xml)
 
+    def test_unicode(self):
+        pass
 
 class TestXmlDomParser(unittest.TestCase, BaseParserTest):
 

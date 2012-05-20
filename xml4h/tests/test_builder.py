@@ -1,3 +1,4 @@
+# -*- coding: utf-8 name> -*-
 import unittest
 import re
 import xml.dom
@@ -499,9 +500,6 @@ class BaseBuilderNodesTest(object):
             '    <FinalElement/>\n'
             '</DocRoot>\n',
             xmlb.doc_xml())
-
-    def test_unicode(self):
-        pass # TODO
 
 
 class TestXmlDomBuilder(BaseBuilderNodesTest, unittest.TestCase):

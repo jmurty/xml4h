@@ -397,7 +397,7 @@ class Element(_NameValueNode):
             else:
                 raise Exception('Attribute data must be a dictionary or list')
         # Always process 'xmlns' namespace definitions first, in case other
-        # attributes are members of a newly-defined namespace
+        # attributes belong to a newly-defined namespace
         def _xmlns_first(x, y):
             nx, ny = x[0], y[0]
             if nx.startswith('xmlns') and ny.startswith('xmlns'):
@@ -410,16 +410,13 @@ class Element(_NameValueNode):
                 return cmp(nx, ny)
         attr_list = sorted(attr_dict.items(), cmp=_xmlns_first)
         # Add attributes
-        for name, v in attr_list:
-            # Remember whether a literal ns definition was used
-            if '}' in name:
-                is_literal_ns_defn = True
-            else:
-                is_literal_ns_defn = False
+        for attr_name, v in attr_list:
             prefix, name, my_ns_uri = self.adapter.get_ns_info_from_node_name(
-                name, element)
-            # If necessary, add an xmlns attr for literally defined namespaces
-            if is_literal_ns_defn and not prefix:
+                attr_name, element)
+            if ' ' in name:
+                raise Exception("Invalid attribute name value contains space")
+            # If necessary, add an xmlns defn for new prefix-defined namespace
+            if not prefix and '}' in attr_name:
                 prefix = self.adapter.get_ns_prefix_for_uri(
                     element, my_ns_uri, auto_generate_prefix=True)
                 self.adapter.set_node_attribute_value(element,
@@ -431,15 +428,15 @@ class Element(_NameValueNode):
                 # Apply attribute namespace URI if different from owning elem
                 if ns_uri == self.adapter.get_node_namespace_uri(element):
                     my_ns_uri = None
-            if ' ' in name:
-                raise Exception("Invalid attribute name value contains space")
             # Forcibly convert all data to unicode text
             if not isinstance(v, basestring):
                 v = unicode(v)
             if prefix:
-                name = '%s:%s' % (prefix, name)
+                qname = '%s:%s' % (prefix, name)
+            else:
+                qname = name
             self.adapter.set_node_attribute_value(
-                element, name, v, ns_uri=my_ns_uri)
+                element, qname, v, ns_uri=my_ns_uri)
 
     def set_attributes(self, attr_obj=None, ns_uri=None, **attr_dict):
         self._set_element_attributes(self.impl_node,
@@ -485,47 +482,45 @@ class Element(_NameValueNode):
 
     def add_element(self, tagname, ns_uri=None, prefix=None,
             attributes=None, text=None, before_this_element=False):
-        # Remember whether a literal ns definition was used
-        if '}' in tagname:
-            is_literal_ns_defn = True
-        else:
-            is_literal_ns_defn = False
-
-        prefix, tagname, node_ns_uri = self.adapter.get_ns_info_from_node_name(
+        # Determine local name, namespace and prefix info from tag name
+        prefix, name, node_ns_uri = self.adapter.get_ns_info_from_node_name(
             tagname, self.impl_node)
         if prefix:
-            tagname = '%s:%s' % (prefix, tagname)
-
-        # If necessary, add an xmlns definition for literally defined namespaces
-        if is_literal_ns_defn and not prefix:
-            if attributes is None:
-                attributes = {}
-            attributes['xmlns'] = node_ns_uri
-
+            qname = '%s:%s' % (prefix, name)
+        else:
+            qname = name
+        # If no name-derived namespace, apply an alternate namespace
         if node_ns_uri is None:
-            # Apply default namespace to node if none is explicitly defined
             if ns_uri is None:
+                # Default document namespace
                 node_ns_uri = self.adapter.get_ns_uri_for_prefix(
                     self.impl_node, None)
             else:
+                # keyword-parameter namespace
                 node_ns_uri = ns_uri
-
+        # Create element
         elem = self.adapter.new_impl_element(
-            tagname, node_ns_uri, parent=self.impl_node)
-
-        # If namespace URI is explicitly set, also apply it as xmlns attribute
-        if ns_uri is not None:
+            qname, node_ns_uri, parent=self.impl_node)
+        # If element's default namespace was defined by literal uri prefix,
+        # create corresponding xmlns attribute for element...
+        if not prefix and '}' in tagname:
+            self._set_element_attributes(elem,
+                {'xmlns': node_ns_uri}, ns_uri=self.XMLNS_URI)
+        # ...otherwise define keyword-defined namespace as the default, if any
+        elif ns_uri is not None:
             self._set_element_attributes(elem,
                 {'xmlns': ns_uri}, ns_uri=self.XMLNS_URI)
-
+        # Create subordinate nodes
         if attributes is not None:
             self._set_element_attributes(elem, attr_obj=attributes)
         if text is not None:
             self._add_text(elem, text)
+        # Add new element to its parent before a given node...
         if before_this_element:
             self.adapter.add_node_child(
                 self.adapter.get_node_parent(self.impl_node),
                 elem, before_sibling=self.impl_node)
+        # ...or in the default position, appended after existing nodes
         else:
             self.adapter.add_node_child(self.impl_node, elem)
         return elem
