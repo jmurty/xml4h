@@ -54,14 +54,13 @@ class BaseParserTest(object):
         self.assertEqual(orig_xml, roundtrip_xml)
 
     def test_unicode(self):
-        if isinstance(self, TestLXMLParser): # TODO: lxml failing unicode tests
-            self.skipTest('lxml currently failing unicode tests')
+        # NOTE lxml doesn't support unicode namespace URIs, so we don't test that
         doc = self.parse_file(self.unicode_xml_file_path)
         self.assertEqual(u'جذر', doc.root.name)
-        self.assertEqual(u'urn:默认', doc.root.attributes[u'xmlns'])
-        self.assertEqual(u'urn:習俗', doc.root.attributes[u'xmlns:důl'])
-        self.assertEqual(5, len(doc.find(ns_uri=u'urn:默认')))
-        self.assertEqual(3, len(doc.find(ns_uri=u'urn:習俗')))
+        self.assertEqual(u'urn:default', doc.root.attributes[u'xmlns'])
+        self.assertEqual(u'urn:custom', doc.root.attributes[u'xmlns:důl'])
+        self.assertEqual(5, len(doc.find(ns_uri=u'urn:default')))
+        self.assertEqual(3, len(doc.find(ns_uri=u'urn:custom')))
         self.assertEqual(u'1', doc.find_first(u'yếutố1').attributes[u'תכונה'])
         self.assertEqual(u'tvö', doc.find_first(u'yếutố2').attributes[u'důl:עודתכונה'])
 

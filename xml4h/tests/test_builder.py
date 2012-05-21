@@ -502,11 +502,15 @@ class BaseBuilderNodesTest(object):
             xmlb.doc_xml())
 
     def test_unicode(self):
-        if isinstance(self, TestLXMLBuilder): # TODO: lxml failing unicode tests
-            self.skipTest('lxml currently failing unicode tests')
+        ns_default = u'urn:默认'
+        ns_custom = u'urn:習俗'
+        # NOTE lxml doesn't support unicode namespace URIs, so we don't test that
+        if isinstance(self, TestLXMLBuilder):
+            ns_default = 'urn:default'
+            ns_custom = 'urn:custom'
         xmlb = (
-            self.my_builder(u'جذر', ns_uri=u'urn:默认')
-                .set_ns_prefix(u'důl', u'urn:習俗')
+            self.my_builder(u'جذر', ns_uri=ns_default)
+                .set_ns_prefix(u'důl', ns_custom)
                 .build_e(u'důl:ぷㄩƦ').up()
                 .build_e(u'yếutố1')
                     .build_as({u'תכונה': '1'})
@@ -514,20 +518,20 @@ class BaseBuilderNodesTest(object):
                 .build_e(u'yếutố2')
                     .build_as({u'důl:עודתכונה': u'tvö'})
             )
-        self.assertEqual(
+        self.assertEqual((
             u'<?xml version="1.0" encoding="utf-8"?>\n'
-            u'<جذر xmlns="urn:默认" xmlns:důl="urn:習俗">\n'
+            u'<جذر xmlns="%(ns_default)s" xmlns:důl="%(ns_custom)s">\n'
             u'    <důl:ぷㄩƦ/>\n'
             u'    <yếutố1 תכונה="1"/>\n'
             u'    <yếutố2 důl:עודתכונה="tvö"/>\n'
-            u'</جذر>\n',
+            u'</جذر>\n') % {'ns_default': ns_default, 'ns_custom': ns_custom},
             xmlb.doc_xml())
         doc = xmlb.document
         self.assertEqual(u'جذر', doc.root.name)
-        self.assertEqual(u'urn:默认', doc.root.attributes[u'xmlns'])
-        self.assertEqual(u'urn:習俗', doc.root.attributes[u'xmlns:důl'])
-        self.assertEqual(3, len(doc.find(ns_uri=u'urn:默认')))
-        self.assertEqual(1, len(doc.find(ns_uri=u'urn:習俗')))
+        self.assertEqual(ns_default, doc.root.attributes[u'xmlns'])
+        self.assertEqual(ns_custom, doc.root.attributes[u'xmlns:důl'])
+        self.assertEqual(3, len(doc.find(ns_uri=ns_default)))
+        self.assertEqual(1, len(doc.find(ns_uri=ns_custom)))
         self.assertEqual(u'1', doc.find_first(u'yếutố1').attributes[u'תכונה'])
         self.assertEqual(u'tvö', doc.find_first(u'yếutố2').attributes[u'důl:עודתכונה'])
 
