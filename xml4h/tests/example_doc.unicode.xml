@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<جذر xmlns="urn:默认" xmlns:důl="urn:習俗">
+    <NSDefaultImplicit/>
+    <NSDefaultExplicit xmlns="urn:默认"/>
+    <NSCustomExplicit xmlns="urn:習俗"/>
+    <důl:NSCustomWithPrefixImplicit/>
+    <důl:NSCustomWithPrefixExplicit xmlns="urn:習俗"/>
+    <yếutố1 תכונה="1"/>
+    <yếutố2 důl:עודתכונה="tvö"/>
+</جذر>

@@ -501,6 +501,36 @@ class BaseBuilderNodesTest(object):
             '</DocRoot>\n',
             xmlb.doc_xml())
 
+    def test_unicode(self):
+        if isinstance(self, TestLXMLBuilder): # TODO: lxml failing unicode tests
+            self.skipTest('lxml currently failing unicode tests')
+        xmlb = (
+            self.my_builder(u'جذر', ns_uri=u'urn:默认')
+                .set_ns_prefix(u'důl', u'urn:習俗')
+                .build_e(u'důl:ぷㄩƦ').up()
+                .build_e(u'yếutố1')
+                    .build_as({u'תכונה': '1'})
+                    .up()
+                .build_e(u'yếutố2')
+                    .build_as({u'důl:עודתכונה': u'tvö'})
+            )
+        self.assertEqual(
+            u'<?xml version="1.0" encoding="utf-8"?>\n'
+            u'<جذر xmlns="urn:默认" xmlns:důl="urn:習俗">\n'
+            u'    <důl:ぷㄩƦ/>\n'
+            u'    <yếutố1 תכונה="1"/>\n'
+            u'    <yếutố2 důl:עודתכונה="tvö"/>\n'
+            u'</جذر>\n',
+            xmlb.doc_xml())
+        doc = xmlb.document
+        self.assertEqual(u'جذر', doc.root.name)
+        self.assertEqual(u'urn:默认', doc.root.attributes[u'xmlns'])
+        self.assertEqual(u'urn:習俗', doc.root.attributes[u'xmlns:důl'])
+        self.assertEqual(3, len(doc.find(ns_uri=u'urn:默认')))
+        self.assertEqual(1, len(doc.find(ns_uri=u'urn:習俗')))
+        self.assertEqual(u'1', doc.find_first(u'yếutố1').attributes[u'תכונה'])
+        self.assertEqual(u'tvö', doc.find_first(u'yếutố2').attributes[u'důl:עודתכונה'])
+
 
 class TestXmlDomBuilder(BaseBuilderNodesTest, unittest.TestCase):
     '''
