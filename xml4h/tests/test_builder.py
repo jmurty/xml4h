@@ -1,8 +1,6 @@
 # -*- coding: utf-8 name> -*-
 import unittest
-import re
 import xml.dom
-from functools import partial
 from StringIO import StringIO
 
 from xml4h import builder, nodes, builder_xmldom, builder_lxml
@@ -10,17 +8,15 @@ from xml4h import builder, nodes, builder_xmldom, builder_lxml
 
 class TestBuilderMethods(unittest.TestCase):
 
-    def test_create_invalid_impl(self):
-        self.assertRaises(Exception,
-            builder_xmldom, ('DocRoot',), dict(impl_name='invalid'))
-
     def test_create_minidom(self):
-        xmlb = builder_xmldom('DocRoot', impl_name='minidom')
-        self.assertIsInstance(xmlb.impl_document, xml.dom.minidom.Document)
+        xmlb = builder_xmldom('DocRoot')
+        self.assertIsInstance(
+            xmlb.anchor_element.impl_document, xml.dom.minidom.Document)
 
     def test_create_default(self):
         xmlb = builder('DocRoot')
-        self.assertIsInstance(xmlb.impl_document, xml.dom.minidom.Document)
+        self.assertIsInstance(
+            xmlb.anchor_element.impl_document, xml.dom.minidom.Document)
 
 
 class BaseBuilderNodesTest(object):
@@ -32,14 +28,14 @@ class BaseBuilderNodesTest(object):
     def test_element(self):
         xmlb = self.my_builder('DocRoot')
         # Aliases
-        self.assertEqual(xmlb.build_element, xmlb.build_elem)
-        self.assertEqual(xmlb.build_element, xmlb.build_e)
+        self.assertEqual(xmlb.element, xmlb.elem)
+        self.assertEqual(xmlb.element, xmlb.e)
         # Add elements
         xmlb = (
             self.my_builder('DocRoot')
-                .build_e('Deeper')
-                .build_e('AndDeeper')
-                .build_e('DeeperStill'))
+                .e('Deeper')
+                .e('AndDeeper')
+                .e('DeeperStill'))
         self.assertEqual(
             '<?xml version="1.0" encoding="utf-8"?>\n'
             '<DocRoot>\n'
@@ -49,69 +45,69 @@ class BaseBuilderNodesTest(object):
             '        </AndDeeper>\n'
             '    </Deeper>\n'
             '</DocRoot>\n',
-            xmlb.doc_xml())
+            xmlb.anchor_element.doc_xml())
 
     def test_root(self):
         xmlb = (
             self.my_builder('DocRoot')
-                .build_e('Deeper')
-                .build_e('AndDeeper')
-                .build_e('DeeperStill'))
+                .e('Deeper')
+                .e('AndDeeper')
+                .e('DeeperStill'))
         # Builder node is at DeeperStill element, but we can get to the root
-        self.assertEqual('DeeperStill', xmlb.name)
-        self.assertEqual('DocRoot', xmlb.root.name)
+        self.assertEqual('DeeperStill', xmlb.anchor_element.name)
+        self.assertEqual('DocRoot', xmlb.anchor_element.root.name)
 
     def test_up(self):
         xmlb = (
             self.my_builder('DocRoot')
-                .build_e('Deeper')
-                .build_e('AndDeeper')
-                .build_e('DeeperStill'))
-        self.assertEqual('DeeperStill', xmlb.name)
+                .e('Deeper')
+                .e('AndDeeper')
+                .e('DeeperStill'))
+        self.assertEqual('DeeperStill', xmlb.anchor_element.name)
 
         # Can navigate up XML DOM tree one step at a time...
-        self.assertEqual('AndDeeper', xmlb.up().name)
-        self.assertEqual('Deeper', xmlb.up().up().name)
-        self.assertEqual('DocRoot', xmlb.up().up().up().name)
+        self.assertEqual('AndDeeper', xmlb.up().anchor_element.name)
+        self.assertEqual('Deeper', xmlb.up().up().anchor_element.name)
+        self.assertEqual('DocRoot', xmlb.up().up().up().anchor_element.name)
         # ...but not past the root element
-        self.assertEqual('DocRoot', xmlb.up().up().up().up().name)
+        self.assertEqual('DocRoot', xmlb.up().up().up().up().anchor_element.name)
 
         # Can navigate up by count...
-        self.assertEqual('AndDeeper', xmlb.up().name)
-        self.assertEqual('Deeper', xmlb.up(2).name)
-        self.assertEqual('DocRoot', xmlb.up(3).name)
+        self.assertEqual('AndDeeper', xmlb.up().anchor_element.name)
+        self.assertEqual('Deeper', xmlb.up(2).anchor_element.name)
+        self.assertEqual('DocRoot', xmlb.up(3).anchor_element.name)
         # ...but not past the root element
-        self.assertEqual('DocRoot', xmlb.up(100).name)
+        self.assertEqual('DocRoot', xmlb.up(100).anchor_element.name)
 
         # Can navigate up to a given element tagname
         self.assertEqual('AndDeeper',
-            xmlb.up(to_tagname='AndDeeper').name)
+            xmlb.up(to_tagname='AndDeeper').anchor_element.name)
         self.assertEqual('Deeper',
-            xmlb.up(to_tagname='Deeper').name)
+            xmlb.up(to_tagname='Deeper').anchor_element.name)
         self.assertEqual('DocRoot',
-            xmlb.up(to_tagname='DocRoot').name)
+            xmlb.up(to_tagname='DocRoot').anchor_element.name)
         # ...but not past the root element if there is no such tagname
         self.assertEqual('DocRoot',
-            xmlb.up(to_tagname='NoSuchName').name)
+            xmlb.up(to_tagname='NoSuchName').anchor_element.name)
 
     def test_attributes(self):
         # Aliases
         xmlb = self.my_builder('DocRoot')
-        self.assertEqual(xmlb.build_attributes, xmlb.build_attrs)
-        self.assertEqual(xmlb.build_attributes, xmlb.build_as)
+        self.assertEqual(xmlb.attributes, xmlb.attrs)
+        self.assertEqual(xmlb.attributes, xmlb.a)
         # Add attributes
         xmlb = (
             self.my_builder('DocRoot')
-              .build_e('Elem1').build_as(x=1).up() # Add a single name/value pair
-              .build_e('Elem2').build_as(a='a', b='bee').up() # Add multiple
-              .build_e('Elem3').build_as([ # Add list of tuple pairs
+              .e('Elem1').attrs(x=1).up()  # Add a single name/value pair
+              .e('Elem2').attrs(a='a', b='bee').up()  # Add multiple
+              .e('Elem3').attrs([  # Add list of tuple pairs
                   ('hyphenated-name', 'v2'),
                   ]).up()
-              .build_e('Elem4').build_as({ # Add a dictionary
+              .e('Elem4').attrs({  # Add a dictionary
                   'twelve': 3 * 4,
                   }).up()
               # Attributes given in first arg trump same name in kwargs
-              .build_e('Elem5').build_as(
+              .e('Elem5').attrs(
                   {'test': 'value-in-first-arg'},
                   test='value-in-kwargs').up()
             )
@@ -124,16 +120,18 @@ class BaseBuilderNodesTest(object):
             '    <Elem4 twelve="12"/>\n'
             '    <Elem5 test="value-in-first-arg"/>\n'
             '</DocRoot>\n',
-            xmlb.doc_xml())
+            xmlb.anchor_element.doc_xml())
 
     def test_xml(self):
         xmlb = (
             self.my_builder('DocRoot')
-                .build_e('Elem1').up()
-                .build_e('Elem2')
-                    .build_e('Elem3').up())
+                .e('Elem1').up()
+                .e('Elem2')
+                    .e('Elem3').up())
         # xml() method outputs current node content and descendents only
-        self.assertEqual('<Elem2>\n    <Elem3/>\n</Elem2>', xmlb.xml())
+        self.assertEqual(
+            '<Elem2>\n    <Elem3/>\n</Elem2>',
+            xmlb.anchor_element.xml())
         # Default string output is utf-8, and pretty-printed
         xml = (
             '<?xml version="1.0" encoding="utf-8"?>\n'
@@ -144,7 +142,7 @@ class BaseBuilderNodesTest(object):
             '    </Elem2>\n'
             '</DocRoot>\n'
             )
-        self.assertEqual(xml, xmlb.doc_xml())
+        self.assertEqual(xml, xmlb.anchor_element.doc_xml())
         # Mix it up a bit
         self.assertEqual(
             '<DocRoot>\n'
@@ -153,7 +151,7 @@ class BaseBuilderNodesTest(object):
             '        <Elem3/>\n'
             '    </Elem2>\n'
             '</DocRoot>\n',
-            xmlb.doc_xml(omit_declaration=True))
+            xmlb.anchor_element.doc_xml(omit_declaration=True))
         self.assertEqual(
             '<?xml version="1.0" encoding="latin1"?>\n'
             '<DocRoot>\n'
@@ -162,7 +160,7 @@ class BaseBuilderNodesTest(object):
             '    <Elem3/>\n'
             '  </Elem2>\n'
             '</DocRoot>\n',
-            xmlb.doc_xml(encoding='latin1', indent=2))
+            xmlb.anchor_element.doc_xml(encoding='latin1', indent=2))
         self.assertEqual(
             '<?xml version="1.0"?>\t'
             '<DocRoot>\t'
@@ -171,16 +169,16 @@ class BaseBuilderNodesTest(object):
             '                <Elem3/>\t'
             '        </Elem2>\t'
             '</DocRoot>\t',
-            xmlb.doc_xml(encoding=None, indent=8, newline='\t'))
+            xmlb.anchor_element.doc_xml(encoding=None, indent=8, newline='\t'))
 
     def test_write(self):
         xmlb = (
             self.my_builder('DocRoot')
-                .build_e('Elem1').up()
-                .build_e('Elem2'))
+                .e('Elem1').up()
+                .e('Elem2'))
         # write() method outputs only current node and descendents
         writer = StringIO()
-        xmlb.write(writer)
+        xmlb.anchor_element.write(writer)
         self.assertEqual('<Elem2/>', writer.getvalue())
         # Default write output is utf-8, with no pretty-printing
         xml = (
@@ -191,11 +189,11 @@ class BaseBuilderNodesTest(object):
             '</DocRoot>'
             )
         writer = StringIO()
-        xmlb.doc_write(writer)
+        xmlb.anchor_element.doc_write(writer)
         self.assertEqual(xml, writer.getvalue())
         # Mix it up a bit
         writer = StringIO()
-        xmlb.doc_write(writer, omit_declaration=True)
+        xmlb.anchor_element.doc_write(writer, omit_declaration=True)
         self.assertEqual(
             '<DocRoot>'
                 '<Elem1/>'
@@ -203,7 +201,7 @@ class BaseBuilderNodesTest(object):
             '</DocRoot>',
             writer.getvalue())
         writer = StringIO()
-        xmlb.doc_write(writer, encoding='latin1', indent=2)
+        xmlb.anchor_element.doc_write(writer, encoding='latin1', indent=2)
         self.assertEqual(
             '<?xml version="1.0" encoding="latin1"?>'
             '<DocRoot>'
@@ -212,7 +210,8 @@ class BaseBuilderNodesTest(object):
             '</DocRoot>',
             writer.getvalue())
         writer = StringIO()
-        xmlb.doc_write(writer, encoding=None, indent=8, newline='\t')
+        xmlb.anchor_element.doc_write(writer,
+            encoding=None, indent=8, newline='\t')
         self.assertEqual(
             '<?xml version="1.0"?>\t'
             '<DocRoot>\t'
@@ -224,12 +223,12 @@ class BaseBuilderNodesTest(object):
     def test_text(self):
         # Aliases
         xmlb = self.my_builder('DocRoot')
-        self.assertEqual(xmlb.build_text, xmlb.build_t)
+        self.assertEqual(xmlb.text, xmlb.t)
         # Add text values to elements
         xmlb = (
             self.my_builder('DocRoot')
-              .build_e('Elem1').build_t('A text value').up()
-              .build_e('Elem2').build_t('Seven equals %s' % 7).up()
+              .e('Elem1').t('A text value').up()
+              .e('Elem2').t('Seven equals %s' % 7).up()
             )
         self.assertEqual(
             '<?xml version="1.0" encoding="utf-8"?>\n'
@@ -237,17 +236,17 @@ class BaseBuilderNodesTest(object):
             '    <Elem1>A text value</Elem1>\n'
             '    <Elem2>Seven equals 7</Elem2>\n'
             '</DocRoot>\n',
-            xmlb.doc_xml())
+            xmlb.anchor_element.doc_xml())
         # Multiple text nodes, and text node next to nested element
         xmlb = (
             self.my_builder('DocRoot')
-              .build_e('Elem1')
-                .build_t('First text value')
-                .build_t('Second text value').up()
-              .build_e('Elem2')
-                .build_t('Text')
-                .build_e('Nested')
-                .build_t('Text in nested').up()
+              .e('Elem1')
+                .t('First text value')
+                .t('Second text value').up()
+              .e('Elem2')
+                .t('Text')
+                .e('Nested')
+                .t('Text in nested').up()
             )
         self.assertEqual(
             '<?xml version="1.0" encoding="utf-8"?>\n'
@@ -257,47 +256,47 @@ class BaseBuilderNodesTest(object):
             '        <Nested>Text in nested</Nested>\n'
             '    </Elem2>\n'
             '</DocRoot>\n',
-            xmlb.doc_xml())
+            xmlb.anchor_element.doc_xml())
 
     def test_comment(self):
         # Aliases
         xmlb = self.my_builder('DocRoot')
-        self.assertEqual(xmlb.build_comment, xmlb.build_c)
+        self.assertEqual(xmlb.comment, xmlb.c)
         # Add text values to elements
         xmlb = (
             self.my_builder('DocRoot')
-                .build_e('Elem1').build_c('Here is my comment').up()
+                .e('Elem1').c('Here is my comment').up()
             )
         self.assertEqual(
             '<?xml version="1.0" encoding="utf-8"?>\n'
             '<DocRoot>\n'
             '    <Elem1><!--Here is my comment--></Elem1>\n'
             '</DocRoot>\n',
-            xmlb.doc_xml())
+            xmlb.anchor_element.doc_xml())
 
     def test_instruction(self):
         # Aliases
         xmlb = self.my_builder('DocRoot')
         self.assertEqual(
-            xmlb.build_instruction, xmlb.build_processing_instruction)
-        self.assertEqual(xmlb.build_instruction, xmlb.build_i)
+            xmlb.instruction, xmlb.processing_instruction)
+        self.assertEqual(xmlb.instruction, xmlb.i)
         # Add text values to elements
         xmlb = (
-            self.my_builder('DocRoot').build_i('inst-target', 'inst-data')
+            self.my_builder('DocRoot').i('inst-target', 'inst-data')
             )
         self.assertEqual(
             '<?xml version="1.0" encoding="utf-8"?>\n'
             '<DocRoot>\n'
             '    <?inst-target inst-data?>\n'
             '</DocRoot>\n',
-            xmlb.doc_xml())
+            xmlb.anchor_element.doc_xml())
 
     def test_namespace(self):
         # Define namespaces on elements after creation
         xmlb = (
             self.my_builder('DocRoot', ns_uri='urn:default')
-                .build_e('Elem1', ns_uri='urn:elem1').up()
-                .build_e('Elem2').set_ns_prefix('myns', 'urn:elem2').up()
+                .e('Elem1', ns_uri='urn:elem1').up()
+                .e('Elem2').ns_prefix('myns', 'urn:elem2').up()
             )
         self.assertEqual(
             '<?xml version="1.0" encoding="utf-8"?>\n'
@@ -305,38 +304,38 @@ class BaseBuilderNodesTest(object):
             '    <Elem1 xmlns="urn:elem1"/>\n'
             '    <Elem2 xmlns:myns="urn:elem2"/>\n'
             '</DocRoot>\n',
-            xmlb.doc_xml())
+            xmlb.anchor_element.doc_xml())
         # Test namespaces work as expected when searching/traversing DOM
         self.assertEqual(1, len(xmlb.find(name='Elem1')))  # Ignore namespace
         self.assertEqual(1, len(xmlb.find(name='Elem1', ns_uri='urn:elem1')))
         self.assertEqual(1, len(xmlb.doc_find(ns_uri='urn:elem1')))
         self.assertEqual(0, len(xmlb.find(name='Elem1', ns_uri='urn:wrong')))
         self.assertEqual(['Elem1'],
-            [n.name for n in xmlb.children_in_ns('urn:elem1')])
+            [n.name for n in xmlb.anchor_element.children_in_ns('urn:elem1')])
         self.assertEqual(['DocRoot', 'Elem2'],
             [n.name for n in xmlb.doc_find(ns_uri='urn:default')])
         self.assertEqual(['Elem2'],
-            [n.name for n in xmlb.children_in_ns('urn:default')])
+            [n.name for n in xmlb.anchor_element.children_in_ns('urn:default')])
         # Set namespaces of elements and attributes on creation
         xmlb = (
             self.my_builder('DocRoot', ns_uri='urn:default')
-                .set_ns_prefix('myns', 'urn:custom')
+                .ns_prefix('myns', 'urn:custom')
                 # Elements in default namespace
-                .build_e('NSDefaultImplicit').up()
-                .build_e('NSDefaultExplicit', ns_uri='urn:default').up()
+                .e('NSDefaultImplicit').up()
+                .e('NSDefaultExplicit', ns_uri='urn:default').up()
                 # Elements in custom namespace
-                .build_e('NSCustomExplicit', ns_uri='urn:custom').up()
-                .build_e('myns:NSCustomWithPrefixImplicit').up()
-                .build_e('myns:NSCustomWithPrefixExplicit',
+                .e('NSCustomExplicit', ns_uri='urn:custom').up()
+                .e('myns:NSCustomWithPrefixImplicit').up()
+                .e('myns:NSCustomWithPrefixExplicit',
                     ns_uri='urn:custom').up()
                 # Attributes in namespace
-                .build_e('Attrs1')
-                    .build_as({'default-ns-implicit': 1})
-                    .build_as({'default-ns-explicit': 1},
+                .e('Attrs1')
+                    .attrs({'default-ns-implicit': 1})
+                    .attrs({'default-ns-explicit': 1},
                         ns_uri='urn:default').up()
-                .build_e('Attrs2')
-                    .build_as({'myns:custom-ns-prefix-implicit': 1})
-                    .build_as({'myns:custom-ns-prefix-explicit': 1},
+                .e('Attrs2')
+                    .attrs({'myns:custom-ns-prefix-implicit': 1})
+                    .attrs({'myns:custom-ns-prefix-explicit': 1},
                         ns_uri='urn:custom')
             )
         xml = (
@@ -355,25 +354,30 @@ class BaseBuilderNodesTest(object):
             '</DocRoot>\n'
             % (isinstance(self, TestLXMLBuilder) and 'myns:' or ''))
             # TODO: lxml outputs prefix in more situations than minidom
-        self.assertEqual(xml, xmlb.doc_xml())
+        self.assertEqual(xml, xmlb.anchor_element.doc_xml())
         # Test namespaces work as expected when searching/traversing DOM
         self.assertEqual(
-            ['DocRoot', 'NSDefaultImplicit', 'NSDefaultExplicit', 'Attrs1', 'Attrs2'],
+            ['DocRoot', 'NSDefaultImplicit', 'NSDefaultExplicit',
+             'Attrs1', 'Attrs2'],
             [n.name for n in xmlb.doc_find(ns_uri='urn:default')])
-        if isinstance(self, TestLXMLBuilder): # TODO: Differing prefix output
+        if isinstance(self, TestLXMLBuilder):  # TODO: Differing prefix output
             self.assertEqual(
-                ['myns:NSCustomExplicit', 'myns:NSCustomWithPrefixImplicit', 'myns:NSCustomWithPrefixExplicit'],
+                ['myns:NSCustomExplicit', 'myns:NSCustomWithPrefixImplicit',
+                 'myns:NSCustomWithPrefixExplicit'],
                 [n.name for n in xmlb.doc_find(ns_uri='urn:custom')])
         else:
             self.assertEqual(
-                ['NSCustomExplicit', 'myns:NSCustomWithPrefixImplicit', 'myns:NSCustomWithPrefixExplicit'],
+                ['NSCustomExplicit', 'myns:NSCustomWithPrefixImplicit',
+                 'myns:NSCustomWithPrefixExplicit'],
                 [n.name for n in xmlb.doc_find(ns_uri='urn:custom')])
         self.assertEqual(
-            ['NSCustomExplicit', 'NSCustomWithPrefixImplicit', 'NSCustomWithPrefixExplicit'],
+            ['NSCustomExplicit', 'NSCustomWithPrefixImplicit',
+             'NSCustomWithPrefixExplicit'],
             [n.local_name for n in xmlb.doc_find(ns_uri='urn:custom')])
         # Check attribute namespaces
         self.assertEqual([nodes.Node.XMLNS_URI, nodes.Node.XMLNS_URI],
-            [n.namespace_uri for n in xmlb.root.attribute_nodes])
+            [n.namespace_uri
+             for n in xmlb.anchor_element.root.attribute_nodes])
         attrs1_elem = xmlb.document.find_first('Attrs1')
         self.assertEqual([None, None],
             [n.namespace_uri for n in attrs1_elem.attribute_nodes])
@@ -385,27 +389,33 @@ class BaseBuilderNodesTest(object):
         # Define namespaces on elements using prefixes
         xmlb = (
             self.my_builder('DocRoot', ns_uri='urn:default')
-                .set_ns_prefix('testns', 'urn:test')
-                .build_e('testns:Elem1').up()  # Standard XML-style prefix name
-                .build_e('{urn:test}Elem2').up()  # ElementTree-style prefix URI
-                .build_e('Attrs').build_as({
+                .ns_prefix('testns', 'urn:test')
+                .e('testns:Elem1').up()  # Standard XML-style prefix name
+                .e('{urn:test}Elem2').up()  # ElementTree-style prefix URI
+                .e('Attrs').attrs({
                     'testns:attrib1': 'value1',
                     '{urn:test}attrib2': 'value2'})
             )
-        root = xmlb.root
+        root = xmlb.anchor_element.root
         self.assertEqual('testns', root.find_first(name='Elem1').prefix)
         self.assertEqual('testns', root.find_first(name='Elem2').prefix)
-        self.assertEqual('urn:test', root.find_first(name='Elem1').namespace_uri)
-        self.assertEqual('urn:test', root.find_first(name='Elem2').namespace_uri)
+        self.assertEqual(
+            'urn:test', root.find_first(name='Elem1').namespace_uri)
+        self.assertEqual(
+            'urn:test', root.find_first(name='Elem2').namespace_uri)
         self.assertEqual('testns:Elem1', root.find_first(name='Elem1').name)
         self.assertEqual('testns:Elem2', root.find_first(name='Elem2').name)
         attrs_elem = root.find_first(name='Attrs')
         self.assertEqual('Attrs', attrs_elem.name)
         # TODO Allow attrib lookups without namespace prefix?
-        self.assertEqual('testns', attrs_elem.attributes.prefix('testns:attrib1'))
-        self.assertEqual('testns', attrs_elem.attributes.prefix('testns:attrib2'))
-        self.assertEqual('urn:test', attrs_elem.attributes.namespace_uri('testns:attrib1'))
-        self.assertEqual('urn:test', attrs_elem.attributes.namespace_uri('testns:attrib2'))
+        self.assertEqual(
+            'testns', attrs_elem.attributes.prefix('testns:attrib1'))
+        self.assertEqual(
+            'testns', attrs_elem.attributes.prefix('testns:attrib2'))
+        self.assertEqual(
+            'urn:test', attrs_elem.attributes.namespace_uri('testns:attrib1'))
+        self.assertEqual(
+            'urn:test', attrs_elem.attributes.namespace_uri('testns:attrib2'))
         self.assertEqual(
             '<?xml version="1.0" encoding="utf-8"?>\n'
             '<DocRoot xmlns="urn:default" xmlns:testns="urn:test">\n'
@@ -413,49 +423,66 @@ class BaseBuilderNodesTest(object):
             '    <testns:Elem2/>\n'
             '    <Attrs testns:attrib1="value1" testns:attrib2="value2"/>\n'
             '</DocRoot>\n',
-            xmlb.doc_xml())
+            xmlb.anchor_element.doc_xml())
         # Attempts to use undefined namespace prefixes will fail
         xmlb = self.my_builder('DocRoot', ns_uri='urn:default')
         self.assertRaises(Exception,
-            xmlb.build_e, ['missingns:Elem1'] )
+            xmlb.e, ['missingns:Elem1'])
         self.assertRaises(Exception,
-            xmlb.build_as, [{'missingns:attrib1': 'value1'}])
+            xmlb.attrs, [{'missingns:attrib1': 'value1'}])
         # Element with literal namespace defn will use the ns as its default
         xmlb = self.my_builder('DocRoot', ns_uri='urn:default')
-        xmlb.build_e('{urn:missing}Elem1')
-        self.assertEqual(None, xmlb.root.find_first(name='Elem1').prefix)
-        self.assertEqual('urn:missing', xmlb.root.find_first(name='Elem1').namespace_uri)
-        self.assertEqual('urn:missing', xmlb.root.find_first(name='Elem1').attributes['xmlns'])
+        xmlb.e('{urn:missing}Elem1')
+        self.assertEqual(
+            None, xmlb.root.find_first(name='Elem1').prefix)
+        self.assertEqual(
+            'urn:missing',
+            xmlb.root.find_first(name='Elem1').namespace_uri)
+        self.assertEqual(
+            'urn:missing',
+            xmlb.root.find_first(name='Elem1').attributes['xmlns'])
         # Automatically define prefix for attribute with literal namespace
-        xmlb.build_as({'{urn:missing2}attrib1': 'value2'})
-        self.assertEqual('autoprefix0', xmlb.root.attributes.prefix('autoprefix0:attrib1'))
-        self.assertEqual('urn:missing2', xmlb.root.attributes.namespace_uri('autoprefix0:attrib1'))
-        self.assertEqual('urn:missing2', xmlb.root.attributes['xmlns:autoprefix0'])
-        xmlb.build_as({'{urn:missing3}attrib2': 'value3'})
-        self.assertEqual('autoprefix1', xmlb.root.attributes.prefix('autoprefix1:attrib2'))
-        self.assertEqual('urn:missing3', xmlb.root.attributes.namespace_uri('autoprefix1:attrib2'))
-        self.assertEqual('urn:missing3', xmlb.root.attributes['xmlns:autoprefix1'])
+        xmlb.attrs({'{urn:missing2}attrib1': 'value2'})
+        self.assertEqual(
+            'autoprefix0',
+            xmlb.root.attributes.prefix('autoprefix0:attrib1'))
+        self.assertEqual(
+            'urn:missing2',
+            xmlb.root.attributes.namespace_uri('autoprefix0:attrib1'))
+        self.assertEqual(
+            'urn:missing2',
+            xmlb.root.attributes['xmlns:autoprefix0'])
+        xmlb.attrs({'{urn:missing3}attrib2': 'value3'})
+        self.assertEqual(
+            'autoprefix1',
+            xmlb.root.attributes.prefix('autoprefix1:attrib2'))
+        self.assertEqual(
+            'urn:missing3',
+            xmlb.root.attributes.namespace_uri('autoprefix1:attrib2'))
+        self.assertEqual(
+            'urn:missing3',
+            xmlb.root.attributes['xmlns:autoprefix1'])
 
     def test_cdata(self):
         # Aliases
         xmlb = self.my_builder('DocRoot')
-        self.assertEqual(xmlb.build_cdata, xmlb.build_data)
-        self.assertEqual(xmlb.build_cdata, xmlb.build_d)
+        self.assertEqual(xmlb.cdata, xmlb.data)
+        self.assertEqual(xmlb.cdata, xmlb.d)
         # Add text values to elements
         xmlb = (
             self.my_builder('DocRoot')
-                .build_e('Elem1').build_t('<content/> as text').up()
-                .build_e('Elem2').build_d('<content/> as cdata').up()
+                .e('Elem1').t('<content/> as text').up()
+                .e('Elem2').d('<content/> as cdata').up()
             )
         if isinstance(self, TestLXMLBuilder):
-            # TODO: lxml library does not distinguish between plain versus cdata text values?
+            # TODO: lxml library does not support real cdata?
             self.assertEqual(
                 '<?xml version="1.0" encoding="utf-8"?>\n'
                 '<DocRoot>\n'
                 '    <Elem1>&lt;content/&gt; as text</Elem1>\n'
                 '    <Elem2>&lt;content/&gt; as cdata</Elem2>\n'
                 '</DocRoot>\n',
-                xmlb.doc_xml())
+                xmlb.anchor_element.doc_xml())
         else:
             self.assertEqual(
                 '<?xml version="1.0" encoding="utf-8"?>\n'
@@ -463,18 +490,18 @@ class BaseBuilderNodesTest(object):
                 '    <Elem1>&lt;content/&gt; as text</Elem1>\n'
                 '    <Elem2><![CDATA[<content/> as cdata]]></Elem2>\n'
                 '</DocRoot>\n',
-                xmlb.doc_xml())
+                xmlb.anchor_element.doc_xml())
 
     def test_element_with_extra_kwargs(self):
         xmlb = (
             self.my_builder('DocRoot')
                 # Include attributes
-                .build_e('Elem', attributes=[('x', 1)]).up()
-                .build_e('Elem', attributes={'my-attribute': 'value'}).up()
+                .e('Elem', attributes=[('x', 1)]).up()
+                .e('Elem', attributes={'my-attribute': 'value'}).up()
                 # Include text
-                .build_e('Elem', text='Text value').up()
+                .e('Elem', text='Text value').up()
                 # Include attributes and text
-                .build_e('Elem', attributes={'x': 1}, text='More text').up()
+                .e('Elem', attributes={'x': 1}, text='More text').up()
             )
         self.assertEqual(
             '<?xml version="1.0" encoding="utf-8"?>\n'
@@ -484,13 +511,13 @@ class BaseBuilderNodesTest(object):
             '    <Elem>Text value</Elem>\n'
             '    <Elem x="1">More text</Elem>\n'
             '</DocRoot>\n',
-            xmlb.doc_xml())
+            xmlb.anchor_element.doc_xml())
         # Insert a new element before another
         xmlb = (
             self.my_builder('DocRoot')
-                .build_e('FinalElement')
-                .build_e('PenultimateElement', before_this_element=True)
-                .build_e('ThirdLastElement', before_this_element=True)
+                .e('FinalElement')
+                .e('PenultimateElement', before_this_element=True)
+                .e('ThirdLastElement', before_this_element=True)
             )
         self.assertEqual(
             '<?xml version="1.0" encoding="utf-8"?>\n'
@@ -499,24 +526,24 @@ class BaseBuilderNodesTest(object):
             '    <PenultimateElement/>\n'
             '    <FinalElement/>\n'
             '</DocRoot>\n',
-            xmlb.doc_xml())
+            xmlb.anchor_element.doc_xml())
 
     def test_unicode(self):
         ns_default = u'urn:默认'
         ns_custom = u'urn:習俗'
-        # NOTE lxml doesn't support unicode namespace URIs, so we don't test that
+        # NOTE lxml doesn't support unicode namespace URIs
         if isinstance(self, TestLXMLBuilder):
             ns_default = 'urn:default'
             ns_custom = 'urn:custom'
         xmlb = (
             self.my_builder(u'جذر', ns_uri=ns_default)
-                .set_ns_prefix(u'důl', ns_custom)
-                .build_e(u'důl:ぷㄩƦ').up()
-                .build_e(u'yếutố1')
-                    .build_as({u'תכונה': '1'})
+                .ns_prefix(u'důl', ns_custom)
+                .e(u'důl:ぷㄩƦ').up()
+                .e(u'yếutố1')
+                    .attrs({u'תכונה': '1'})
                     .up()
-                .build_e(u'yếutố2')
-                    .build_as({u'důl:עודתכונה': u'tvö'})
+                .e(u'yếutố2')
+                    .attrs({u'důl:עודתכונה': u'tvö'})
             )
         self.assertEqual((
             u'<?xml version="1.0" encoding="utf-8"?>\n'
@@ -525,7 +552,7 @@ class BaseBuilderNodesTest(object):
             u'    <yếutố1 תכונה="1"/>\n'
             u'    <yếutố2 důl:עודתכונה="tvö"/>\n'
             u'</جذر>\n') % {'ns_default': ns_default, 'ns_custom': ns_custom},
-            xmlb.doc_xml())
+            xmlb.anchor_element.doc_xml())
         doc = xmlb.document
         self.assertEqual(u'جذر', doc.root.name)
         self.assertEqual(ns_default, doc.root.attributes[u'xmlns'])
@@ -533,7 +560,8 @@ class BaseBuilderNodesTest(object):
         self.assertEqual(3, len(doc.find(ns_uri=ns_default)))
         self.assertEqual(1, len(doc.find(ns_uri=ns_custom)))
         self.assertEqual(u'1', doc.find_first(u'yếutố1').attributes[u'תכונה'])
-        self.assertEqual(u'tvö', doc.find_first(u'yếutố2').attributes[u'důl:עודתכונה'])
+        self.assertEqual(u'tvö',
+            doc.find_first(u'yếutố2').attributes[u'důl:עודתכונה'])
 
 
 class TestXmlDomBuilder(BaseBuilderNodesTest, unittest.TestCase):
@@ -544,7 +572,7 @@ class TestXmlDomBuilder(BaseBuilderNodesTest, unittest.TestCase):
 
     @property
     def my_builder(self):
-        return partial(builder_xmldom, impl_name='minidom')
+        return builder_xmldom
 
 
 class TestLXMLBuilder(BaseBuilderNodesTest, unittest.TestCase):
@@ -556,4 +584,3 @@ class TestLXMLBuilder(BaseBuilderNodesTest, unittest.TestCase):
     @property
     def my_builder(self):
         return builder_lxml
-

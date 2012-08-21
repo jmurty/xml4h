@@ -41,6 +41,7 @@ class Node(object):
 
     @property
     def document(self):
+        """Return the root Document of the document containing this node"""
         if self.is_document:
             return self
         return self.adapter.wrap_document(self.adapter.impl_document)
@@ -220,6 +221,10 @@ class Node(object):
             destroy_node=True)
 
     def find(self, name=None, ns_uri=None, first_only=False):
+        """
+        Return a list of Element node descendents of this node that match
+        the given constraints.
+        """
         if name is None:
             name = '*'  # Match all element names
         if ns_uri is None:
@@ -238,6 +243,10 @@ class Node(object):
         return self.find(name=name, ns_uri=ns_uri, first_only=True)
 
     def doc_find(self, name=None, ns_uri=None, first_only=False):
+        """
+        Return a list of all Element nodes in the document that match
+        the given constraints.
+        """
         return self.document.find(name=name, ns_uri=ns_uri,
             first_only=first_only)
 
@@ -257,6 +266,9 @@ class Node(object):
 
     def xml(self, encoding='utf-8', indent=4, newline='\n',
             quote_char='"', omit_declaration=False, _depth=0):
+        """
+        Return XML document as a string
+        """
         writer = StringIO()
         if encoding is not None:
             codecs.getwriter(encoding)(writer)
@@ -396,6 +408,7 @@ class Element(_NameValueNode):
                     attr_dict[n] = v
             else:
                 raise Exception('Attribute data must be a dictionary or list')
+
         # Always process 'xmlns' namespace definitions first, in case other
         # attributes belong to a newly-defined namespace
         def _xmlns_first(x, y):
@@ -478,7 +491,6 @@ class Element(_NameValueNode):
 
     def set_ns_prefix(self, prefix, ns_uri):
         self._add_ns_prefix_attr(self.impl_node, prefix, ns_uri)
-        return self
 
     def add_element(self, tagname, ns_uri=None, prefix=None,
             attributes=None, text=None, before_this_element=False):
@@ -499,31 +511,31 @@ class Element(_NameValueNode):
                 # keyword-parameter namespace
                 node_ns_uri = ns_uri
         # Create element
-        elem = self.adapter.new_impl_element(
+        child_elem = self.adapter.new_impl_element(
             qname, node_ns_uri, parent=self.impl_node)
         # If element's default namespace was defined by literal uri prefix,
         # create corresponding xmlns attribute for element...
         if not prefix and '}' in tagname:
-            self._set_element_attributes(elem,
+            self._set_element_attributes(child_elem,
                 {'xmlns': node_ns_uri}, ns_uri=self.XMLNS_URI)
         # ...otherwise define keyword-defined namespace as the default, if any
         elif ns_uri is not None:
-            self._set_element_attributes(elem,
+            self._set_element_attributes(child_elem,
                 {'xmlns': ns_uri}, ns_uri=self.XMLNS_URI)
         # Create subordinate nodes
         if attributes is not None:
-            self._set_element_attributes(elem, attr_obj=attributes)
+            self._set_element_attributes(child_elem, attr_obj=attributes)
         if text is not None:
-            self._add_text(elem, text)
+            self._add_text(child_elem, text)
         # Add new element to its parent before a given node...
         if before_this_element:
             self.adapter.add_node_child(
                 self.adapter.get_node_parent(self.impl_node),
-                elem, before_sibling=self.impl_node)
+                child_elem, before_sibling=self.impl_node)
         # ...or in the default position, appended after existing nodes
         else:
-            self.adapter.add_node_child(self.impl_node, elem)
-        return elem
+            self.adapter.add_node_child(self.impl_node, child_elem)
+        return self.adapter.wrap_node(child_elem, self.adapter.impl_document)
 
     def _add_text(self, element, text):
         text_node = self.adapter.new_impl_text(text)
@@ -552,80 +564,6 @@ class Element(_NameValueNode):
 
     def add_cdata(self, data):
         self._add_cdata(self.impl_node, data)
-
-    ###########################
-    # Element builder methods #
-    ###########################
-
-    def up(self, count=1, to_tagname=None):
-        elem = self.impl_node
-        up_count = 0
-        while True:
-            # Don't go up beyond the document root
-            if (self.adapter.get_node_parent(elem) is None
-                or self.adapter.get_node_parent(elem) == self.impl_document):
-
-                return self.adapter.wrap_node(
-                    self.adapter.impl_root_element,
-                    self.adapter.impl_document)
-            elem = self.adapter.get_node_parent(elem)
-            if to_tagname is None:
-                up_count += 1
-                if up_count >= count:
-                    break
-            else:
-                if self.adapter.get_node_name(elem) == to_tagname:
-                    break
-        return self.adapter.wrap_node(elem, self.adapter.impl_document)
-
-    def build_element(self, tagname, ns_uri=None, prefix=None,
-            attributes=None, text=None, before_this_element=False):
-        impl_elem = self.add_element(tagname, ns_uri=ns_uri, prefix=prefix,
-            attributes=attributes, text=text,
-            before_this_element=before_this_element)
-        return self.adapter.wrap_node(
-            impl_elem, self.adapter.impl_document)
-
-    build_elem = build_element  # Alias
-
-    build_e = build_element  # Alias
-
-    def build_attributes(self, attr_obj=None, ns_uri=None, **attr_dict):
-        self._set_element_attributes(self.impl_node,
-            attr_obj=attr_obj, ns_uri=ns_uri, **attr_dict)
-        return self
-
-    build_attrs = build_attributes  # Alias
-
-    build_as = build_attributes  # Alias
-
-    def build_text(self, text):
-        self.add_text(text)
-        return self
-
-    build_t = build_text  # Alias
-
-    def build_comment(self, text):
-        self.add_comment(text)
-        return self
-
-    build_c = build_comment  # Alias
-
-    def build_instruction(self, target, data):
-        self.add_instruction(target, data)
-        return self
-
-    build_processing_instruction = build_instruction  # Alias
-
-    build_i = build_instruction  # Alias
-
-    def build_cdata(self, text):
-        self.add_cdata(text)
-        return self
-
-    build_data = build_cdata  # Alias
-
-    build_d = build_cdata  # Alias
 
 
 class AttributeDict(object):
@@ -698,4 +636,3 @@ class AttributeDict(object):
     @property
     def impl_attributes(self):
         return self.adapter.get_node_attributes(self.impl_element)
-

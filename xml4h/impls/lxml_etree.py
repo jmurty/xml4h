@@ -262,6 +262,7 @@ class LXMLAdapter(_XmlImplAdapter):
                 parent.text = parent.text + child.text
             else:
                 parent.text = child.text
+            return None
         else:
             if before_sibling is not None:
                 offset = 0
@@ -272,6 +273,7 @@ class LXMLAdapter(_XmlImplAdapter):
                 parent.insert(offset, child)
             else:
                 parent.append(child)
+            return child
 
     def remove_node_child(self, parent, child, destroy_node=True):
         if isinstance(child, LXMLText):

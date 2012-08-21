@@ -8,11 +8,11 @@ class XmlDomImplAdapter(_XmlImplAdapter):
 
     @classmethod
     def new_impl_document(self, root_tagname, ns_uri=None,
-            doctype=None, impl_name=None, impl_features=None):
+            doctype=None, impl_features=None):
         # Create DOM implementation factory
         if impl_features is None:
             impl_features = []
-        factory = xml.dom.getDOMImplementation(impl_name, impl_features)
+        factory = xml.dom.getDOMImplementation('minidom', impl_features)
         # Create Document from factory
         doc = factory.createDocument(ns_uri, root_tagname, doctype)
         return doc
