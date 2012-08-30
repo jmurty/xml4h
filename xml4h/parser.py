@@ -1,6 +1,6 @@
 from StringIO import StringIO
 
-from xml4h.impls.xml_dom import XmlDomImplAdapter
+from xml4h.impls.xml_dom_minidom import XmlDomImplAdapter
 from xml4h.impls.lxml_etree import LXMLAdapter
 
 
@@ -8,14 +8,15 @@ def parse_string_xmldom(xml_str, ignore_whitespace_text_nodes=True):
     string_io = StringIO(xml_str)
     return parse_file_xmldom(string_io, ignore_whitespace_text_nodes)
 
+
 def parse_file_xmldom(xml_file, ignore_whitespace_text_nodes=True):
     from xml.dom.minidom import parse
     impl_doc = parse(xml_file)
-    from xml4h.impls.xml_dom import XmlDomImplAdapter
     wrapped_doc = XmlDomImplAdapter.wrap_document(impl_doc)
     if ignore_whitespace_text_nodes:
         _ignore_whitespace_text_nodes(wrapped_doc)
     return wrapped_doc
+
 
 def parse_string_lxml(xml_str, ignore_whitespace_text_nodes=True):
     from lxml import etree
@@ -24,6 +25,7 @@ def parse_string_lxml(xml_str, ignore_whitespace_text_nodes=True):
     if ignore_whitespace_text_nodes:
         _ignore_whitespace_text_nodes(wrapped_doc)
     return wrapped_doc
+
 
 def parse_file_lxml(xml_file, ignore_whitespace_text_nodes=True):
     from lxml import etree

@@ -1,7 +1,7 @@
 import unittest
 
 from xml4h import nodes
-from xml4h.impls.xml_dom import XmlDomImplAdapter
+from xml4h.impls.xml_dom_minidom import XmlDomImplAdapter
 from xml4h.impls.lxml_etree import LXMLAdapter, LXMLText
 
 

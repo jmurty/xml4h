@@ -1,5 +1,5 @@
 from xml4h.nodes import Element
-from xml4h.impls.xml_dom import XmlDomImplAdapter as minidom_adapter
+from xml4h.impls.xml_dom_minidom import XmlDomImplAdapter as minidom_adapter
 
 
 def builder(root_tagname, ns_uri=None, adapter=minidom_adapter):
