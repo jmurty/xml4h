@@ -35,11 +35,11 @@ def parse_file_lxml(xml_file, ignore_whitespace_text_nodes=True):
 
 
 def _ignore_whitespace_text_nodes(wrapped_node):
-    '''
+    """
     Find and delete in node and descendents any text nodes that contain
     nothing but whitespace. Useful for cleaning up excess text nodes
     in a document DOM after parsing a pretty-printed XML document.
-    '''
+    """
     for child in wrapped_node.children:
         if child.is_text and child.value.strip() == '':
             child.delete()

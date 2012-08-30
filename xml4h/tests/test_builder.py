@@ -565,10 +565,10 @@ class BaseBuilderNodesTest(object):
 
 
 class TestXmlDomBuilder(BaseBuilderNodesTest, unittest.TestCase):
-    '''
+    """
     Tests building with the standard library xml.dom module, or with any
     library that augments/clobbers this module.
-    '''
+    """
 
     @property
     def my_builder(self):
@@ -576,10 +576,10 @@ class TestXmlDomBuilder(BaseBuilderNodesTest, unittest.TestCase):
 
 
 class TestLXMLBuilder(BaseBuilderNodesTest, unittest.TestCase):
-    '''
+    """
     Tests building with the standard library xml.dom module, or with any
     library that augments/clobbers this module.
-    '''
+    """
 
     @property
     def my_builder(self):

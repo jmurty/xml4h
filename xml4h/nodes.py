@@ -130,10 +130,10 @@ class Node(object):
 
     @property
     def ancestors(self):
-        '''
+        """
         Return the ancestors of this node in an ordered list with this node's
         parent, grand-parent, great-grand-parent etc.
-        '''
+        """
         ancestors = []
         p = self.parent
         while p:
@@ -376,10 +376,10 @@ class ProcessingInstruction(_NameValueNode):
 
 
 class Element(_NameValueNode):
-    '''
+    """
     Wrap underlying XML document-building libarary/implementation and
     expose utility functions to easily build XML nodes.
-    '''
+    """
     _node_type = ELEMENT_NODE
 
     def _get_text(self):
@@ -567,11 +567,11 @@ class Element(_NameValueNode):
 
 
 class AttributeDict(object):
-    '''
+    """
     Dictionary-like object of element attributes that always reflects the
     state of the underlying element node, and that allows for in-place
     modifications that will immediately affect the element.
-    '''
+    """
 
     def __init__(self, attr_impl_nodes, impl_element, adapter):
         self.impl_element = impl_element

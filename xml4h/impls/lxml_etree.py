@@ -76,13 +76,13 @@ class LXMLAdapter(_XmlImplAdapter):
         return LXMLText(text, is_cdata=True)
 
     def find_node_elements(self, node, name='*', ns_uri='*'):
-        '''
+        """
         Return NodeList containing element node descendants of the given node
         which match the search constraints.
 
         If name is '*', elements with any name will be returned.
         If ns_uri is '*', elements in any namespace will be returned.
-        '''
+        """
         # TODO Any proper way to find namespaced elements by name?
         name_match_nodes = node.getiterator()
         # Filter nodes by name and ns_uri if necessary
@@ -353,11 +353,11 @@ class LXMLAdapter(_XmlImplAdapter):
         return (qname, ns_uri, prefix, local_name)
 
     def _is_ns_in_ancestor(self, node, name, value):
-        '''
+        """
         Return True if the given namespace name/value is defined in an
         ancestor of the given node, meaning that the given node need not
         have its own attributes to apply that namespacing.
-        '''
+        """
         curr_node = self.get_node_parent(node)
         while curr_node.__class__ == etree._Element:
             if (hasattr(curr_node, 'nsmap')

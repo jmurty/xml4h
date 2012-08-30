@@ -91,9 +91,9 @@ class XmlDomImplAdapter(_XmlImplAdapter):
         return node.nodeValue
 
     def get_node_text(self, node):
-        '''
+        """
         Return contatenated value of all text node children of this element
-        '''
+        """
         text_children = [n.nodeValue for n in self.get_node_children(node)
                          if n.nodeType == xml.dom.Node.TEXT_NODE]
         if text_children:
@@ -102,10 +102,10 @@ class XmlDomImplAdapter(_XmlImplAdapter):
             return None
 
     def set_node_text(self, node, text):
-        '''
+        """
         Set text value as sole Text child node of element; any existing
         Text nodes are removed
-        '''
+        """
         # Remove any existing Text node children
         for child in self.get_node_children(node):
             if child.nodeType == xml.dom.Node.TEXT_NODE:
