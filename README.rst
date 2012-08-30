@@ -20,7 +20,7 @@ drawbacks:
 - `xml.dom.minidom <http://docs.python.org/library/xml.dom.minidom.html>`_
   is a light-weight, moderately-featured implementation of the W3C DOM
   that is included in the standard library. Unfortunately the W3C DOM API is
-  terrible -- the very opposite of pythonic -- and the minidom does not
+  terrible – the very opposite of pythonic – and the minidom does not
   support XPath expressions.
 - `xml.etree.ElementTree <http://docs.python.org/library/xml.etree.elementtree.html>`_
   is a fast hierarchical data container that is included in the standard
@@ -46,6 +46,7 @@ support or powerful DOM traversal methods.
 This is where `xml4h` comes in. It provides an abstraction layer over
 the existing XML libraries, taking advantage of their power while offering
 the following improvements:
+
 - A richer, W3C-like yet pythonic API for DOM traversal and manipulation.
 - A document builder that makes it simple to safely construct complex
   documents with very little code; no more string concatenation and crossed
@@ -81,8 +82,6 @@ case anyone else would like to start playing with it.
 
 TODO
 ----
-
-Things I'm planning to get to:
 
 - Write project documentation, code comments, and user guide
 - Support for xpath querying in lxml implementation
