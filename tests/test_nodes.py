@@ -355,6 +355,8 @@ class TestLXMLNodes(BaseTestNodes, unittest.TestCase):
         return LXMLAdapter
 
     def setUp(self):
+        if not LXMLAdapter.is_available():
+            self.skipTest("lxml library is not installed")
         from lxml import etree
         # Build a DOM using minidom for testing
         self.root_elem = etree.Element('{urn:test}DocRoot', nsmap={

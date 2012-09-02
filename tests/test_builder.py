@@ -587,6 +587,8 @@ class TestLXMLEtreeBuilder(BaseBuilderNodesTest, unittest.TestCase):
     @property
     def adapter(self):
         from xml4h.impls.lxml_etree import LXMLAdapter
+        if not LXMLAdapter.is_available():
+            self.skipTest("lxml library is not installed")
         return LXMLAdapter
 
     @property

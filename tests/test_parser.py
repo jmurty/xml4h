@@ -87,6 +87,8 @@ class TestLXMLEtreeParser(unittest.TestCase, BaseParserTest):
     @property
     def adapter(self):
         from xml4h.impls.lxml_etree import LXMLAdapter
+        if not LXMLAdapter.is_available():
+            self.skipTest("lxml library is not installed")
         return LXMLAdapter
 
     def parse(self, xml_str):
