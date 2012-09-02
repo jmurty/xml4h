@@ -1,9 +1,37 @@
-import re
-
 from xml4h import nodes
 
 
 class _XmlImplAdapter(object):
+
+    @classmethod
+    def is_available(cls):
+        """
+        Return ``True`` if this implementation is available for use because
+        it's underlying XML library is installed in the Python environment,
+        ``False`` otherwise.
+        """
+        raise NotImplementedError("Implementation missing for %s" % cls)
+
+    @classmethod
+    def parse_string(cls, xml_str, ignore_whitespace_text_nodes=True):
+        raise NotImplementedError("Implementation missing for %s" % cls)
+
+    @classmethod
+    def parse_file(cls, xml_file, ignore_whitespace_text_nodes=True):
+        raise NotImplementedError("Implementation missing for %s" % cls)
+
+    @classmethod
+    def ignore_whitespace_text_nodes(cls, wrapped_node):
+        """
+        Find and delete in node and descendents any text nodes that contain
+        nothing but whitespace. Useful for cleaning up excess text nodes
+        in a document DOM after parsing a pretty-printed XML document.
+        """
+        for child in wrapped_node.children:
+            if child.is_text and child.value.strip() == '':
+                child.delete()
+            else:
+                cls.ignore_whitespace_text_nodes(child)
 
     @classmethod
     def create_document(cls, root_tagname, ns_uri=None, **kwargs):
@@ -83,7 +111,7 @@ class _XmlImplAdapter(object):
             ns_uri = ns_uri[1:]
             prefix = self.get_ns_prefix_for_uri(impl_node, ns_uri)
         elif ':' in name:
-            prefix, name  = name.split(':')
+            prefix, name = name.split(':')
             ns_uri = self.get_ns_uri_for_prefix(impl_node, prefix)
             if ns_uri is None:
                 raise Exception(
@@ -97,30 +125,30 @@ class _XmlImplAdapter(object):
 
     @classmethod
     def new_impl_document(cls, root_tagname, ns_uri=None, **kwargs):
-        raise NotImplementedError()
+        raise NotImplementedError("Implementation missing for %s" % cls)
 
     def map_node_to_class(self, node):
-        raise NotImplementedError()
+        raise NotImplementedError("Implementation missing for %s" % self)
 
     def get_impl_root(self, node):
-        raise NotImplementedError()
+        raise NotImplementedError("Implementation missing for %s" % self)
 
     # Document implementation methods
 
     def new_impl_element(self, tagname, ns_uri):
-        raise NotImplementedError()
+        raise NotImplementedError("Implementation missing for %s" % self)
 
     def new_impl_text(self, text):
-        raise NotImplementedError()
+        raise NotImplementedError("Implementation missing for %s" % self)
 
     def new_impl_comment(self, text):
-        raise NotImplementedError()
+        raise NotImplementedError("Implementation missing for %s" % self)
 
     def new_impl_instruction(self, target, data):
-        raise NotImplementedError()
+        raise NotImplementedError("Implementation missing for %s" % self)
 
     def new_impl_cdata(self, text):
-        raise NotImplementedError()
+        raise NotImplementedError("Implementation missing for %s" % self)
 
     def find_node_elements(self, node, name='*', ns_uri='*'):
         """
@@ -130,73 +158,72 @@ class _XmlImplAdapter(object):
         If name is '*', elements with any name will be returned.
         If ns_uri is '*', elements in any namespace will be returned.
         """
-        raise NotImplementedError()
+        raise NotImplementedError("Implementation missing for %s" % self)
 
     # Node implementation methods
 
     def get_node_namespace_uri(self, node):
-        raise NotImplementedError()
+        raise NotImplementedError("Implementation missing for %s" % self)
 
     def set_node_namespace_uri(self, node, ns_uri):
-        raise NotImplementedError()
+        raise NotImplementedError("Implementation missing for %s" % self)
 
     def get_node_parent(self, node):
-        raise NotImplementedError()
+        raise NotImplementedError("Implementation missing for %s" % self)
 
     def get_node_children(self, node):
-        raise NotImplementedError()
+        raise NotImplementedError("Implementation missing for %s" % self)
 
     def get_node_name(self, node):
-        raise NotImplementedError()
+        raise NotImplementedError("Implementation missing for %s" % self)
 
     def set_node_name(self, node, name):
-        raise NotImplementedError()
+        raise NotImplementedError("Implementation missing for %s" % self)
 
     def get_node_local_name(self, node):
-        raise NotImplementedError()
+        raise NotImplementedError("Implementation missing for %s" % self)
 
     def get_node_name_prefix(self, node):
-        raise NotImplementedError()
+        raise NotImplementedError("Implementation missing for %s" % self)
 
     def get_node_value(self, node):
-        raise NotImplementedError()
+        raise NotImplementedError("Implementation missing for %s" % self)
 
     def set_node_value(self, node, value):
-        raise NotImplementedError()
+        raise NotImplementedError("Implementation missing for %s" % self)
 
     def get_node_text(self, node):
-        raise NotImplementedError()
+        raise NotImplementedError("Implementation missing for %s" % self)
 
     def set_node_text(self, node, text):
-        raise NotImplementedError()
+        raise NotImplementedError("Implementation missing for %s" % self)
 
     def get_node_attributes(self, element, ns_uri=None):
-        raise NotImplementedError()
+        raise NotImplementedError("Implementation missing for %s" % self)
 
     def has_node_attribute(self, element, name, ns_uri=None):
-        raise NotImplementedError()
+        raise NotImplementedError("Implementation missing for %s" % self)
 
     def get_node_attribute_node(self, element, name, ns_uri=None):
-        raise NotImplementedError()
+        raise NotImplementedError("Implementation missing for %s" % self)
 
     def get_node_attribute_value(self, element, name, ns_uri=None):
-        raise NotImplementedError()
+        raise NotImplementedError("Implementation missing for %s" % self)
 
     def set_node_attribute_value(self, element, name, value, ns_uri=None):
-        raise NotImplementedError()
+        raise NotImplementedError("Implementation missing for %s" % self)
 
     def remove_node_attribute(self, element, name, ns_uri=None):
-        raise NotImplementedError()
+        raise NotImplementedError("Implementation missing for %s" % self)
 
     def add_node_child(self, parent, child, before_sibling=None):
-        raise NotImplementedError()
+        raise NotImplementedError("Implementation missing for %s" % self)
 
     def remove_node_child(self, parent, child, destroy_node=True):
-        raise NotImplementedError()
+        raise NotImplementedError("Implementation missing for %s" % self)
 
     def lookup_ns_uri_by_attr_name(self, node, name):
-        raise NotImplementedError()
+        raise NotImplementedError("Implementation missing for %s" % self)
 
-    def lookup_ns_prefix_for_uri(slef, node, uri):
-        raise NotImplementedError()
-
+    def lookup_ns_prefix_for_uri(self, node, uri):
+        raise NotImplementedError("Implementation missing for %s" % self)

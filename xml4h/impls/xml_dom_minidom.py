@@ -1,13 +1,39 @@
+from StringIO import StringIO
+
 from xml4h.impls.interface import _XmlImplAdapter
 from xml4h import nodes
 
-import xml.dom
+try:
+    import xml.dom
+except ImportError:
+    pass
 
 
 class XmlDomImplAdapter(_XmlImplAdapter):
 
     @classmethod
-    def new_impl_document(self, root_tagname, ns_uri=None,
+    def is_available(cls):
+        try:
+            xml.dom.Node
+            return True
+        except:
+            return False
+
+    @classmethod
+    def parse_string(cls, xml_str, ignore_whitespace_text_nodes=True):
+        string_io = StringIO(xml_str)
+        return cls.parse_file(string_io, ignore_whitespace_text_nodes)
+
+    @classmethod
+    def parse_file(cls, xml_file, ignore_whitespace_text_nodes=True):
+        impl_doc = xml.dom.minidom.parse(xml_file)
+        wrapped_doc = XmlDomImplAdapter.wrap_document(impl_doc)
+        if ignore_whitespace_text_nodes:
+            cls.ignore_whitespace_text_nodes(wrapped_doc)
+        return wrapped_doc
+
+    @classmethod
+    def new_impl_document(cls, root_tagname, ns_uri=None,
             doctype=None, impl_features=None):
         # Create DOM implementation factory
         if impl_features is None:
@@ -18,7 +44,7 @@ class XmlDomImplAdapter(_XmlImplAdapter):
         return doc
 
     @classmethod
-    def get_impl_document(self, node):
+    def get_impl_document(cls, node):
         if node.nodeType == node.DOCUMENT_NODE:
             return node
         return node.ownerDocument

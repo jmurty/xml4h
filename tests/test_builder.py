@@ -1,20 +1,18 @@
 # -*- coding: utf-8 name> -*-
 import unittest
-import xml.dom
 from StringIO import StringIO
+import functools
 
-from xml4h import builder, nodes, builder_xmldom, builder_lxml
+from xml4h import builder, nodes, impl_preferred
+from xml4h.impls.lxml_etree import LXMLAdapter
 
 
 class TestBuilderMethods(unittest.TestCase):
 
     def test_create_minidom(self):
-        xmlb = builder_xmldom('DocRoot')
-        self.assertIsInstance(
-            xmlb.anchor_element.impl_document, xml.dom.minidom.Document)
-
-    def test_create_default(self):
-        xmlb = builder('DocRoot')
+        import xml.dom
+        from xml4h.impls.xml_dom_minidom import XmlDomImplAdapter
+        xmlb = builder('DocRoot', adapter=XmlDomImplAdapter)
         self.assertIsInstance(
             xmlb.anchor_element.impl_document, xml.dom.minidom.Document)
 
@@ -70,7 +68,8 @@ class BaseBuilderNodesTest(object):
         self.assertEqual('Deeper', xmlb.up().up().anchor_element.name)
         self.assertEqual('DocRoot', xmlb.up().up().up().anchor_element.name)
         # ...but not past the root element
-        self.assertEqual('DocRoot', xmlb.up().up().up().up().anchor_element.name)
+        self.assertEqual('DocRoot',
+            xmlb.up().up().up().up().anchor_element.name)
 
         # Can navigate up by count...
         self.assertEqual('AndDeeper', xmlb.up().anchor_element.name)
@@ -352,7 +351,7 @@ class BaseBuilderNodesTest(object):
                        ' myns:custom-ns-prefix-explicit="1"'
                        ' myns:custom-ns-prefix-implicit="1"/>\n'
             '</DocRoot>\n'
-            % (isinstance(self, TestLXMLBuilder) and 'myns:' or ''))
+            % (self.adapter == LXMLAdapter and 'myns:' or ''))
             # TODO: lxml outputs prefix in more situations than minidom
         self.assertEqual(xml, xmlb.anchor_element.doc_xml())
         # Test namespaces work as expected when searching/traversing DOM
@@ -360,7 +359,7 @@ class BaseBuilderNodesTest(object):
             ['DocRoot', 'NSDefaultImplicit', 'NSDefaultExplicit',
              'Attrs1', 'Attrs2'],
             [n.name for n in xmlb.doc_find(ns_uri='urn:default')])
-        if isinstance(self, TestLXMLBuilder):  # TODO: Differing prefix output
+        if self.adapter == LXMLAdapter:  # TODO: Differing prefix output
             self.assertEqual(
                 ['myns:NSCustomExplicit', 'myns:NSCustomWithPrefixImplicit',
                  'myns:NSCustomWithPrefixExplicit'],
@@ -474,7 +473,7 @@ class BaseBuilderNodesTest(object):
                 .e('Elem1').t('<content/> as text').up()
                 .e('Elem2').d('<content/> as cdata').up()
             )
-        if isinstance(self, TestLXMLBuilder):
+        if self.adapter == LXMLAdapter:
             # TODO: lxml library does not support real cdata?
             self.assertEqual(
                 '<?xml version="1.0" encoding="utf-8"?>\n'
@@ -532,7 +531,7 @@ class BaseBuilderNodesTest(object):
         ns_default = u'urn:默认'
         ns_custom = u'urn:習俗'
         # NOTE lxml doesn't support unicode namespace URIs
-        if isinstance(self, TestLXMLBuilder):
+        if self.adapter == LXMLAdapter:
             ns_default = 'urn:default'
             ns_custom = 'urn:custom'
         xmlb = (
@@ -571,16 +570,39 @@ class TestXmlDomBuilder(BaseBuilderNodesTest, unittest.TestCase):
     """
 
     @property
-    def my_builder(self):
-        return builder_xmldom
-
-
-class TestLXMLBuilder(BaseBuilderNodesTest, unittest.TestCase):
-    """
-    Tests building with the standard library xml.dom module, or with any
-    library that augments/clobbers this module.
-    """
+    def adapter(self):
+        from xml4h.impls.xml_dom_minidom import XmlDomImplAdapter
+        return XmlDomImplAdapter
 
     @property
     def my_builder(self):
-        return builder_lxml
+        return functools.partial(builder, adapter=self.adapter)
+
+
+class TestLXMLEtreeBuilder(BaseBuilderNodesTest, unittest.TestCase):
+    """
+    Tests building with the lxml (lxml.etree) library.
+    """
+
+    @property
+    def adapter(self):
+        from xml4h.impls.lxml_etree import LXMLAdapter
+        return LXMLAdapter
+
+    @property
+    def my_builder(self):
+        return functools.partial(builder, adapter=self.adapter)
+
+
+class TestDefaultImpl(BaseBuilderNodesTest, unittest.TestCase):
+    """
+    Tests building with the default implementation, whichever it is.
+    """
+
+    @property
+    def adapter(self):
+        return impl_preferred
+
+    @property
+    def my_builder(self):
+        return functools.partial(builder)

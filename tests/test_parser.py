@@ -3,7 +3,9 @@ import unittest
 import os
 import re
 
-from xml4h import parser, nodes
+from xml4h import parse, nodes, impl_preferred
+from xml4h.impls.lxml_etree import LXMLAdapter
+
 
 class BaseParserTest(object):
 
@@ -15,8 +17,12 @@ class BaseParserTest(object):
     def unicode_xml_file_path(self):
         return os.path.join(os.path.dirname(__file__), 'example_doc.unicode.xml')
 
+    def test_parse_with_filename_string(self):
+        # Ensure filename path is recognized and not treated as XML doc string
+        self.parse(self.small_xml_file_path)
+
     def test_parse_file(self):
-        wrapped_doc = self.parse_file(self.small_xml_file_path)
+        wrapped_doc = self.parse(self.small_xml_file_path)
         self.assertIsInstance(wrapped_doc, nodes.Document)
         self.assertEqual(8, len(wrapped_doc.find()))
         # Check element namespaces
@@ -42,9 +48,9 @@ class BaseParserTest(object):
 
     def test_roundtrip(self):
         orig_xml = open(self.small_xml_file_path).read()
-        doc = self.parse_string(orig_xml)
+        doc = self.parse(self.small_xml_file_path)
         roundtrip_xml = doc.doc_xml()
-        if isinstance(self, TestLXMLParser):
+        if self.adapter == LXMLAdapter:
             # lxml parser does not make it possible to retain semantically
             # unnecessary 'xmlns' namespace definitions in all elements.
             # It's not worth failing the roundtrip test just for this
@@ -55,7 +61,7 @@ class BaseParserTest(object):
 
     def test_unicode(self):
         # NOTE lxml doesn't support unicode namespace URIs, so we don't test that
-        doc = self.parse_file(self.unicode_xml_file_path)
+        doc = self.parse(self.unicode_xml_file_path)
         self.assertEqual(u'جذر', doc.root.name)
         self.assertEqual(u'urn:default', doc.root.attributes[u'xmlns'])
         self.assertEqual(u'urn:custom', doc.root.attributes[u'xmlns:důl'])
@@ -64,19 +70,34 @@ class BaseParserTest(object):
         self.assertEqual(u'1', doc.find_first(u'yếutố1').attributes[u'תכונה'])
         self.assertEqual(u'tvö', doc.find_first(u'yếutố2').attributes[u'důl:עודתכונה'])
 
+
 class TestXmlDomParser(unittest.TestCase, BaseParserTest):
 
-    def parse_string(self, xml_str):
-        return parser.parse_string_xmldom(xml_str)
+    @property
+    def adapter(self):
+        from xml4h.impls.xml_dom_minidom import XmlDomImplAdapter
+        return XmlDomImplAdapter
 
-    def parse_file(self, xml_file):
-        return parser.parse_file_xmldom(xml_file)
+    def parse(self, xml_str):
+        return parse(xml_str, adapter=self.adapter)
 
 
-class TestLXMLParser(unittest.TestCase, BaseParserTest):
+class TestLXMLEtreeParser(unittest.TestCase, BaseParserTest):
 
-    def parse_string(self, xml_str):
-        return parser.parse_string_lxml(xml_str)
+    @property
+    def adapter(self):
+        from xml4h.impls.lxml_etree import LXMLAdapter
+        return LXMLAdapter
 
-    def parse_file(self, xml_file):
-        return parser.parse_file_lxml(xml_file)
+    def parse(self, xml_str):
+        return parse(xml_str, adapter=self.adapter)
+
+
+class TestDefaultImpl(unittest.TestCase, BaseParserTest):
+
+    @property
+    def adapter(self):
+        return impl_preferred
+
+    def parse(self, xml_str):
+        return parse(xml_str)

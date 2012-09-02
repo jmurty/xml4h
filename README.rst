@@ -7,6 +7,19 @@ human-friendly activity.
 This library exists because Python is awesome, XML is everywhere, and
 combining the two should be a pleasure. Until xml4h, it wasn't.
 
+::
+
+    >>> # Download XML object listing from Amazon S3
+    >>> from urllib2 import urlopen
+    >>> xml_file = urlopen('http://jets3t.s3.amazonaws.com')
+    >>>
+    >>> import xml4h
+    >>> doc = xml4h.parse(xml_file)
+    >>> for obj_data in doc.find('Contents'):
+    >>>     print obj_data.find_first('Key').text
+    >>>     print obj_data.find_first('Size').text
+    >>>     print obj_data.find_first('LastModified').text
+
 This project is heavily inspired by the the work of
 `Kenneth Reitz <http://kennethreitz.com/pages/open-projects.html>`_ such as
 the excellent `Requests HTTP library <http://docs.python-requests.org/>`_.
@@ -72,19 +85,23 @@ minidom and lxml's ElementTree. The project is still at the stage where I am
 playing with ideas and tweaking the APIs to try and get them right, before
 I move on to the TODO list.
 
-Howver, the project is under very slow development right now, due to my lack
-of time. It is very much an alpha, is likely to be in flux for a while yet,
-and is in no way ready for production use.
+The project is under slow development right now, due mainly to my lack of time.
+It is also very much an alpha which is likely to be in flux for a while yet,
+so it is not ready for production use.
 
-It probably shouldn't even be out in public yet, it isn't fully dressed.
+It probably shouldn't even be out in public yet; it isn't fully dressed.
 But I'm putting it out there to encourage myself to work on it more, and in
 case anyone else would like to start playing with it.
 
 TODO
 ----
 
+- Human-friendly node object description text from __unicode__
+- Basic element traversal by tag name, e.g. elem.FirstChild.FirstGrandchild
 - Write project documentation, code comments, and user guide
-- Support for xpath querying in lxml implementation
+- Support for XPath querying in lxml implementation
+- Add implementation of standard library's (c)ElementTree (if plausible) so
+  XPath is available to all users without installing the extra lxml library.
 - Find a way to make the lxml `nsmap` namespace map mutable, or to fake it?
   This is necessary to properly abstract namespace definition behaviour.
 - SAX parsing, done nicely -- Need to figure out what that means...

@@ -1,22 +1,4 @@
 from xml4h.nodes import Element
-from xml4h.impls.xml_dom_minidom import XmlDomImplAdapter as minidom_adapter
-
-
-def builder(root_tagname, ns_uri=None, adapter=minidom_adapter):
-    """
-    Create a new XML DOM document a return a Builder to manipulate it.
-    """
-    impl_doc = adapter.create_document(root_tagname, ns_uri=ns_uri)
-    return Builder(impl_doc.root)
-
-
-def builder_xmldom(root_tagname, ns_uri=None):
-    return builder(root_tagname, ns_uri=ns_uri, adapter=minidom_adapter)
-
-
-def builder_lxml(root_tagname, ns_uri=None):
-    from xml4h.impls.lxml_etree import LXMLAdapter as adapter
-    return builder(root_tagname, ns_uri=ns_uri, adapter=adapter)
 
 
 class Builder(object):

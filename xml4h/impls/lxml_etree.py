@@ -3,10 +3,37 @@ import re
 from xml4h.impls.interface import _XmlImplAdapter
 from xml4h import nodes
 
-from lxml import etree
+try:
+    from lxml import etree
+except ImportError:
+    pass
 
 
 class LXMLAdapter(_XmlImplAdapter):
+
+    @classmethod
+    def is_available(cls):
+        try:
+            etree.Element
+            return True
+        except:
+            return False
+
+    @classmethod
+    def parse_string(cls, xml_str, ignore_whitespace_text_nodes=True):
+        impl_root_elem = etree.fromstring(xml_str)
+        wrapped_doc = LXMLAdapter.wrap_document(impl_root_elem.getroottree())
+        if ignore_whitespace_text_nodes:
+            cls.ignore_whitespace_text_nodes(wrapped_doc)
+        return wrapped_doc
+
+    @classmethod
+    def parse_file(cls, xml_file, ignore_whitespace_text_nodes=True):
+        impl_doc = etree.parse(xml_file)
+        wrapped_doc = LXMLAdapter.wrap_document(impl_doc)
+        if ignore_whitespace_text_nodes:
+            cls.ignore_whitespace_text_nodes(wrapped_doc)
+        return wrapped_doc
 
     @classmethod
     def new_impl_document(cls, root_tagname, ns_uri=None, **kwargs):
@@ -133,6 +160,8 @@ class LXMLAdapter(_XmlImplAdapter):
         if isinstance(node, etree._ElementTree):
             children = [node.getroot()]
         else:
+            if not hasattr(node, 'getchildren'):
+                return []
             children = node.getchildren()
             # Hack to treat text attribute as child text nodes
             if node.text is not None:
