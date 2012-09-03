@@ -27,6 +27,17 @@ class Node(object):
         self._impl_node = node
         self._adapter = adapter
 
+    def __unicode__(self):
+        return u'<%s.%s>' % (
+            self.__class__.__module__, self.__class__.__name__)
+
+    def __str__(self):
+        # TODO Degrade non-ASCII characters gracefully
+        return str(self.__unicode__())
+
+    def __repr__(self):
+        return self.__str__()
+
     @property
     def impl_node(self):
         return self._impl_node
@@ -207,14 +218,6 @@ class Node(object):
             curr_node = curr_node.parent
         return None
 
-    @property
-    def prefix(self):
-        return self.adapter.get_node_name_prefix(self.impl_node)
-
-    @property
-    def local_name(self):
-        return self.adapter.get_node_local_name(self.impl_node)
-
     def delete(self):
         self.adapter.remove_node_child(
             self.adapter.get_node_parent(self.impl_node), self.impl_node,
@@ -319,6 +322,19 @@ class EntityReference(Node):
 
 
 class _NameValueNode(Node):
+
+    def __unicode__(self):
+        return u'<%s.%s: "%s">' % (
+            self.__class__.__module__, self.__class__.__name__,
+            self.name)
+
+    @property
+    def prefix(self):
+        return self.adapter.get_node_name_prefix(self.impl_node)
+
+    @property
+    def local_name(self):
+        return self.adapter.get_node_local_name(self.impl_node)
 
     @property
     def name(self):
