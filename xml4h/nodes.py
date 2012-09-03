@@ -287,7 +287,42 @@ class Node(object):
             omit_declaration=omit_declaration, _depth=_depth)
 
 
-class Document(Node):
+class _NodeWithElementChildrenMixin(object):
+
+    def __getattr__(self, child_name):
+        """
+        Magical traversal of child XML elements by name.
+        """
+        # TODO This feels too broad to be safe, should be more restrictive?
+        if child_name and child_name[0] != '_':
+            results = self.get(child_name)
+            if len(results) == 1:
+                return results[0]
+            elif len(results) > 1:
+                return results
+        # TODO: Localize exception message
+        raise AttributeError(
+            "'%s' object has no attribute '%s'"
+            % (self.__class__.__name__, child_name))
+
+    def get(self, child_name, first_only=False):
+        """
+        Return a list of child elements with the given node name.
+
+        If ``first_only`` is True, only the ``first`` such element is
+        returned or None is returned if there are no such child elements.
+        """
+        results = [c for c in self.children if c.name == child_name]
+        if first_only:
+            return results[0] if results else None
+        else:
+            return results
+
+    def get_first(self, child_name):
+        return self.get(child_name, first_only=True)
+
+
+class Document(Node, _NodeWithElementChildrenMixin):
     _node_type = DOCUMENT_NODE
     # TODO: doc_type, document_element
 
@@ -391,7 +426,7 @@ class ProcessingInstruction(_NameValueNode):
     data = _NameValueNode.value
 
 
-class Element(_NameValueNode):
+class Element(_NameValueNode, _NodeWithElementChildrenMixin):
     """
     Wrap underlying XML document-building libarary/implementation and
     expose utility functions to easily build XML nodes.

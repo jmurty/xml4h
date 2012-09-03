@@ -12,13 +12,14 @@ combining the two should be a pleasure. Until xml4h, it wasn't.
     >>> # Download XML object listing from Amazon S3
     >>> from urllib2 import urlopen
     >>> xml_file = urlopen('http://jets3t.s3.amazonaws.com')
-    >>>
+
     >>> import xml4h
     >>> doc = xml4h.parse(xml_file)
-    >>> for obj_data in doc.find('Contents'):
-    >>>     print obj_data.find_first('Key').text
-    >>>     print obj_data.find_first('Size').text
-    >>>     print obj_data.find_first('LastModified').text
+    >>> for s3_obj in doc.ListBucketResult.Contents:
+    >>>     print u'%s\t%s\t%s' % (
+    >>>         s3_obj.get_first('LastModified').text,
+    >>>         long(s3_obj.Size.text),
+    >>>         s3_obj.Key.text)
 
 This project is heavily inspired by the the work of
 `Kenneth Reitz <http://kennethreitz.com/pages/open-projects.html>`_ such as
@@ -96,8 +97,6 @@ case anyone else would like to start playing with it.
 TODO
 ----
 
-- Human-friendly node object description text from __unicode__
-- Basic element traversal by tag name, e.g. elem.FirstChild.FirstGrandchild
 - Write project documentation, code comments, and user guide
 - Support for XPath querying in lxml implementation
 - Add implementation of standard library's (c)ElementTree (if plausible) so
