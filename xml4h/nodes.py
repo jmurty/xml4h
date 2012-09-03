@@ -320,21 +320,21 @@ class EntityReference(Node):
 
 class _NameValueNode(Node):
 
-    def _get_name(self):
+    @property
+    def name(self):
         return self.adapter.get_node_name(self.impl_node)
 
-    def _set_name(self, name):
+    @name.setter
+    def name(self, name):
         self.set_name(self.impl_node, name)
 
-    name = property(_get_name, _set_name)
-
-    def _get_value(self):
+    @property
+    def value(self):
         return self.adapter.get_node_value(self.impl_node)
 
-    def _set_value(self, value):
+    @value.setter
+    def value(self, value):
         self.adapter.set_node_value(self.impl_node, value)
-
-    value = property(_get_value, _set_value)
 
 
 class Text(_NameValueNode):
@@ -359,12 +359,12 @@ class Attribute(_NameValueNode):
     # Cannot set/change name of attribute
     @property
     def name(self):
-        return self._get_name()
+        return super(Attribute, self).name
 
     # Cannot set/change value of attribute
     @property
     def value(self):
-        return self._get_value()
+        return super(Attribute, self).value
 
 
 class ProcessingInstruction(_NameValueNode):
@@ -382,21 +382,18 @@ class Element(_NameValueNode):
     """
     _node_type = ELEMENT_NODE
 
-    def _get_text(self):
+    @property
+    def text(self):
         return self.adapter.get_node_text(self.impl_node)
 
-    def _set_text(self, text):
+    @text.setter
+    def text(self, text):
         self.adapter.set_node_text(self.impl_node, text)
-
-    text = property(_get_text, _set_text)
 
     def attributes_by_ns(self, ns_uri):
         attr_impl_nodes = self.adapter.get_node_attributes(
             self.impl_node, ns_uri=ns_uri)
         return AttributeDict(attr_impl_nodes, self.impl_node, self.adapter)
-
-    def _get_attributes(self):
-        return self.attributes_by_ns(None)
 
     def _set_element_attributes(self, element,
             attr_obj=None, ns_uri=None, **attr_dict):
@@ -455,16 +452,19 @@ class Element(_NameValueNode):
         self._set_element_attributes(self.impl_node,
             attr_obj=attr_obj, ns_uri=ns_uri, **attr_dict)
 
-    def _set_attributes(self, attr_obj=None, ns_uri=None, **attr_dict):
+    @property
+    def attributes(self):
+        return self.attributes_by_ns(None)
+
+    @attributes.setter
+    def attributes(self, attr_obj=None, ns_uri=None, **attr_dict):
         # Remove existing attributes
-        for attr_name in self._get_attributes():
+        for attr_name in self.attributes:
             self.adapter.remove_node_attribute(
                 self.impl_node, attr_name, ns_uri)
         # Add new attributes
         self._set_element_attributes(self.impl_node,
             attr_obj=attr_obj, ns_uri=ns_uri, **attr_dict)
-
-    attributes = property(_get_attributes, _set_attributes)
 
     @property
     def attribute_nodes(self):
