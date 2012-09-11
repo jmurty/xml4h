@@ -1,4 +1,5 @@
 from .builder import Builder
+from .writer import write
 
 from xml4h.impls.xml_dom_minidom import XmlDomImplAdapter
 from xml4h.impls.lxml_etree import LXMLAdapter

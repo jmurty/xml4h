@@ -1,4 +1,6 @@
 # Adapted from standard library method xml.dom.minidom.writexml
+import sys
+
 
 def _sanitize_write_value(value):
     if not value:
@@ -9,6 +11,7 @@ def _sanitize_write_value(value):
         .replace("\"", "&quot;")
         .replace(">", "&gt;")
         )
+
 
 def _sanitize_write_params(indent='', newline=''):
     if isinstance(indent, int):
@@ -25,8 +28,12 @@ def _sanitize_write_params(indent='', newline=''):
 
     return (indent, newline)
 
-def write(node, writer, encoding='utf-8', indent=0, newline='',
+
+def write(node, writer=None, encoding='utf-8', indent=0, newline='',
         quote_char='"', omit_declaration=False, _depth=0):
+
+    if writer is None:
+        writer = sys.stdout
 
     indent, newline = _sanitize_write_params(indent, newline)
 
@@ -117,4 +124,3 @@ def write(node, writer, encoding='utf-8', indent=0, newline='',
             writer.write('/>')
     else:
         raise Exception('write of node %s is not supported' % node.__class__)
-

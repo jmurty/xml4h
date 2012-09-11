@@ -1,7 +1,7 @@
 import codecs
 from StringIO import StringIO
 
-from xml4h.writer import write as write_func
+import xml4h
 
 
 ELEMENT_NODE = 1
@@ -255,11 +255,8 @@ class Node(object):
 
     # Methods that operate on this Node implementation adapter
 
-    def write(self, writer, encoding='utf-8', indent=False, newline=False,
-            quote_char='"', omit_declaration=False, _depth=0):
-        write_func(self, writer, encoding=encoding,
-            indent=indent, newline=newline, quote_char=quote_char,
-            omit_declaration=omit_declaration, _depth=_depth)
+    def write(self, *args, **kwargs):
+        xml4h.write(self, *args, **kwargs)
 
     def doc_write(self, writer, encoding='utf-8', indent=False, newline=False,
             quote_char='"', omit_declaration=False, _depth=0):
@@ -432,6 +429,10 @@ class Element(_NameValueNode, _NodeWithElementChildrenMixin):
     expose utility functions to easily build XML nodes.
     """
     _node_type = ELEMENT_NODE
+
+    @property
+    def builder(self):
+        return xml4h.Builder(self)
 
     @property
     def text(self):
