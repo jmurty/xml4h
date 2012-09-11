@@ -1,1 +1,3 @@
+# Nose for running tests
 nose
+coverage
