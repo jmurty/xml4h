@@ -11,11 +11,11 @@ class BaseParserTest(object):
 
     @property
     def small_xml_file_path(self):
-        return os.path.join(os.path.dirname(__file__), 'example_doc.small.xml')
+        return os.path.join(os.path.dirname(__file__), 'data/example_doc.small.xml')
 
     @property
     def unicode_xml_file_path(self):
-        return os.path.join(os.path.dirname(__file__), 'example_doc.unicode.xml')
+        return os.path.join(os.path.dirname(__file__), 'data/example_doc.unicode.xml')
 
     def test_parse_with_filename_string(self):
         # Ensure filename path is recognized and not treated as XML doc string
