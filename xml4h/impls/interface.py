@@ -1,7 +1,16 @@
-from xml4h import nodes
+from xml4h import nodes, exceptions
 
 
 class _XmlImplAdapter(object):
+
+    # List of extra features supported (or not) by an adapter implementation
+    SUPPORTED_FEATURES = {
+        'xpath': False,
+        }
+
+    @classmethod
+    def has_feature(cls, feature_name):
+        return cls.SUPPORTED_FEATURES.get(feature_name.lower(), False)
 
     @classmethod
     def is_available(cls):
