@@ -5,9 +5,10 @@ xml4h is an ISC licensed library for Python to make working with XML a
 human-friendly activity.
 
 This library exists because Python is awesome, XML is everywhere, and
-combining the two should be a pleasure. Until xml4h, it wasn't.
+combining the two should be a pleasure. With xml4h, it can be.
 
-Here is an example of parsing and retrieving data from an XML document:
+Here is an example of parsing and reading data from an XML document using
+"magic" element and attribute lookups:
 
 ::
 
@@ -16,6 +17,16 @@ Here is an example of parsing and retrieving data from an XML document:
     >>> doc = xml4h.parse('tests/data/monty_python_films.xml')
     >>> for film in doc.MontyPythonFilms.Film[:3]:
     ...     print film['year'], ':', film.Title.text
+    1971 : And Now for Something Completely Different
+    1974 : Monty Python and the Holy Grail
+    1979 : Monty Python's Life of Brian
+
+You can also use a more traditional approach to traverse the DOM:
+
+::
+
+    >>> for film in doc.find('Film')[:3]:
+    ...     print film.attributes['year'], ':', film.children[0].text
     1971 : And Now for Something Completely Different
     1974 : Monty Python and the Holy Grail
     1979 : Monty Python's Life of Brian

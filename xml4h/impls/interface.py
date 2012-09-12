@@ -169,6 +169,11 @@ class _XmlImplAdapter(object):
         """
         raise NotImplementedError("Implementation missing for %s" % self)
 
+    def xpath_on_node(self, node, xpath, **kwargs):
+        if not self.has_feature('xpath'):
+            raise exceptions.FeatureUnavailableException()
+        raise NotImplementedError("Implementation missing for %s" % self)
+
     # Node implementation methods
 
     def get_node_namespace_uri(self, node):

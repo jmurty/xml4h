@@ -333,7 +333,18 @@ class _MagicNodeAttrItemLookupsMixin(object):
         return self.get(child_name, first_only=True)
 
 
-class Document(Node, _MagicNodeAttrItemLookupsMixin):
+class _XPathMixin(object):
+
+    def xpath(self, xpath, **kwargs):
+        result = self.adapter.xpath_on_node(self.impl_node, xpath, **kwargs)
+        if isinstance(result, (list, tuple)):
+            return [self.adapter.wrap_node(r, self.adapter.impl_document)
+                    for r in result]
+        else:
+            return self.adapter.wrap_node(result, self.adapter.impl_document)
+
+
+class Document(Node, _MagicNodeAttrItemLookupsMixin, _XPathMixin):
     _node_type = DOCUMENT_NODE
     # TODO: doc_type, document_element
 
@@ -437,7 +448,7 @@ class ProcessingInstruction(_NameValueNode):
     data = _NameValueNode.value
 
 
-class Element(_NameValueNode, _MagicNodeAttrItemLookupsMixin):
+class Element(_NameValueNode, _MagicNodeAttrItemLookupsMixin, _XPathMixin):
     """
     Wrap underlying XML document-building libarary/implementation and
     expose utility functions to easily build XML nodes.

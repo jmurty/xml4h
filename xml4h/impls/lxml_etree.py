@@ -11,6 +11,10 @@ except ImportError:
 
 class LXMLAdapter(_XmlImplAdapter):
 
+    SUPPORTED_FEATURES = {
+        'xpath': True,
+        }
+
     @classmethod
     def is_available(cls):
         try:
@@ -127,6 +131,26 @@ class LXMLAdapter(_XmlImplAdapter):
                 continue
             results.append(n)
         return results
+
+    def xpath_on_node(self, node, xpath, **kwargs):
+        """
+        Return result of performing the given XPath query on the given node.
+
+        All known namespace prefix-to-URI mappings in the document are
+        automatically included in the XPath invocation.
+
+        If an empty/default namespace (i.e. None) is defined, this is
+        converted to the prefix name '_' so it can be used despite empty
+        namespace prefixes being unsupported by XPath.
+        """
+        namespaces_dict = node.nsmap.copy()
+        if 'namespaces' in kwargs:
+            namespaces_dict.update(kwargs['namespaces'])
+        # Empty namespace prefix is not supported, convert to '_' prefix
+        if None in namespaces_dict:
+            default_ns_uri = namespaces_dict.pop(None)
+            namespaces_dict['_'] = default_ns_uri
+        return node.xpath(xpath, namespaces=namespaces_dict)
 
     # Node implementation methods
 

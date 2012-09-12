@@ -1,6 +1,6 @@
 import unittest
 
-from xml4h import nodes
+from xml4h import nodes, exceptions
 from xml4h.impls.xml_dom_minidom import XmlDomImplAdapter
 from xml4h.impls.lxml_etree import LXMLAdapter, LXMLText
 
@@ -280,6 +280,71 @@ class BaseTestNodes(object):
         elems = self.wrapped_root.find('Element3', ns_uri='urn:ns2')
         self.assertEqual(1, len(elems))
         self.assertEqual('Element4', elems[0].parent.name)
+        # Non-namespaced find will find elements across namespaces
+        elems = self.wrapped_root.find('Element3')
+        self.assertEqual(2, len(elems))
+        # Find only elements in a given namespace
+        elems = self.wrapped_root.find(ns_uri='urn:ns1')
+        self.assertEqual(2, len(elems))
+        self.assertEqual('Element3', elems[0].name)
+        self.assertEqual('DocRoot', elems[0].parent.name)
+        self.assertEqual('Element4', elems[1].name)
+        elems = self.wrapped_root.find(ns_uri='urn:ns2')
+        self.assertEqual(1, len(elems))
+        self.assertEqual('ns2:Element3', elems[0].name)
+        self.assertEqual('Element3', elems[0].local_name)
+        self.assertEqual('Element4', elems[0].parent.name)
+        # Chain finds
+        self.wrapped_root.find('Element3')[0].find
+        # Find first only
+        self.assertEqual(None, self.wrapped_root.find_first('NoMatchingName'))
+        self.assertEqual(self.elem1,
+                self.wrapped_root.find_first('Element1').impl_node)
+        self.assertEqual(self.elem2,
+                self.wrapped_root.find_first('Element2').impl_node)
+
+    def test_xpath(self):
+        # Ensure appropriate exception thrown if XPath is not supported
+        if not self.my_adapter.has_feature('xpath'):
+            self.assertRaises(exceptions.FeatureUnavailableException,
+                self.wrapped_root.xpath, '/')
+            self.skipTest("XPath feature is not supported by %s"
+                          % self.my_adapter)
+        # Find elements at root
+        self.assertEqual([self.wrapped_root], self.wrapped_root.xpath('/*'))
+        # Find all elements in document
+        elems = self.wrapped_root.xpath('//*')
+        self.assertEqual(7, len(elems))
+        self.assertEqual(self.wrapped_root.document.find(), elems)
+        # Find default namespaced element with helper empty/default prefix '_'
+        self.assertEqual([self.wrapped_root],
+            self.wrapped_root.xpath('/_:DocRoot'))
+        # Find all element descendants of root
+        self.assertEqual(self.wrapped_root.find(),
+            self.wrapped_root.xpath('/_:DocRoot//*'))
+        # Find when no element names match
+        elems = self.wrapped_root.xpath('//NoMatchingName')
+        self.assertEqual([], elems)
+        # Find non-namespaced element
+        elems = self.wrapped_root.xpath('//Element1')
+        self.assertEqual(self.wrapped_root.find('Element1'), elems)
+        # Find multiple non-namespaced elements
+        elems = self.wrapped_root.xpath('//Element2')
+        self.assertEqual(
+            [self.wrapped_root.Element2, self.wrapped_root.Element3.Element2],
+            elems)
+        # Find namespaced elements (only 1 Element3 in each namespace)
+        elems = self.wrapped_root.xpath('//ns1:Element3',
+            namespaces={'ns1': 'urn:ns1'})
+        self.assertEqual([self.wrapped_root.Element3], elems)
+
+        return
+        # TODO Complete tests
+
+        # Support namespace URI prefixes, not just standard prefixes
+        elems = self.wrapped_root.xpath('//{urn:ns2}:Element3')
+        self.assertEqual([self.wrapped_root.Element4.Element3], elems)
+
         # Non-namespaced find will find elements across namespaces
         elems = self.wrapped_root.find('Element3')
         self.assertEqual(2, len(elems))
