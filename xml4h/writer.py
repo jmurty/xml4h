@@ -20,6 +20,9 @@ def _sanitize_write_params(indent='', newline=''):
         indent = ' ' * 4
     elif indent is False:
         indent = ''
+    # If indent but no newline set, apply a newline (it makes sense)
+    if indent and not newline:
+        newline = True
 
     if newline is True:
         newline = '\n'
