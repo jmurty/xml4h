@@ -543,6 +543,8 @@ class Element(_NameValueNode, _MagicNodeAttrItemLookupsMixin, _XPathMixin):
     def attributes(self):
         return self.attributes_by_ns(None)
 
+    attrib = attributes  # Alias
+
     @attributes.setter
     def attributes(self, attr_obj=None, ns_uri=None, **attr_dict):
         # Remove existing attributes
@@ -697,6 +699,18 @@ class AttributeDict(object):
             name, self.impl_element)
         return self.adapter.has_node_attribute(self.impl_element, name, ns_uri)
 
+    def __unicode__(self):
+        return u'<%s.%s: %s>' % (
+            self.__class__.__module__, self.__class__.__name__,
+            self.to_dict)
+
+    def __str__(self):
+        # TODO Degrade non-ASCII characters gracefully
+        return str(self.__unicode__())
+
+    def __repr__(self):
+        return self.__str__()
+
     def keys(self):
         return [self.adapter.get_node_name(a) for a in self.impl_attributes]
 
@@ -714,6 +728,11 @@ class AttributeDict(object):
         if a_node is None:
             return None
         return a_node.prefix
+
+    @property
+    def to_dict(self):
+        """Return attribute dictionary as normal dict"""
+        return dict(zip(self.keys(), self.values()))
 
     @property
     def element(self):
