@@ -150,6 +150,9 @@ class LXMLAdapter(_XmlImplAdapter):
         if None in namespaces_dict:
             default_ns_uri = namespaces_dict.pop(None)
             namespaces_dict['_'] = default_ns_uri
+        # Include XMLNS namespace if it's not already defined
+        if not 'xmlns' in namespaces_dict:
+            namespaces_dict['xmlns'] = nodes.Node.XMLNS_URI
         return node.xpath(xpath, namespaces=namespaces_dict)
 
     # Node implementation methods

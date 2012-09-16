@@ -334,39 +334,39 @@ class BaseTestNodes(object):
             [self.wrapped_root.Element2, self.wrapped_root.Element3.Element2],
             elems)
         # Find namespaced elements (only 1 Element3 in each namespace)
+        # requires explicit namepsace mappings to work
         elems = self.wrapped_root.xpath('//ns1:Element3',
             namespaces={'ns1': 'urn:ns1'})
         self.assertEqual([self.wrapped_root.Element3], elems)
-
-        return
-        # TODO Complete tests
-
-        # Support namespace URI prefixes, not just standard prefixes
-        elems = self.wrapped_root.xpath('//{urn:ns2}:Element3')
+        # Find only elements with a given namespace
+        elems = self.wrapped_root.xpath('//x:*', namespaces={'x': 'urn:ns1'})
+        self.assertEqual(
+            [self.wrapped_root.Element3, self.wrapped_root.Element4], elems)
+        elems = self.wrapped_root.xpath('//x:*', namespaces={'x': 'urn:ns2'})
         self.assertEqual([self.wrapped_root.Element4.Element3], elems)
-
-        # Non-namespaced find will find elements across namespaces
-        elems = self.wrapped_root.find('Element3')
-        self.assertEqual(2, len(elems))
-        # Find only elements in a given namespace
-        elems = self.wrapped_root.find(ns_uri='urn:ns1')
-        self.assertEqual(2, len(elems))
-        self.assertEqual('Element3', elems[0].name)
-        self.assertEqual('DocRoot', elems[0].parent.name)
-        self.assertEqual('Element4', elems[1].name)
-        elems = self.wrapped_root.find(ns_uri='urn:ns2')
-        self.assertEqual(1, len(elems))
-        self.assertEqual('ns2:Element3', elems[0].name)
-        self.assertEqual('Element3', elems[0].local_name)
-        self.assertEqual('Element4', elems[0].parent.name)
-        # Chain finds
-        self.wrapped_root.find('Element3')[0].find
-        # Find first only
-        self.assertEqual(None, self.wrapped_root.find_first('NoMatchingName'))
-        self.assertEqual(self.elem1,
-                self.wrapped_root.find_first('Element1').impl_node)
-        self.assertEqual(self.elem2,
-                self.wrapped_root.find_first('Element2').impl_node)
+        # Find a node's parent
+        elems = self.wrapped_root.xpath('//x:Element3/..',
+            namespaces={'x': 'urn:ns2'})
+        self.assertEqual([self.wrapped_root.Element4], elems)
+        # Find just the first/last results
+        elems = self.wrapped_root.xpath('//x:*[1]',
+            namespaces={'x': 'urn:ns1'})
+        self.assertEqual([self.wrapped_root.Element3], elems)
+        elems = self.wrapped_root.xpath('//x:*[last()]',
+            namespaces={'x': 'urn:ns1'})
+        self.assertEqual([self.wrapped_root.Element4], elems)
+        # Lookup attribute
+        result = self.wrapped_root.xpath('//Element1/@a',
+            namespaces={'x': 'urn:ns2'})
+        self.assertEqual(['1'], result)
+        # Lookup text
+        result = self.wrapped_root.xpath('//Element1/text()',
+            namespaces={'x': 'urn:ns2'})
+        self.assertEqual(['Some text'], result)
+        # sum() aggregate function
+        result = self.wrapped_root.xpath('sum(//Element1/@*)',
+            namespaces={'x': 'urn:ns2'})
+        self.assertEqual(3, result)
 
 
 class TestMinidomNodes(BaseTestNodes, unittest.TestCase):

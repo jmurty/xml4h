@@ -300,7 +300,7 @@ class _MagicNodeAttrItemLookupsMixin(object):
         """
         Magical traversal of child XML elements by name when name contains
         an uppercase character, or ends with an underscore (for lowercase
-        element names).
+        element names). Ignores namespaces.
         """
         if child_name.startswith('_'):
             # Never match names with underscore leaders, for safety
@@ -318,12 +318,13 @@ class _MagicNodeAttrItemLookupsMixin(object):
 
     def get(self, child_name, first_only=False):
         """
-        Return a list of child elements with the given node name.
+        Return a list of child elements with the given node name, ignoring
+        namespaces.
 
         If ``first_only`` is True, only the ``first`` such element is
         returned or None is returned if there are no such child elements.
         """
-        results = [c for c in self.children if c.name == child_name]
+        results = [c for c in self.children if c.local_name == child_name]
         if first_only:
             return results[0] if results else None
         else:
@@ -335,13 +336,19 @@ class _MagicNodeAttrItemLookupsMixin(object):
 
 class _XPathMixin(object):
 
+    def _maybe_wrap_node(self, node):
+        # Don't try and wrap base types (e.g. attribute values or node text)
+        if isinstance(node, (basestring, int, long, float)):
+            return node
+        else:
+            return self.adapter.wrap_node(node, self.adapter.impl_document)
+
     def xpath(self, xpath, **kwargs):
         result = self.adapter.xpath_on_node(self.impl_node, xpath, **kwargs)
         if isinstance(result, (list, tuple)):
-            return [self.adapter.wrap_node(r, self.adapter.impl_document)
-                    for r in result]
+            return [self._maybe_wrap_node(r) for r in result]
         else:
-            return self.adapter.wrap_node(result, self.adapter.impl_document)
+            return self._maybe_wrap_node(result)
 
 
 class Document(Node, _MagicNodeAttrItemLookupsMixin, _XPathMixin):
