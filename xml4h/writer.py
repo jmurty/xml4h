@@ -1,5 +1,6 @@
 # Adapted from standard library method xml.dom.minidom.writexml
 import sys
+import codecs
 
 
 def _sanitize_write_value(value):
@@ -13,7 +14,7 @@ def _sanitize_write_value(value):
         )
 
 
-def _sanitize_write_params(indent='', newline=''):
+def _sanitize_write_params(indent='', newline=None):
     if isinstance(indent, int):
         indent = ' ' * indent
     elif indent is True:
@@ -21,10 +22,12 @@ def _sanitize_write_params(indent='', newline=''):
     elif indent is False:
         indent = ''
     # If indent but no newline set, apply a newline (it makes sense)
-    if indent and not newline:
+    if indent and newline is None:
         newline = True
 
-    if newline is True:
+    if newline is None:
+        newline = ''
+    elif newline is True:
         newline = '\n'
     elif newline is False:
         newline = ''
@@ -38,6 +41,19 @@ def write(node, writer=None, encoding='utf-8', indent=0, newline='',
     if writer is None:
         writer = sys.stdout
 
+    if encoding is None:
+        writer = writer
+    else:
+        writer = codecs.getwriter(encoding)(writer)
+
+    __write(node, writer=writer, encoding=encoding,
+        indent=indent, newline=newline, quote_char=quote_char,
+        omit_declaration=omit_declaration, _depth=_depth)
+
+
+def __write(node, writer=None, encoding='utf-8', indent=0, newline='',
+        quote_char='"', omit_declaration=False, _depth=0):
+
     indent, newline = _sanitize_write_params(indent, newline)
 
     # Output document declaration if we're outputting the whole doc
@@ -49,7 +65,7 @@ def write(node, writer=None, encoding='utf-8', indent=0, newline='',
                     % (quote_char, encoding, quote_char))
             writer.write('?>%s' % newline)
         for child in node.children:
-            write(child, writer, encoding, indent, newline, quote_char,
+            __write(child, writer, encoding, indent, newline, quote_char,
                     omit_declaration, _depth)  # Note _depth not incremented
         writer.write(newline)
     elif node.is_document_type:
@@ -60,7 +76,7 @@ def write(node, writer=None, encoding='utf-8', indent=0, newline='',
         if node.children:
             writer.write("[")
             for child in node.children:
-                write(child, writer, encoding=encoding,
+                __write(child, writer, encoding=encoding,
                     indent=indent, newline=newline, quote_char=quote_char,
                     omit_declaration=omit_declaration, _depth=_depth+1)
             writer.write("]")
@@ -108,14 +124,14 @@ def write(node, writer=None, encoding='utf-8', indent=0, newline='',
         writer.write("<" + node.name)
 
         for attr in node.attribute_nodes:
-            write(attr, writer, encoding=encoding,
+            __write(attr, writer, encoding=encoding,
                 indent=indent, newline=newline, quote_char=quote_char,
                 omit_declaration=omit_declaration, _depth=_depth)
         if node.children:
             found_indented_child = False
             writer.write(">")
             for child in node.children:
-                write(child, writer, encoding=encoding,
+                __write(child, writer, encoding=encoding,
                     indent=indent, newline=newline, quote_char=quote_char,
                     omit_declaration=omit_declaration, _depth=_depth+1)
                 if not (child.is_text or child.is_comment or child.is_cdata):

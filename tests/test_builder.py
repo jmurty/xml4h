@@ -1,6 +1,5 @@
 # -*- coding: utf-8 name> -*-
 import unittest
-from StringIO import StringIO
 import functools
 
 from xml4h import builder, nodes, impl_preferred
@@ -169,55 +168,6 @@ class BaseBuilderNodesTest(object):
             '        </Elem2>\t'
             '</DocRoot>\t',
             xmlb.anchor_element.doc_xml(encoding=None, indent=8, newline='\t'))
-
-    def test_write(self):
-        xmlb = (
-            self.my_builder('DocRoot')
-                .e('Elem1').up()
-                .e('Elem2'))
-        # write() method outputs only current node and descendents
-        writer = StringIO()
-        xmlb.anchor_element.write(writer)
-        self.assertEqual('<Elem2/>', writer.getvalue())
-        # Default write output is utf-8, with no pretty-printing
-        xml = (
-            '<?xml version="1.0" encoding="utf-8"?>'
-            '<DocRoot>'
-                '<Elem1/>'
-                '<Elem2/>'
-            '</DocRoot>'
-            )
-        writer = StringIO()
-        xmlb.anchor_element.doc_write(writer)
-        self.assertEqual(xml, writer.getvalue())
-        # Mix it up a bit
-        writer = StringIO()
-        xmlb.anchor_element.doc_write(writer, omit_declaration=True)
-        self.assertEqual(
-            '<DocRoot>'
-                '<Elem1/>'
-                '<Elem2/>'
-            '</DocRoot>',
-            writer.getvalue())
-        writer = StringIO()
-        xmlb.anchor_element.doc_write(writer, encoding='latin1', indent=2)
-        self.assertEqual(
-            '<?xml version="1.0" encoding="latin1"?>'
-            '<DocRoot>'
-            '  <Elem1/>'
-            '  <Elem2/>'
-            '</DocRoot>',
-            writer.getvalue())
-        writer = StringIO()
-        xmlb.anchor_element.doc_write(writer,
-            encoding=None, indent=8, newline='\t')
-        self.assertEqual(
-            '<?xml version="1.0"?>\t'
-            '<DocRoot>\t'
-            '        <Elem1/>\t'
-            '        <Elem2/>\t'
-            '</DocRoot>\t',
-            writer.getvalue())
 
     def test_text(self):
         # Aliases
@@ -544,14 +494,14 @@ class BaseBuilderNodesTest(object):
                 .e(u'yếutố2')
                     .attrs({u'důl:עודתכונה': u'tvö'})
             )
-        self.assertEqual((
+        xml = (
             u'<?xml version="1.0" encoding="utf-8"?>\n'
             u'<جذر xmlns="%(ns_default)s" xmlns:důl="%(ns_custom)s">\n'
             u'    <důl:ぷㄩƦ/>\n'
             u'    <yếutố1 תכונה="1"/>\n'
             u'    <yếutố2 důl:עודתכונה="tvö"/>\n'
-            u'</جذر>\n') % {'ns_default': ns_default, 'ns_custom': ns_custom},
-            xmlb.anchor_element.doc_xml())
+            u'</جذر>\n') % {'ns_default': ns_default, 'ns_custom': ns_custom}
+        self.assertEqual(xml.encode('utf-8'), xmlb.anchor_element.doc_xml())
         doc = xmlb.document
         self.assertEqual(u'جذر', doc.root.name)
         self.assertEqual(ns_default, doc.root.attributes[u'xmlns'])
