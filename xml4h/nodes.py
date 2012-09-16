@@ -126,7 +126,10 @@ class Node(object):
     def __eq__(self, other):
         if self is other:
             return True
-        return self.impl_document == getattr(other, 'impl_document', None)
+        elif not isinstance(other, Node):
+            return False
+        return (self.impl_document == other.impl_document
+            and self.impl_node == other.impl_node)
 
     def _convert_nodelist(self, nodelist):
         # TODO Do something more efficient here, lazy wrapping?
