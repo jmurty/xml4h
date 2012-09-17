@@ -22,7 +22,7 @@ def _sanitize_write_params(indent='', newline=None):
     elif indent is False:
         indent = ''
     # If indent but no newline set, apply a newline (it makes sense)
-    if indent and newline is None:
+    if indent and not newline:
         newline = True
 
     if newline is None:
@@ -46,6 +46,8 @@ def write(node, writer=None, encoding='utf-8', indent=0, newline='',
     else:
         writer = codecs.getwriter(encoding)(writer)
 
+    indent, newline = _sanitize_write_params(indent, newline)
+
     __write(node, writer=writer, encoding=encoding,
         indent=indent, newline=newline, quote_char=quote_char,
         omit_declaration=omit_declaration, _depth=_depth)
@@ -53,8 +55,6 @@ def write(node, writer=None, encoding='utf-8', indent=0, newline='',
 
 def __write(node, writer=None, encoding='utf-8', indent=0, newline='',
         quote_char='"', omit_declaration=False, _depth=0):
-
-    indent, newline = _sanitize_write_params(indent, newline)
 
     # Output document declaration if we're outputting the whole doc
     if node.is_document:
@@ -78,7 +78,7 @@ def __write(node, writer=None, encoding='utf-8', indent=0, newline='',
             for child in node.children:
                 __write(child, writer, encoding=encoding,
                     indent=indent, newline=newline, quote_char=quote_char,
-                    omit_declaration=omit_declaration, _depth=_depth+1)
+                    omit_declaration=omit_declaration, _depth=_depth + 1)
             writer.write("]")
         writer.write(">")
     elif node.is_text:
@@ -133,7 +133,7 @@ def __write(node, writer=None, encoding='utf-8', indent=0, newline='',
             for child in node.children:
                 __write(child, writer, encoding=encoding,
                     indent=indent, newline=newline, quote_char=quote_char,
-                    omit_declaration=omit_declaration, _depth=_depth+1)
+                    omit_declaration=omit_declaration, _depth=_depth + 1)
                 if not (child.is_text or child.is_comment or child.is_cdata):
                     found_indented_child = True
             if found_indented_child:
