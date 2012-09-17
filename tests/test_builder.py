@@ -1,6 +1,8 @@
 # -*- coding: utf-8 name> -*-
 import unittest
 import functools
+import os
+from StringIO import StringIO
 
 from xml4h import builder, nodes, impl_preferred
 from xml4h.impls.lxml_etree import LXMLAdapter
@@ -511,6 +513,98 @@ class BaseBuilderNodesTest(object):
         self.assertEqual(u'1', doc.find_first(u'yếutố1').attributes[u'תכונה'])
         self.assertEqual(u'tvö',
             doc.find_first(u'yếutố2').attributes[u'důl:עודתכונה'])
+
+    def test_build_monty_python_film_example(self):
+        """
+        Test production of a simple example XML doc; to be reused as project
+        documentation.
+        """
+        import xml4h
+        # Create builder with the name of the root element
+        b = (xml4h.builder('MontyPythonFilms')
+            # Assign attributes to the new root element
+            .attributes({'source': 'http://en.wikipedia.org/wiki/Monty_Python'})
+            # Create a child element
+            .element('Film')
+                # When an element is added, later method calls apply to it
+                .attributes({'year': 1971})
+                .element('Title')
+                    # Set text content of element with text()
+                    .text('And Now for Something Completely Different')
+                    # Use up() to perform later actions on parent element
+                    .up()
+                # Builder methods element(), text() etc. have shorter aliases
+                .elem('Description').t(
+                    "A collection of sketches from the first and second TV"
+                    " series of Monty Python's Flying Circus purposely"
+                    " re-enacted and shot for film.").up()
+                .up()
+            )
+        # A builder object can be re-used
+        (b.e('Film')
+            .attrs(year=1974)
+            .e('Title').t('Monty Python and the Holy Grail').up()
+            .e('Description').t(
+                "King Arthur and his knights embark on a low-budget search"
+                " for the Holy Grail, encountering humorous obstacles along"
+                " the way. Some of these turned into standalone sketches."
+                ).up()
+            .up()
+        )
+        # A builder can be created from any element
+        doc_root_elem = b.root
+        (doc_root_elem.builder
+            .e('Film')
+                .attrs(year=1979)
+                .e('Title').t("Monty Python's Life of Brian").up()
+                .e('Description').t(
+                    "Brian is born on the first Christmas, in the stable next to"
+                    " Jesus'. He spends his life being mistaken for a messiah."
+                    ).up()
+                .up()
+
+            .e('Film')
+                .attrs(year=1982)
+                .e('Title').t('Monty Python Live at the Hollywood Bowl').up()
+                .e('Description').t(
+                    "A videotape recording directed by Ian MacNaughton of a"
+                    " live performance of sketches. Originally intended for"
+                    " a TV/video special. Transferred to 35mm and given a"
+                    " limited theatrical release in the US."
+                    ).up()
+                .up()
+            .e('Film')
+                .attrs(year=1983)
+                .e('Title').t("Monty Python's The Meaning of Life").up()
+                .e('Description').t(
+                    "An examination of the meaning of life in a series of"
+                    " sketches from conception to death and beyond."
+                    ).up()
+                .up()
+            .e('Film')
+                .attrs(year=2009)
+                .e('Title').t("Monty Python: Almost the Truth (The Lawyer's Cut)").up()
+                .e('Description').t(
+                    "This film features interviews with all the surviving"
+                    " Python members, along with archive representation for"
+                    " the late Graham Chapman."
+                    ).up()
+                .up()
+            .e('Film')
+                .attrs(year=2012)
+                .e('Title').t("A Liar's Autobiography: Volume IV").up()
+                .e('Description').t(
+                    "This is an animated film which is based on the memoir"
+                    " of the late Monty Python member, Graham Chapman."
+                    ).up()
+                .up()
+        )
+        # Compare output of builder with pre-prepared example document
+        example_file_path = os.path.join(
+            os.path.dirname(__file__), 'data/monty_python_films.xml')
+        writer = StringIO()
+        doc_root_elem.write(writer, indent=True)
+        self.assertEqual(open(example_file_path).read(), writer.getvalue())
 
 
 class TestXmlDomBuilder(BaseBuilderNodesTest, unittest.TestCase):
