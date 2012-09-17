@@ -3,7 +3,7 @@ import unittest
 import os
 import re
 
-from xml4h import parse, nodes, impl_preferred
+from xml4h import parse, nodes
 from xml4h.impls.lxml_etree import LXMLAdapter
 
 
@@ -93,13 +93,3 @@ class TestLXMLEtreeParser(unittest.TestCase, BaseParserTest):
 
     def parse(self, xml_str):
         return parse(xml_str, adapter=self.adapter)
-
-
-class TestDefaultImpl(unittest.TestCase, BaseParserTest):
-
-    @property
-    def adapter(self):
-        return impl_preferred
-
-    def parse(self, xml_str):
-        return parse(xml_str)

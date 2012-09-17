@@ -4,7 +4,7 @@ import functools
 import os
 from StringIO import StringIO
 
-from xml4h import builder, nodes, impl_preferred
+from xml4h import builder, nodes
 from xml4h.impls.lxml_etree import LXMLAdapter
 
 
@@ -638,17 +638,3 @@ class TestLXMLEtreeBuilder(BaseBuilderNodesTest, unittest.TestCase):
     @property
     def my_builder(self):
         return functools.partial(builder, adapter=self.adapter)
-
-
-class TestDefaultImpl(BaseBuilderNodesTest, unittest.TestCase):
-    """
-    Tests building with the default implementation, whichever it is.
-    """
-
-    @property
-    def adapter(self):
-        return impl_preferred
-
-    @property
-    def my_builder(self):
-        return functools.partial(builder)
