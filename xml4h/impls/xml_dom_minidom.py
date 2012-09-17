@@ -67,7 +67,7 @@ class XmlDomImplAdapter(_XmlImplAdapter):
                 xml.dom.Node.DOCUMENT_FRAGMENT_NODE: nodes.DocumentFragment,
                 xml.dom.Node.NOTATION_NODE: nodes.Notation,
                 }[impl_node.nodeType]
-        except KeyError, e:
+        except KeyError:
             raise Exception(
                 'Unrecognized type for implementation node: %s' % impl_node)
 

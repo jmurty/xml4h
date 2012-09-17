@@ -10,12 +10,13 @@ class Builder(object):
     def __init__(self, element):
         """Create a Builder anchored to an xml4h Element node"""
         if not isinstance(element, Element):
-            raise ValueError("Builder can only be created with an %s object"
-                             % Element)
+            raise ValueError(
+                "Builder can only be created with an %s.%s instance"
+                % (Element.__module__, Element.__name__))
         self._element = element
 
     @property
-    def anchor_element(self):
+    def doc_element(self):
         """Return the xml4h Element node that anchors this Builder"""
         return self._element
 

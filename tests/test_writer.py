@@ -3,7 +3,7 @@ import unittest
 import functools
 from StringIO import StringIO
 
-from xml4h import builder
+import xml4h
 
 
 class BaseWriterTest(object):
@@ -18,7 +18,7 @@ class BaseWriterTest(object):
         self.iostr = StringIO()
 
     def test_write_current_node_and_descendents(self):
-        self.builder.anchor_element.write(self.iostr)
+        self.builder.doc_element.write(self.iostr)
         self.assertEqual('<Elem2/>', self.iostr.getvalue())
 
     def test_write_utf8_by_default(self):
@@ -30,7 +30,7 @@ class BaseWriterTest(object):
             u'<Elem2/>'
             u'</DocRoot>'
             )
-        self.builder.anchor_element.doc_write(self.iostr)
+        self.builder.doc_element.doc_write(self.iostr)
         self.assertEqual(xml.encode('utf-8'), self.iostr.getvalue())
 
     def test_write_utf16(self):
@@ -41,12 +41,12 @@ class BaseWriterTest(object):
             u'<Elem2/>'
             u'</DocRoot>'
             )
-        self.builder.anchor_element.doc_write(self.iostr, encoding='utf-16')
+        self.builder.doc_element.doc_write(self.iostr, encoding='utf-16')
         self.assertEqual(xml.encode('utf-16'), self.iostr.getvalue())
 
     def test_write_latin1_with_illegal_characters(self):
         self.assertRaises(UnicodeEncodeError,
-            self.builder.anchor_element.doc_write,
+            self.builder.doc_element.doc_write,
                 self.iostr, encoding='latin1', indent=2)
 
     def test_write_latin1(self):
@@ -55,7 +55,7 @@ class BaseWriterTest(object):
             self.my_builder('DocRoot')
                 .element('Elem1').text(u'Tést çæsè').up()
                 .element('Elem2'))
-        self.builder.anchor_element.doc_write(self.iostr, encoding='latin1')
+        self.builder.doc_element.doc_write(self.iostr, encoding='latin1')
         self.assertEqual(
             u'<?xml version="1.0" encoding="latin1"?>'
             u'<DocRoot>'
@@ -73,12 +73,12 @@ class BaseWriterTest(object):
             u'<Elem2/>'
             u'</DocRoot>'
             )
-        self.builder.anchor_element.doc_write(self.iostr, encoding=None)
+        self.builder.doc_element.doc_write(self.iostr, encoding=None)
         # NOTE Exact test, no encoding of comparison XML doc string
         self.assertEqual(xml, self.iostr.getvalue())
 
     def test_omit_declaration(self):
-        self.builder.anchor_element.doc_write(self.iostr,
+        self.builder.doc_element.doc_write(self.iostr,
                 omit_declaration=True)
         self.assertEqual(
             u'<DocRoot>'
@@ -88,7 +88,7 @@ class BaseWriterTest(object):
             self.iostr.getvalue())
 
     def test_custom_indent_and_newline(self):
-        self.builder.anchor_element.doc_write(self.iostr,
+        self.builder.doc_element.doc_write(self.iostr,
             indent=8, newline='\t')
         self.assertEqual(
             u'<?xml version="1.0" encoding="utf-8"?>\t'
@@ -107,12 +107,11 @@ class TestXmlDomBuilder(BaseWriterTest, unittest.TestCase):
 
     @property
     def adapter(self):
-        from xml4h.impls.xml_dom_minidom import XmlDomImplAdapter
-        return XmlDomImplAdapter
+        return xml4h.XmlDomImplAdapter
 
     @property
     def my_builder(self):
-        return functools.partial(builder, adapter=self.adapter)
+        return functools.partial(xml4h.builder, adapter=self.adapter)
 
 
 class TestLXMLEtreeBuilder(BaseWriterTest, unittest.TestCase):
@@ -122,11 +121,10 @@ class TestLXMLEtreeBuilder(BaseWriterTest, unittest.TestCase):
 
     @property
     def adapter(self):
-        from xml4h.impls.lxml_etree import LXMLAdapter
-        if not LXMLAdapter.is_available():
+        if not xml4h.LXMLAdapter.is_available():
             self.skipTest("lxml library is not installed")
-        return LXMLAdapter
+        return xml4h.LXMLAdapter
 
     @property
     def my_builder(self):
-        return functools.partial(builder, adapter=self.adapter)
+        return functools.partial(xml4h.builder, adapter=self.adapter)

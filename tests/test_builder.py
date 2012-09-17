@@ -4,18 +4,20 @@ import functools
 import os
 from StringIO import StringIO
 
-from xml4h import builder, nodes
-from xml4h.impls.lxml_etree import LXMLAdapter
+import xml.dom
+
+import xml4h
 
 
 class TestBuilderMethods(unittest.TestCase):
 
     def test_create_minidom(self):
-        import xml.dom
-        from xml4h.impls.xml_dom_minidom import XmlDomImplAdapter
-        xmlb = builder('DocRoot', adapter=XmlDomImplAdapter)
+        xmlb = xml4h.builder('DocRoot', adapter=xml4h.XmlDomImplAdapter)
         self.assertIsInstance(
-            xmlb.anchor_element.impl_document, xml.dom.minidom.Document)
+            xmlb.doc_element.impl_document, xml.dom.minidom.Document)
+
+    def test_init_with_illegal_object(self):
+        self.assertRaises(ValueError, xml4h.Builder, 'Bad')
 
 
 class BaseBuilderNodesTest(object):
@@ -44,7 +46,7 @@ class BaseBuilderNodesTest(object):
             '        </AndDeeper>\n'
             '    </Deeper>\n'
             '</DocRoot>\n',
-            xmlb.anchor_element.doc_xml())
+            xmlb.doc_element.doc_xml())
 
     def test_root(self):
         xmlb = (
@@ -53,8 +55,8 @@ class BaseBuilderNodesTest(object):
                 .e('AndDeeper')
                 .e('DeeperStill'))
         # Builder node is at DeeperStill element, but we can get to the root
-        self.assertEqual('DeeperStill', xmlb.anchor_element.name)
-        self.assertEqual('DocRoot', xmlb.anchor_element.root.name)
+        self.assertEqual('DeeperStill', xmlb.doc_element.name)
+        self.assertEqual('DocRoot', xmlb.doc_element.root.name)
 
     def test_up(self):
         xmlb = (
@@ -62,33 +64,33 @@ class BaseBuilderNodesTest(object):
                 .e('Deeper')
                 .e('AndDeeper')
                 .e('DeeperStill'))
-        self.assertEqual('DeeperStill', xmlb.anchor_element.name)
+        self.assertEqual('DeeperStill', xmlb.doc_element.name)
 
         # Can navigate up XML DOM tree one step at a time...
-        self.assertEqual('AndDeeper', xmlb.up().anchor_element.name)
-        self.assertEqual('Deeper', xmlb.up().up().anchor_element.name)
-        self.assertEqual('DocRoot', xmlb.up().up().up().anchor_element.name)
+        self.assertEqual('AndDeeper', xmlb.up().doc_element.name)
+        self.assertEqual('Deeper', xmlb.up().up().doc_element.name)
+        self.assertEqual('DocRoot', xmlb.up().up().up().doc_element.name)
         # ...but not past the root element
         self.assertEqual('DocRoot',
-            xmlb.up().up().up().up().anchor_element.name)
+            xmlb.up().up().up().up().doc_element.name)
 
         # Can navigate up by count...
-        self.assertEqual('AndDeeper', xmlb.up().anchor_element.name)
-        self.assertEqual('Deeper', xmlb.up(2).anchor_element.name)
-        self.assertEqual('DocRoot', xmlb.up(3).anchor_element.name)
+        self.assertEqual('AndDeeper', xmlb.up().doc_element.name)
+        self.assertEqual('Deeper', xmlb.up(2).doc_element.name)
+        self.assertEqual('DocRoot', xmlb.up(3).doc_element.name)
         # ...but not past the root element
-        self.assertEqual('DocRoot', xmlb.up(100).anchor_element.name)
+        self.assertEqual('DocRoot', xmlb.up(100).doc_element.name)
 
         # Can navigate up to a given element tagname
         self.assertEqual('AndDeeper',
-            xmlb.up(to_tagname='AndDeeper').anchor_element.name)
+            xmlb.up(to_tagname='AndDeeper').doc_element.name)
         self.assertEqual('Deeper',
-            xmlb.up(to_tagname='Deeper').anchor_element.name)
+            xmlb.up(to_tagname='Deeper').doc_element.name)
         self.assertEqual('DocRoot',
-            xmlb.up(to_tagname='DocRoot').anchor_element.name)
+            xmlb.up(to_tagname='DocRoot').doc_element.name)
         # ...but not past the root element if there is no such tagname
         self.assertEqual('DocRoot',
-            xmlb.up(to_tagname='NoSuchName').anchor_element.name)
+            xmlb.up(to_tagname='NoSuchName').doc_element.name)
 
     def test_attributes(self):
         # Aliases
@@ -120,7 +122,7 @@ class BaseBuilderNodesTest(object):
             '    <Elem4 twelve="12"/>\n'
             '    <Elem5 test="value-in-first-arg"/>\n'
             '</DocRoot>\n',
-            xmlb.anchor_element.doc_xml())
+            xmlb.doc_element.doc_xml())
 
     def test_xml(self):
         xmlb = (
@@ -131,7 +133,7 @@ class BaseBuilderNodesTest(object):
         # xml() method outputs current node content and descendents only
         self.assertEqual(
             '<Elem2>\n    <Elem3/>\n</Elem2>',
-            xmlb.anchor_element.xml())
+            xmlb.doc_element.xml())
         # Default string output is utf-8, and pretty-printed
         xml = (
             '<?xml version="1.0" encoding="utf-8"?>\n'
@@ -142,7 +144,7 @@ class BaseBuilderNodesTest(object):
             '    </Elem2>\n'
             '</DocRoot>\n'
             )
-        self.assertEqual(xml, xmlb.anchor_element.doc_xml())
+        self.assertEqual(xml, xmlb.doc_element.doc_xml())
         # Mix it up a bit
         self.assertEqual(
             '<DocRoot>\n'
@@ -151,7 +153,7 @@ class BaseBuilderNodesTest(object):
             '        <Elem3/>\n'
             '    </Elem2>\n'
             '</DocRoot>\n',
-            xmlb.anchor_element.doc_xml(omit_declaration=True))
+            xmlb.doc_element.doc_xml(omit_declaration=True))
         self.assertEqual(
             '<?xml version="1.0" encoding="latin1"?>\n'
             '<DocRoot>\n'
@@ -160,7 +162,7 @@ class BaseBuilderNodesTest(object):
             '    <Elem3/>\n'
             '  </Elem2>\n'
             '</DocRoot>\n',
-            xmlb.anchor_element.doc_xml(encoding='latin1', indent=2))
+            xmlb.doc_element.doc_xml(encoding='latin1', indent=2))
         self.assertEqual(
             '<?xml version="1.0"?>\t'
             '<DocRoot>\t'
@@ -169,7 +171,7 @@ class BaseBuilderNodesTest(object):
             '                <Elem3/>\t'
             '        </Elem2>\t'
             '</DocRoot>\t',
-            xmlb.anchor_element.doc_xml(encoding=None, indent=8, newline='\t'))
+            xmlb.doc_element.doc_xml(encoding=None, indent=8, newline='\t'))
 
     def test_text(self):
         # Aliases
@@ -187,7 +189,7 @@ class BaseBuilderNodesTest(object):
             '    <Elem1>A text value</Elem1>\n'
             '    <Elem2>Seven equals 7</Elem2>\n'
             '</DocRoot>\n',
-            xmlb.anchor_element.doc_xml())
+            xmlb.doc_element.doc_xml())
         # Multiple text nodes, and text node next to nested element
         xmlb = (
             self.my_builder('DocRoot')
@@ -207,7 +209,7 @@ class BaseBuilderNodesTest(object):
             '        <Nested>Text in nested</Nested>\n'
             '    </Elem2>\n'
             '</DocRoot>\n',
-            xmlb.anchor_element.doc_xml())
+            xmlb.doc_element.doc_xml())
 
     def test_comment(self):
         # Aliases
@@ -223,7 +225,7 @@ class BaseBuilderNodesTest(object):
             '<DocRoot>\n'
             '    <Elem1><!--Here is my comment--></Elem1>\n'
             '</DocRoot>\n',
-            xmlb.anchor_element.doc_xml())
+            xmlb.doc_element.doc_xml())
 
     def test_instruction(self):
         # Aliases
@@ -240,7 +242,7 @@ class BaseBuilderNodesTest(object):
             '<DocRoot>\n'
             '    <?inst-target inst-data?>\n'
             '</DocRoot>\n',
-            xmlb.anchor_element.doc_xml())
+            xmlb.doc_element.doc_xml())
 
     def test_namespace(self):
         # Define namespaces on elements after creation
@@ -255,18 +257,18 @@ class BaseBuilderNodesTest(object):
             '    <Elem1 xmlns="urn:elem1"/>\n'
             '    <Elem2 xmlns:myns="urn:elem2"/>\n'
             '</DocRoot>\n',
-            xmlb.anchor_element.doc_xml())
+            xmlb.doc_element.doc_xml())
         # Test namespaces work as expected when searching/traversing DOM
         self.assertEqual(1, len(xmlb.find(name='Elem1')))  # Ignore namespace
         self.assertEqual(1, len(xmlb.find(name='Elem1', ns_uri='urn:elem1')))
         self.assertEqual(1, len(xmlb.doc_find(ns_uri='urn:elem1')))
         self.assertEqual(0, len(xmlb.find(name='Elem1', ns_uri='urn:wrong')))
         self.assertEqual(['Elem1'],
-            [n.name for n in xmlb.anchor_element.children_in_ns('urn:elem1')])
+            [n.name for n in xmlb.doc_element.children_in_ns('urn:elem1')])
         self.assertEqual(['DocRoot', 'Elem2'],
             [n.name for n in xmlb.doc_find(ns_uri='urn:default')])
         self.assertEqual(['Elem2'],
-            [n.name for n in xmlb.anchor_element.children_in_ns('urn:default')])
+            [n.name for n in xmlb.doc_element.children_in_ns('urn:default')])
         # Set namespaces of elements and attributes on creation
         xmlb = (
             self.my_builder('DocRoot', ns_uri='urn:default')
@@ -303,15 +305,15 @@ class BaseBuilderNodesTest(object):
                        ' myns:custom-ns-prefix-explicit="1"'
                        ' myns:custom-ns-prefix-implicit="1"/>\n'
             '</DocRoot>\n'
-            % (self.adapter == LXMLAdapter and 'myns:' or ''))
+            % (self.adapter == xml4h.LXMLAdapter and 'myns:' or ''))
             # TODO: lxml outputs prefix in more situations than minidom
-        self.assertEqual(xml, xmlb.anchor_element.doc_xml())
+        self.assertEqual(xml, xmlb.doc_element.doc_xml())
         # Test namespaces work as expected when searching/traversing DOM
         self.assertEqual(
             ['DocRoot', 'NSDefaultImplicit', 'NSDefaultExplicit',
              'Attrs1', 'Attrs2'],
             [n.name for n in xmlb.doc_find(ns_uri='urn:default')])
-        if self.adapter == LXMLAdapter:  # TODO: Differing prefix output
+        if self.adapter == xml4h.LXMLAdapter:  # TODO: Differing prefix output
             self.assertEqual(
                 ['myns:NSCustomExplicit', 'myns:NSCustomWithPrefixImplicit',
                  'myns:NSCustomWithPrefixExplicit'],
@@ -326,9 +328,9 @@ class BaseBuilderNodesTest(object):
              'NSCustomWithPrefixExplicit'],
             [n.local_name for n in xmlb.doc_find(ns_uri='urn:custom')])
         # Check attribute namespaces
-        self.assertEqual([nodes.Node.XMLNS_URI, nodes.Node.XMLNS_URI],
-            [n.namespace_uri
-             for n in xmlb.anchor_element.root.attribute_nodes])
+        self.assertEqual(
+            [xml4h.nodes.Node.XMLNS_URI, xml4h.nodes.Node.XMLNS_URI],
+            [n.namespace_uri for n in xmlb.doc_element.root.attribute_nodes])
         attrs1_elem = xmlb.document.find_first('Attrs1')
         self.assertEqual([None, None],
             [n.namespace_uri for n in attrs1_elem.attribute_nodes])
@@ -347,7 +349,7 @@ class BaseBuilderNodesTest(object):
                     'testns:attrib1': 'value1',
                     '{urn:test}attrib2': 'value2'})
             )
-        root = xmlb.anchor_element.root
+        root = xmlb.doc_element.root
         self.assertEqual('testns', root.find_first(name='Elem1').prefix)
         self.assertEqual('testns', root.find_first(name='Elem2').prefix)
         self.assertEqual(
@@ -374,7 +376,7 @@ class BaseBuilderNodesTest(object):
             '    <testns:Elem2/>\n'
             '    <Attrs testns:attrib1="value1" testns:attrib2="value2"/>\n'
             '</DocRoot>\n',
-            xmlb.anchor_element.doc_xml())
+            xmlb.doc_element.doc_xml())
         # Attempts to use undefined namespace prefixes will fail
         xmlb = self.my_builder('DocRoot', ns_uri='urn:default')
         self.assertRaises(Exception,
@@ -425,7 +427,7 @@ class BaseBuilderNodesTest(object):
                 .e('Elem1').t('<content/> as text').up()
                 .e('Elem2').d('<content/> as cdata').up()
             )
-        if self.adapter == LXMLAdapter:
+        if self.adapter == xml4h.LXMLAdapter:
             # TODO: lxml library does not support real cdata?
             self.assertEqual(
                 '<?xml version="1.0" encoding="utf-8"?>\n'
@@ -433,7 +435,7 @@ class BaseBuilderNodesTest(object):
                 '    <Elem1>&lt;content/&gt; as text</Elem1>\n'
                 '    <Elem2>&lt;content/&gt; as cdata</Elem2>\n'
                 '</DocRoot>\n',
-                xmlb.anchor_element.doc_xml())
+                xmlb.doc_element.doc_xml())
         else:
             self.assertEqual(
                 '<?xml version="1.0" encoding="utf-8"?>\n'
@@ -441,7 +443,7 @@ class BaseBuilderNodesTest(object):
                 '    <Elem1>&lt;content/&gt; as text</Elem1>\n'
                 '    <Elem2><![CDATA[<content/> as cdata]]></Elem2>\n'
                 '</DocRoot>\n',
-                xmlb.anchor_element.doc_xml())
+                xmlb.doc_element.doc_xml())
 
     def test_element_with_extra_kwargs(self):
         xmlb = (
@@ -462,7 +464,7 @@ class BaseBuilderNodesTest(object):
             '    <Elem>Text value</Elem>\n'
             '    <Elem x="1">More text</Elem>\n'
             '</DocRoot>\n',
-            xmlb.anchor_element.doc_xml())
+            xmlb.doc_element.doc_xml())
         # Insert a new element before another
         xmlb = (
             self.my_builder('DocRoot')
@@ -477,13 +479,13 @@ class BaseBuilderNodesTest(object):
             '    <PenultimateElement/>\n'
             '    <FinalElement/>\n'
             '</DocRoot>\n',
-            xmlb.anchor_element.doc_xml())
+            xmlb.doc_element.doc_xml())
 
     def test_unicode(self):
         ns_default = u'urn:默认'
         ns_custom = u'urn:習俗'
         # NOTE lxml doesn't support unicode namespace URIs
-        if self.adapter == LXMLAdapter:
+        if self.adapter == xml4h.LXMLAdapter:
             ns_default = 'urn:default'
             ns_custom = 'urn:custom'
         xmlb = (
@@ -503,7 +505,7 @@ class BaseBuilderNodesTest(object):
             u'    <yếutố1 תכונה="1"/>\n'
             u'    <yếutố2 důl:עודתכונה="tvö"/>\n'
             u'</جذر>\n') % {'ns_default': ns_default, 'ns_custom': ns_custom}
-        self.assertEqual(xml.encode('utf-8'), xmlb.anchor_element.doc_xml())
+        self.assertEqual(xml.encode('utf-8'), xmlb.doc_element.doc_xml())
         doc = xmlb.document
         self.assertEqual(u'جذر', doc.root.name)
         self.assertEqual(ns_default, doc.root.attributes[u'xmlns'])
@@ -519,11 +521,11 @@ class BaseBuilderNodesTest(object):
         Test production of a simple example XML doc; to be reused as project
         documentation.
         """
-        import xml4h
         # Create builder with the name of the root element
         b = (xml4h.builder('MontyPythonFilms')
             # Assign attributes to the new root element
-            .attributes({'source': 'http://en.wikipedia.org/wiki/Monty_Python'})
+            .attributes(
+                {'source': 'http://en.wikipedia.org/wiki/Monty_Python'})
             # Create a child element
             .element('Film')
                 # When an element is added, later method calls apply to it
@@ -558,8 +560,9 @@ class BaseBuilderNodesTest(object):
                 .attrs(year=1979)
                 .e('Title').t("Monty Python's Life of Brian").up()
                 .e('Description').t(
-                    "Brian is born on the first Christmas, in the stable next to"
-                    " Jesus'. He spends his life being mistaken for a messiah."
+                    "Brian is born on the first Christmas, in the stable "
+                    "next to Jesus'. He spends his life being mistaken "
+                    "for a messiah."
                     ).up()
                 .up()
 
@@ -583,7 +586,9 @@ class BaseBuilderNodesTest(object):
                 .up()
             .e('Film')
                 .attrs(year=2009)
-                .e('Title').t("Monty Python: Almost the Truth (The Lawyer's Cut)").up()
+                .e('Title')
+                    .t("Monty Python: Almost the Truth (The Lawyer's Cut)")
+                    .up()
                 .e('Description').t(
                     "This film features interviews with all the surviving"
                     " Python members, along with archive representation for"
@@ -615,12 +620,11 @@ class TestXmlDomBuilder(BaseBuilderNodesTest, unittest.TestCase):
 
     @property
     def adapter(self):
-        from xml4h.impls.xml_dom_minidom import XmlDomImplAdapter
-        return XmlDomImplAdapter
+        return xml4h.XmlDomImplAdapter
 
     @property
     def my_builder(self):
-        return functools.partial(builder, adapter=self.adapter)
+        return functools.partial(xml4h.builder, adapter=self.adapter)
 
 
 class TestLXMLEtreeBuilder(BaseBuilderNodesTest, unittest.TestCase):
@@ -630,11 +634,10 @@ class TestLXMLEtreeBuilder(BaseBuilderNodesTest, unittest.TestCase):
 
     @property
     def adapter(self):
-        from xml4h.impls.lxml_etree import LXMLAdapter
-        if not LXMLAdapter.is_available():
+        if not xml4h.LXMLAdapter.is_available():
             self.skipTest("lxml library is not installed")
-        return LXMLAdapter
+        return xml4h.LXMLAdapter
 
     @property
     def my_builder(self):
-        return functools.partial(builder, adapter=self.adapter)
+        return functools.partial(xml4h.builder, adapter=self.adapter)

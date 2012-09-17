@@ -22,18 +22,22 @@ for impl_class in _IMPLEMENTATION_CLASSES:
         _IMPLEMENTATIONS_UNAVAILABLE.append(impl_class)
 
 
-impl_preferred = _IMPLEMENTATIONS_AVAILABLE[0]
+best_adapter = _IMPLEMENTATIONS_AVAILABLE[0]
 
 
 def parse(to_parse, ignore_whitespace_text_nodes=True, adapter=None):
     """
     Return an xml4h document based on an XML DOM parsed from a string or
     file-like input, using the supplied implementation adapter
-    (or the xml4h preferred implementation if not
-    supplied).
+    (or the xml4h preferred implementation if not supplied).
+
+    Params:
+     - `to_parse` : a string containing XML data or a file path. An input
+       containing any '<' characters is treated as literal XML data,
+       everything else is treated as a file path.
     """
     if adapter is None:
-        adapter = impl_preferred
+        adapter = best_adapter
     if isinstance(to_parse, basestring) and '<' in to_parse:
         return adapter.parse_string(to_parse, ignore_whitespace_text_nodes)
     else:
@@ -47,6 +51,6 @@ def builder(root_tagname, ns_uri=None, adapter=None):
     if not supplied).
     """
     if adapter is None:
-        adapter = impl_preferred
+        adapter = best_adapter
     impl_doc = adapter.create_document(root_tagname, ns_uri=ns_uri)
     return Builder(impl_doc.root)

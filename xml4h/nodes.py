@@ -47,6 +47,10 @@ class Node(object):
         return self._adapter
 
     @property
+    def adapter_class(self):
+        return self._adapter.__class__
+
+    @property
     def impl_document(self):
         return self.adapter.impl_document
 
@@ -543,8 +547,6 @@ class Element(_NameValueNode, _MagicNodeAttrItemLookupsMixin, _XPathMixin):
     def attributes(self):
         return self.attributes_by_ns(None)
 
-    attrib = attributes  # Alias
-
     @attributes.setter
     def attributes(self, attr_obj=None, ns_uri=None, **attr_dict):
         # Remove existing attributes
@@ -554,6 +556,8 @@ class Element(_NameValueNode, _MagicNodeAttrItemLookupsMixin, _XPathMixin):
         # Add new attributes
         self._set_element_attributes(self.impl_node,
             attr_obj=attr_obj, ns_uri=ns_uri, **attr_dict)
+
+    attrib = attributes  # Alias
 
     @property
     def attribute_nodes(self):

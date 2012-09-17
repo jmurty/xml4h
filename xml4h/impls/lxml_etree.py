@@ -488,5 +488,4 @@ class LXMLAttribute(object):
     def value(self):
         return self._value
 
-    name = tag = local_name # Alias
-
+    name = tag = local_name  # Alias
