@@ -1,4 +1,5 @@
 import codecs
+import collections
 from StringIO import StringIO
 
 import xml4h
@@ -265,11 +266,8 @@ class Node(object):
     def write(self, *args, **kwargs):
         xml4h.write(self, *args, **kwargs)
 
-    def doc_write(self, writer, encoding='utf-8', indent=False, newline=False,
-            quote_char='"', omit_declaration=False, _depth=0):
-        self.document.write(writer, encoding=encoding,
-            indent=indent, newline=newline, quote_char=quote_char,
-            omit_declaration=omit_declaration, _depth=_depth)
+    def doc_write(self, *args, **kwargs):
+        self.document.write(*args, **kwargs)
 
     def xml(self, encoding='utf-8', indent=4, newline='\n',
             quote_char='"', omit_declaration=False, _depth=0):
@@ -721,6 +719,10 @@ class AttributeDict(object):
     def values(self):
         return [self.adapter.get_node_value(a) for a in self.impl_attributes]
 
+    def items(self):
+        sorted_keys = sorted(self.keys())
+        return [(k, self[k]) for k in sorted_keys]
+
     def namespace_uri(self, name):
         a_node = self.adapter.get_node_attribute_node(self.impl_element, name)
         if a_node is None:
@@ -735,8 +737,8 @@ class AttributeDict(object):
 
     @property
     def to_dict(self):
-        """Return attribute dictionary as normal dict"""
-        return dict(zip(self.keys(), self.values()))
+        """Return attribute dictionary as an ordered dict"""
+        return collections.OrderedDict(self.items())
 
     @property
     def element(self):
