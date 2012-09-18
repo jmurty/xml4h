@@ -47,6 +47,12 @@ class Builder(object):
         """
         return self._element.doc_find(**kwargs)
 
+    def write(self, *args, **kwargs):
+        self.doc_element.write(*args, **kwargs)
+
+    def doc_write(self, *args, **kwargs):
+        self.doc_element.doc_write(*args, **kwargs)
+
     def up(self, count=1, to_tagname=None):
         """
         Return a Builder anchored on an element node that is either:
