@@ -1,2 +1,6 @@
 *.swp
 *.pyc
+
+# Sphinx documentation
+docs/_*
+docs/.*
