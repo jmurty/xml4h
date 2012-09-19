@@ -349,7 +349,8 @@ class LXMLAdapter(_XmlImplAdapter):
         # If namespace is not in `nsmap` it may be in an XML DOM attribute
         # TODO Generalize this block
         curr_node = node
-        while curr_node is not None:
+        while (curr_node is not None
+                and curr_node.__class__ != etree._ElementTree):
             uri = self.get_node_attribute_value(curr_node, name)
             if uri is not None:
                 return uri
