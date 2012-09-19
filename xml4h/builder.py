@@ -16,7 +16,7 @@ class Builder(object):
         self._element = element
 
     @property
-    def doc_element(self):
+    def dom_element(self):
         """Return the xml4h Element node that anchors this Builder"""
         return self._element
 
@@ -48,10 +48,10 @@ class Builder(object):
         return self._element.doc_find(**kwargs)
 
     def write(self, *args, **kwargs):
-        self.doc_element.write(*args, **kwargs)
+        self.dom_element.write(*args, **kwargs)
 
     def doc_write(self, *args, **kwargs):
-        self.doc_element.doc_write(*args, **kwargs)
+        self.dom_element.doc_write(*args, **kwargs)
 
     def up(self, count=1, to_tagname=None):
         """
@@ -114,7 +114,7 @@ class Builder(object):
         Add a text node to the Element node anchoring the current
         Builder and return the current Builder.
         """
-        self._element.add_text(text)
+        self._element.add_text(unicode(text))
         return self
 
     t = text  # Alias
@@ -129,7 +129,7 @@ class Builder(object):
 
     c = comment  # Alias
 
-    def instruction(self, target, data):
+    def processing_instruction(self, target, data):
         """
         Add a processing instruction node to the Element node anchoring
         the current Builder and return the current Builder.
@@ -137,7 +137,7 @@ class Builder(object):
         self._element.add_instruction(target, data)
         return self
 
-    processing_instruction = instruction  # Alias
+    instruction = processing_instruction  # Alias
 
     i = instruction  # Alias
 
