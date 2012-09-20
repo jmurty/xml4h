@@ -65,7 +65,7 @@ You typically create a new XML document and builder by calling the
     >>> root_b = xml4h.builder('RootElement')
 
 The method returns an ``xml4h.Builder`` object that represents the
-*RootElement* element and allows you to manipulate this element's attributes
+*RootElement* and allows you to manipulate this element's attributes
 or to add child elements.
 
 Once you have the first builder instance, every action you perform on a
@@ -231,7 +231,8 @@ the ``xml4h.builder`` method described in `Getting Started`_. However, what
 if you want ot add content to a parsed XML document DOM you have already?
 
 To wrap an ``xml4h.nodes.Element`` DOM node with a builder you simply provide
-the element node to the constructor of ``xml4h.Builder``.
+the element node to the same ``xml4h.builder`` method used previously and
+it will do the right thing.
 
 Here is an example of parsing an existing XML document, locating an element
 of interest, constructing a builder from that element, and adding some
@@ -248,7 +249,7 @@ content. Luckily, the code is simpler than that description...
     "Monty Python's Life of Brian"
 
     >>> # Construct a builder from the element
-    >>> lob_builder = xml4h.Builder(lob_film_elem)
+    >>> lob_builder = xml4h.builder(lob_film_elem)
 
     >>> # Add content
     >>> (lob_builder.attrs(stars=5)

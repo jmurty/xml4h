@@ -16,8 +16,20 @@ class TestBuilderMethods(unittest.TestCase):
         self.assertIsInstance(
             xmlb.dom_element.impl_document, xml.dom.minidom.Document)
 
-    def test_init_with_illegal_object(self):
+    def test_init_class_with_illegal_object(self):
         self.assertRaises(ValueError, xml4h.Builder, 'Bad')
+
+    def test_builder_method_with_illegal_object(self):
+        try:
+            xml4h.builder(123)
+        except Exception, ex:
+            self.assertEqual(
+                xml4h.exceptions.IncorrectArgumentTypeException,
+                ex.__class__)
+            self.assertEqual(
+                u"Argument 123 is not one of the expected types: "
+                u"[<type 'basestring'>, <class 'xml4h.nodes.Element'>]",
+                unicode(ex))
 
 
 class BaseBuilderNodesTest(object):

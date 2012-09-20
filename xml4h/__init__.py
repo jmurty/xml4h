@@ -1,6 +1,7 @@
 from .builder import Builder
 from .writer import write
 
+import xml4h
 from xml4h.impls.xml_dom_minidom import XmlDomImplAdapter
 from xml4h.impls.lxml_etree import LXMLAdapter
 
@@ -44,13 +45,21 @@ def parse(to_parse, ignore_whitespace_text_nodes=True, adapter=None):
         return adapter.parse_file(to_parse, ignore_whitespace_text_nodes)
 
 
-def builder(root_tagname, ns_uri=None, adapter=None):
+def builder(root_tagname_or_dom_element, ns_uri=None, adapter=None):
     """
-    Return a new Builder based on an XML DOM document created with the
+    Return a new builder based on an XML DOM document created with the
     supplied implementation adapter (or the xml4h preferred implementation
     if not supplied).
     """
     if adapter is None:
         adapter = best_adapter
-    impl_doc = adapter.create_document(root_tagname, ns_uri=ns_uri)
-    return Builder(impl_doc.root)
+    if isinstance(root_tagname_or_dom_element, basestring):
+        doc = adapter.create_document(
+            root_tagname_or_dom_element, ns_uri=ns_uri)
+        element = doc.root
+    elif isinstance(root_tagname_or_dom_element, xml4h.nodes.Element):
+        element = root_tagname_or_dom_element
+    else:
+        raise xml4h.exceptions.IncorrectArgumentTypeException(
+            root_tagname_or_dom_element, [basestring, xml4h.nodes.Element])
+    return Builder(element)
