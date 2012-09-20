@@ -95,14 +95,14 @@ class BaseBuilderNodesTest(object):
 
         # Can navigate up to a given element tagname
         self.assertEqual('AndDeeper',
-            xmlb.up(to_tagname='AndDeeper').dom_element.name)
+            xmlb.up(to_name='AndDeeper').dom_element.name)
         self.assertEqual('Deeper',
-            xmlb.up(to_tagname='Deeper').dom_element.name)
+            xmlb.up(to_name='Deeper').dom_element.name)
         self.assertEqual('DocRoot',
-            xmlb.up(to_tagname='DocRoot').dom_element.name)
+            xmlb.up(to_name='DocRoot').dom_element.name)
         # ...but not past the root element if there is no such tagname
         self.assertEqual('DocRoot',
-            xmlb.up(to_tagname='NoSuchName').dom_element.name)
+            xmlb.up(to_name='NoSuchName').dom_element.name)
 
     def test_attributes(self):
         # Aliases

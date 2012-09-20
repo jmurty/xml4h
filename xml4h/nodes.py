@@ -20,6 +20,8 @@ NOTATION_NODE = 12
 
 
 class Node(object):
+    """
+    """
     XMLNS_URI = 'http://www.w3.org/2000/xmlns/'
 
     def __init__(self, node, adapter):
@@ -233,8 +235,8 @@ class Node(object):
 
     def find(self, name=None, ns_uri=None, first_only=False):
         """
-        Return a list of Element node descendents of this node that match
-        the given constraints.
+        Return a list of ``xml4h.nodes.Element`` node descendants of this
+        Element that match the given constraints.
         """
         if name is None:
             name = '*'  # Match all element names

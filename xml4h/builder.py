@@ -1,68 +1,111 @@
-from xml4h.nodes import Element
+"""
+Builder is a utility class that makes it easy to create valid, well-formed
+XML documents using relatively sparse python code.  The builder class works
+by wrapping an ``xml4h.nodes.Element`` node to provide "chainable" methods
+focussed specifically on adding XML content.
+
+Each method that adds content returns a Builder instance representing the
+current or the newly-added Element. Behind the scenes, the builder uses the
+``xml4h`` node traversal and manipulation methods to add content directly
+to the underlying DOM.
+
+You will not generally create Builder instances directly, but will instead
+call the ``xml4h.builder`` method with an existing Element node or the name
+for a new root element.
+"""
+import xml4h
 
 
 class Builder(object):
     """
-    Builder with convenience methods to construct an XML DOM using chained
-    methods.
+    Builder class that wraps an ``xml4h.nodes.Element`` node with methods
+    for adding XML content to an underlying DOM.
     """
 
     def __init__(self, element):
-        """Create a Builder anchored to an xml4h Element node"""
-        if not isinstance(element, Element):
+        """
+        Create a Builder representing an xml4h Element node.
+
+        :param element: Element node to represent
+        :type element: xml4h.nodes.Element
+        """
+        if not isinstance(element, xml4h.nodes.Element):
             raise ValueError(
                 "Builder can only be created with an %s.%s instance"
-                % (Element.__module__, Element.__name__))
+                % (xml4h.nodes.Element.__module__,
+                   xml4h.nodes.Element.__name__))
         self._element = element
 
     @property
     def dom_element(self):
-        """Return the xml4h Element node that anchors this Builder"""
+        """
+        Return the ``xml4h.nodes.Element`` node represented by this Builder.
+        """
         return self._element
 
     @property
     def document(self):
         """
-        Return the root xml4h Document of the document containing the node
-        than anchors this Builder.
+        Return the ``xml4h.nodes.Document`` node that contains the Element
+        represented by this Builder.
         """
         return self._element.document
 
     @property
     def root(self):
-        """Return the root of the Element node that anchors this Builder"""
+        """Return the ``xml4h.nodes.Element`` root node ancestor of the
+        Element represented by this Builder"""
         return self._element.root
 
     def find(self, **kwargs):
         """
-        Return a list of Element node descendents of this node that match
-        the given constraints.
+        Return a list of ``xml4h.nodes.Element`` node descendants of the
+        Element represented by this builder that match the given constraints.
+
+        Delegates to :meth:`xml4h.nodes.Node.find`
         """
         return self._element.find(**kwargs)
 
     def doc_find(self, **kwargs):
         """
-        Return a list of all Element nodes in the document that match
-        the given constraints.
+        Return a list of ``xml4h.nodes.Element`` nodes in this Element's
+        owning Document that match the given constraints.
+
+        Delegates to :meth:`xml4h.nodes.Node.doc_find`.
         """
         return self._element.doc_find(**kwargs)
 
     def write(self, *args, **kwargs):
+        """
+        Write XML text for the Element represented by this builder.
+
+        Delegates to :meth:`xml4h.nodes.Node.write`.
+        """
         self.dom_element.write(*args, **kwargs)
 
     def doc_write(self, *args, **kwargs):
+        """
+        Write XML text for the Document containing the Element
+        represented by this builder.
+
+        Delegates to :meth:`xml4h.nodes.Node.doc_write`.
+        """
         self.dom_element.doc_write(*args, **kwargs)
 
-    def up(self, count=1, to_tagname=None):
+    def up(self, count=1, to_name=None):
         """
-        Return a Builder anchored on an element node that is either:
-        - `count` elements towards the document root, or
-        - has a tag name matching the given `to_tagname`
+        Return a builder representing an ancestor of the current Element,
+        by default the parent Element.
 
-        Will return a Builder anchored to the document's root node if
-        the `count` exceeds the number of ancestors between the current
-        element and the document root, or if no ancestor node tag name
-        matches `to_tagname`.
+        :param count: return the n'th ancestor element; defaults to 1 which
+                      means the immediate parent. If *count* is greater than
+                      the number of number of ancestors return the document's
+                      root element.
+        :type count: integer, 1 or greater
+        :param to_name: return the nearest ancestor element with the matching
+                      name, or the document's root element if there are no
+                      matching elements.
+        :type to_name: string
         """
         elem = self._element
         up_count = 0
@@ -71,23 +114,23 @@ class Builder(object):
             if elem.is_root or elem.parent is None:
                 break
             elem = elem.parent
-            if to_tagname is None:
+            if to_name is None:
                 up_count += 1
                 if up_count >= count:
                     break
             else:
-                if elem.name == to_tagname:
+                if elem.name == to_name:
                     break
         return Builder(elem)
 
-    def element(self, tagname, ns_uri=None, prefix=None,
+    def element(self, name, ns_uri=None, prefix=None,
             attributes=None, text=None, before_this_element=False):
         """
         Add a child element to the Element node anchoring the current
         Builder and return a new Builder anchored to that child element.
         """
         child_element = self._element.add_element(
-            tagname, ns_uri=ns_uri, prefix=prefix,
+            name, ns_uri=ns_uri, prefix=prefix,
             attributes=attributes, text=text,
             before_this_element=before_this_element)
         return Builder(child_element)
