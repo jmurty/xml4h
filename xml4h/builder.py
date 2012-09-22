@@ -66,14 +66,14 @@ class Builder(object):
         """
         return self._element.find(**kwargs)
 
-    def doc_find(self, **kwargs):
+    def find_doc(self, **kwargs):
         """
         Return a list of ``xml4h.nodes.Element`` nodes in this Element's
         owning Document that match the given constraints.
 
         Delegates to :meth:`xml4h.nodes.Node.doc_find`.
         """
-        return self._element.doc_find(**kwargs)
+        return self._element.find_doc(**kwargs)
 
     def write(self, *args, **kwargs):
         """
@@ -83,7 +83,7 @@ class Builder(object):
         """
         self.dom_element.write(*args, **kwargs)
 
-    def doc_write(self, *args, **kwargs):
+    def write_doc(self, *args, **kwargs):
         """
         Write XML text for the Document containing the Element
         represented by this builder.

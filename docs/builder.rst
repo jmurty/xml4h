@@ -42,7 +42,7 @@ Here is some example code::
 
 That produces the XML document::
 
-    >>> xmlb.doc_write(indent=True)
+    >>> xmlb.write_doc(indent=True)
     <?xml version="1.0" encoding="utf-8"?>
     <MontyPythonFilms source="http://en.wikipedia.org/wiki/Monty_Python">
      <Film year="1971">
@@ -124,7 +124,7 @@ the same thing::
     ...     .element('ChildElement2')
     ...     )
 
-    >>> b.doc_write(indent=4)
+    >>> b.write_doc(indent=4)
     <?xml version="1.0" encoding="utf-8"?>
     <RootElement a="1" b="2" c="3">
         <ChildElement1/>
@@ -285,7 +285,7 @@ Here is a trivial example of this technique::
     <...
 
     >>> # Check the final document
-    >>> odd_b.doc_write(indent=True)
+    >>> odd_b.write_doc(indent=True)
     <?xml version="1.0" encoding="utf-8"?>
     <EvenAndOdd>
      <Odd>

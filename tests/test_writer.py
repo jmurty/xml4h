@@ -30,7 +30,7 @@ class BaseWriterTest(object):
             u'<Elem2/>'
             u'</DocRoot>'
             )
-        self.builder.dom_element.doc_write(self.iostr)
+        self.builder.dom_element.write_doc(self.iostr)
         self.assertEqual(xml.encode('utf-8'), self.iostr.getvalue())
 
     def test_write_utf16(self):
@@ -41,12 +41,12 @@ class BaseWriterTest(object):
             u'<Elem2/>'
             u'</DocRoot>'
             )
-        self.builder.dom_element.doc_write(self.iostr, encoding='utf-16')
+        self.builder.dom_element.write_doc(self.iostr, encoding='utf-16')
         self.assertEqual(xml.encode('utf-16'), self.iostr.getvalue())
 
     def test_write_latin1_with_illegal_characters(self):
         self.assertRaises(UnicodeEncodeError,
-            self.builder.dom_element.doc_write,
+            self.builder.dom_element.write_doc,
                 self.iostr, encoding='latin1', indent=2)
 
     def test_write_latin1(self):
@@ -55,7 +55,7 @@ class BaseWriterTest(object):
             self.my_builder('DocRoot')
                 .element('Elem1').text(u'Tést çæsè').up()
                 .element('Elem2'))
-        self.builder.dom_element.doc_write(self.iostr, encoding='latin1')
+        self.builder.dom_element.write_doc(self.iostr, encoding='latin1')
         self.assertEqual(
             u'<?xml version="1.0" encoding="latin1"?>'
             u'<DocRoot>'
@@ -73,12 +73,12 @@ class BaseWriterTest(object):
             u'<Elem2/>'
             u'</DocRoot>'
             )
-        self.builder.dom_element.doc_write(self.iostr, encoding=None)
+        self.builder.dom_element.write_doc(self.iostr, encoding=None)
         # NOTE Exact test, no encoding of comparison XML doc string
         self.assertEqual(xml, self.iostr.getvalue())
 
     def test_omit_declaration(self):
-        self.builder.dom_element.doc_write(self.iostr,
+        self.builder.dom_element.write_doc(self.iostr,
                 omit_declaration=True)
         self.assertEqual(
             u'<DocRoot>'
@@ -88,7 +88,7 @@ class BaseWriterTest(object):
             self.iostr.getvalue())
 
     def test_custom_indent_and_newline(self):
-        self.builder.dom_element.doc_write(self.iostr,
+        self.builder.dom_element.write_doc(self.iostr,
             indent=8, newline='\t')
         self.assertEqual(
             u'<?xml version="1.0" encoding="utf-8"?>\t'

@@ -79,7 +79,7 @@ class BaseParserTest(object):
     def test_roundtrip(self):
         orig_xml = open(self.small_xml_file_path).read()
         doc = self.parse(self.small_xml_file_path)
-        roundtrip_xml = doc.doc_xml()
+        roundtrip_xml = doc.xml_doc()
         if self.adapter == xml4h.LXMLAdapter:
             # lxml parser does not make it possible to retain semantically
             # unnecessary 'xmlns' namespace definitions in all elements.

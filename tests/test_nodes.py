@@ -253,18 +253,18 @@ class BaseTestNodes(object):
         self.assertEqual(
             ['Element2', 'Element3', 'Element4'],
             [n.name for n in self.xml4h_root.children])
-        self.assertEqual(6, len(self.xml4h_root.doc_find()))
+        self.assertEqual(6, len(self.xml4h_root.find_doc()))
         # Remove element with child elements using __del__()
         # TODO Implement __del__()
 #        del(self.xml4h_root.children[2])
 #        self.assertEqual(
 #            ['Element2', 'Element3'],
 #            [n.name for n in self.xml4h_root.children])
-#        self.assertEqual(4, len(self.xml4h_root.doc_find()))
+#        self.assertEqual(4, len(self.xml4h_root.find_doc()))
 
     def test_find_methods(self):
         # Find all elements in document
-        elems = self.xml4h_root.doc_find()
+        elems = self.xml4h_root.find_doc()
         self.assertEqual(7, len(elems))
         elems = self.xml4h_root.document.find()
         self.assertEqual(7, len(elems))
