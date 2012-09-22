@@ -1,6 +1,10 @@
-*.swp
-*.pyc
+# Build artifacts
+build
+xml4h.egg-info
 
 # Sphinx documentation
 docs/_*
 docs/.*
+
+# Nosetests coverage report
+.coverage
