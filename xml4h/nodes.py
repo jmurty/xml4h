@@ -540,6 +540,9 @@ class Element(_NameValueNode, _MagicNodeAttrItemLookupsMixin, _XPathMixin):
                 element, qname, v, ns_uri=my_ns_uri)
 
     def set_attributes(self, attr_obj=None, ns_uri=None, **attr_dict):
+        """
+        Add one or more attributes to the current element node.
+        """
         self._set_element_attributes(self.impl_node,
             attr_obj=attr_obj, ns_uri=ns_uri, **attr_dict)
 
@@ -587,6 +590,9 @@ class Element(_NameValueNode, _MagicNodeAttrItemLookupsMixin, _XPathMixin):
 
     def add_element(self, tagname, ns_uri=None, prefix=None,
             attributes=None, text=None, before_this_element=False):
+        """
+        Add a child element to the current element node and return the child.
+        """
         # Determine local name, namespace and prefix info from tag name
         prefix, name, node_ns_uri = self.adapter.get_ns_info_from_node_name(
             tagname, self.impl_node)
@@ -635,6 +641,15 @@ class Element(_NameValueNode, _MagicNodeAttrItemLookupsMixin, _XPathMixin):
         self.adapter.add_node_child(element, text_node)
 
     def add_text(self, text):
+        """
+        Add a text node to the current element node.
+
+        :param text: string data content for the node
+        :param type: basestring, or any object that can be converted to
+                     a string by :func:`unicode`
+        """
+        if not isinstance(text, basestring):
+            text = unicode(text)
         self._add_text(self.impl_node, text)
 
     def _add_comment(self, element, text):

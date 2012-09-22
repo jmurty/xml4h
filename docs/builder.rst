@@ -60,12 +60,12 @@ Getting Started
 ---------------
 
 You typically create a new XML document and builder by calling the
-``xml4h.builder`` method with the name of the root element::
+:func:`xml4h.builder` function with the name of the root element::
 
     >>> root_b = xml4h.builder('RootElement')
 
-The method returns an ``xml4h.Builder`` object that represents the
-*RootElement* and allows you to manipulate this element's attributes
+The function returns an :class:`xml4h.builder.Builder` object that represents
+the *RootElement* and allows you to manipulate this element's attributes
 or to add child elements.
 
 Once you have the first builder instance, every action you perform on a
@@ -86,7 +86,7 @@ current element::
 
 .. note::
    As you can see above, the element node represented by a builder instance is
-   available through the ``dom_element`` method.
+   available through the :meth:`~xml4h.builder.Builder.dom_element` method.
 
 When you add a new child element the result is a builder instance representing
 the child element, *not the original element*::
@@ -138,13 +138,13 @@ concatenate strings.
 
 .. note::
 
-   It is a good idea to wrap the ``xml4h.builder`` method call and all
+   It is a good idea to wrap the :func:`~xml4h.builder` function call and all
    following chained methods in parentheses, so you don't need to put
    backslash (\\) characters at the end of every line.
 
-The code above introduces a very important builder method: ``up()``. This
-method returns a builder instance representing the current element's parent,
-or indeed any ancestor.
+The code above introduces a very important builder method:
+:meth:`~xml4h.builder.Builder.up`. This method returns a builder instance
+representing the current element's parent, or indeed any ancestor.
 
 Without the ``up()`` method every child element a builder created would leave
 you deeper in the document structure with no way to return to prior elements
@@ -173,9 +173,10 @@ element::
     <xml4h.nodes.Element: "Root">
 
 .. note::
-   Best practice when chaining builder method calls is to use ``up()`` calls
-   to return back one level for every ``element()`` method (or alias).
-   Do this to avoid making subtle errors in your document's structure.
+   We recommend you use :meth:`~xml4h.builder.Builder.up` calls to return
+   back one level for every :meth:`~xml4h.builder.Builder.element` method
+   (or alias) when you chain methods to avoid making subtle errors in
+   your document's structure.
 
 
 Shorthand Methods
@@ -211,27 +212,30 @@ Access the DOM
 --------------
 
 The XML builder is merely a layer of convenience methods that sits on the
-``xml4h.nodes`` DOM API. This means you can quickly access the underlying
+:mod:`xml4h.nodes` DOM API. This means you can quickly access the underlying
 nodes from a builder if you need to inspect them or manipulate them in a
 way the builder doesn't allow.
 
-The ``dom_element`` attribute returns a builder's underlying ``Element``, and
-the ``root`` attribute returns the document's root element.
+The :attr:`~xml4h.builder.Builder.dom_element` attribute returns a builder's
+underlying :class:`~xml4h.nodes.Element`, and the
+:attr:`~xml4h.builder.Builder.root` attribute returns the document's
+root element.
 
-The ``document`` attribute returns a builder's underlying ``Document``.
+The :attr:`~xml4h.builder.Builder.document` attribute returns a builder's
+underlying :class:`~xml4h.nodes.Document`.
 
-The ``xml4h.nodes`` api is described in :ref:`api-nodes`.
+The :mod:`xml4h.nodes` api is described in :ref:`api-nodes`.
 
 
 Building on an Existing DOM
 ---------------------------
 
 When you are building an XML document from scratch you will generally use the
-the ``xml4h.builder`` method described in `Getting Started`_. However, what
-if you want ot add content to a parsed XML document DOM you have already?
+the :func:`~xml4h.builder` function described in `Getting Started`_. However,
+what if you want ot add content to a parsed XML document DOM you have already?
 
-To wrap an ``xml4h.nodes.Element`` DOM node with a builder you simply provide
-the element node to the same ``xml4h.builder`` method used previously and
+To wrap an :class:`~xml4h.nodes.Element` DOM node with a builder you simply
+provide the element node to the same ``builder()`` method used previously and
 it will do the right thing.
 
 Here is an example of parsing an existing XML document, locating an element
