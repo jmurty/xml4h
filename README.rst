@@ -2,7 +2,7 @@
 xml4h: XML for Humans
 =====================
 
-xml4h is an :ref:`ISC licensed <license>` library for Python to make working with XML a
+xml4h is an ISC licensed library for Python to make working with XML a
 human-friendly activity.
 
 This library exists because Python is awesome, XML is everywhere, and
@@ -179,11 +179,3 @@ TODO
   add/remove children via the nodelist.
 - Complete test coverage and weed out implementation-specific skipped or
   hacky tests
-
-
-.. _license:
-
-License
--------
-
-.. include:: ../LICENSE
