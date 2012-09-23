@@ -45,7 +45,7 @@ def parse(to_parse, ignore_whitespace_text_nodes=True, adapter=None):
         return adapter.parse_file(to_parse, ignore_whitespace_text_nodes)
 
 
-def builder(root_tagname_or_dom_element, ns_uri=None, adapter=None):
+def build(root_tagname_or_dom_element, ns_uri=None, adapter=None):
     """
     Return a new builder based on an XML DOM document created with the
     supplied implementation adapter (or the xml4h preferred implementation

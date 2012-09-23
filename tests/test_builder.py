@@ -12,7 +12,7 @@ import xml4h
 class TestBuilderMethods(unittest.TestCase):
 
     def test_create_minidom(self):
-        xmlb = xml4h.builder('DocRoot', adapter=xml4h.XmlDomImplAdapter)
+        xmlb = xml4h.build('DocRoot', adapter=xml4h.XmlDomImplAdapter)
         self.assertIsInstance(
             xmlb.dom_element.impl_document, xml.dom.minidom.Document)
 
@@ -21,7 +21,7 @@ class TestBuilderMethods(unittest.TestCase):
 
     def test_builder_method_with_illegal_object(self):
         try:
-            xml4h.builder(123)
+            xml4h.build(123)
         except Exception, ex:
             self.assertEqual(
                 xml4h.exceptions.IncorrectArgumentTypeException,
@@ -534,7 +534,7 @@ class BaseBuilderNodesTest(object):
         documentation.
         """
         # Create builder with the name of the root element
-        b = (xml4h.builder('MontyPythonFilms')
+        b = (xml4h.build('MontyPythonFilms')
             # Assign attributes to the new root element
             .attributes(
                 {'source': 'http://en.wikipedia.org/wiki/Monty_Python'})
@@ -636,7 +636,7 @@ class TestXmlDomBuilder(BaseBuilderNodesTest, unittest.TestCase):
 
     @property
     def my_builder(self):
-        return functools.partial(xml4h.builder, adapter=self.adapter)
+        return functools.partial(xml4h.build, adapter=self.adapter)
 
 
 class TestLXMLEtreeBuilder(BaseBuilderNodesTest, unittest.TestCase):
@@ -652,4 +652,4 @@ class TestLXMLEtreeBuilder(BaseBuilderNodesTest, unittest.TestCase):
 
     @property
     def my_builder(self):
-        return functools.partial(xml4h.builder, adapter=self.adapter)
+        return functools.partial(xml4h.build, adapter=self.adapter)

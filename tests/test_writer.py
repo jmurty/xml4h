@@ -111,7 +111,7 @@ class TestXmlDomBuilder(BaseWriterTest, unittest.TestCase):
 
     @property
     def my_builder(self):
-        return functools.partial(xml4h.builder, adapter=self.adapter)
+        return functools.partial(xml4h.build, adapter=self.adapter)
 
 
 class TestLXMLEtreeBuilder(BaseWriterTest, unittest.TestCase):
@@ -127,4 +127,4 @@ class TestLXMLEtreeBuilder(BaseWriterTest, unittest.TestCase):
 
     @property
     def my_builder(self):
-        return functools.partial(xml4h.builder, adapter=self.adapter)
+        return functools.partial(xml4h.build, adapter=self.adapter)

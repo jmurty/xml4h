@@ -43,7 +43,7 @@ document itself:
 ::
 
     >>> # Create builder with the name of the root element
-    >>> b = (xml4h.builder('MontyPythonFilms')
+    >>> b = (xml4h.build('MontyPythonFilms')
     ...     # Assign attributes to the new root element
     ...     .attributes({'source': 'http://en.wikipedia.org/wiki/Monty_Python'})
     ...     # Create a child element

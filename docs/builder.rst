@@ -15,7 +15,7 @@ that you can be sure you will generate a valid document.
 Here is some example code::
 
     >>> import xml4h
-    >>> xmlb = (xml4h.builder('MontyPythonFilms')
+    >>> xmlb = (xml4h.build('MontyPythonFilms')
     ...     .attributes({'source': 'http://en.wikipedia.org/wiki/Monty_Python'})
     ...     .element('Film')
     ...         .attributes({'year': 1971})
@@ -60,9 +60,9 @@ Getting Started
 ---------------
 
 You typically create a new XML document and builder by calling the
-:func:`xml4h.builder` function with the name of the root element::
+:func:`xml4h.build` function with the name of the root element::
 
-    >>> root_b = xml4h.builder('RootElement')
+    >>> root_b = xml4h.build('RootElement')
 
 The function returns an :class:`xml4h.builder.Builder` object that represents
 the *RootElement* and allows you to manipulate this element's attributes
@@ -118,7 +118,7 @@ For example, the example code in the previous section used the variables
 this is not necessary. Here is the method-chaining approach to accomplish
 the same thing::
 
-    >>> b = (xml4h.builder('RootElement')
+    >>> b = (xml4h.build('RootElement')
     ...         .attributes({'a': 1, 'b': 2}, c=3)
     ...     .element('ChildElement1').up()  # NOTE the up() method
     ...     .element('ChildElement2')
@@ -138,7 +138,7 @@ concatenate strings.
 
 .. note::
 
-   It is a good idea to wrap the :func:`~xml4h.builder` function call and all
+   It is a good idea to wrap the :func:`~xml4h.build` function call and all
    following chained methods in parentheses, so you don't need to put
    backslash (\\) characters at the end of every line.
 
@@ -155,7 +155,7 @@ your code, this method can also jump up multiple levels or to a named ancestor
 element::
 
     >>> # A builder that references a deeply-nested element:
-    >>> deep_b = (xml4h.builder('Root')
+    >>> deep_b = (xml4h.build('Root')
     ...     .element('Deep')
     ...         .element('AndDeeper')
     ...             .element('AndDeeperStill')
@@ -231,7 +231,7 @@ Building on an Existing DOM
 ---------------------------
 
 When you are building an XML document from scratch you will generally use the
-the :func:`~xml4h.builder` function described in `Getting Started`_. However,
+the :func:`~xml4h.build` function described in `Getting Started`_. However,
 what if you want ot add content to a parsed XML document DOM you have already?
 
 To wrap an :class:`~xml4h.nodes.Element` DOM node with a builder you simply
@@ -253,7 +253,7 @@ content. Luckily, the code is simpler than that description...
     "Monty Python's Life of Brian"
 
     >>> # Construct a builder from the element
-    >>> lob_builder = xml4h.builder(lob_film_elem)
+    >>> lob_builder = xml4h.build(lob_film_elem)
 
     >>> # Add content
     >>> (lob_builder.attrs(stars=5)
@@ -277,7 +277,7 @@ to different places in the same document can be very handy.
 Here is a trivial example of this technique::
 
     >>> # Create two Elements in a doc to store even or odd numbers
-    >>> odd_b = xml4h.builder('EvenAndOdd').elem('Odd')
+    >>> odd_b = xml4h.build('EvenAndOdd').elem('Odd')
     >>> even_b = odd_b.up().elem('Even')
 
     >>> # Populate the numbers from a loop
