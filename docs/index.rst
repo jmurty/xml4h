@@ -11,13 +11,12 @@ Contents:
 .. toctree::
    :maxdepth: 2
 
+   readme
    builder
    writer
    nodes
    advanced
    api
-
-.. include ../README.rst
 
 
 Indices and tables

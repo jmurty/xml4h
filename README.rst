@@ -1,11 +1,16 @@
+=====================
 xml4h: XML for Humans
 =====================
 
-xml4h is an ISC licensed library for Python to make working with XML a
+xml4h is an :ref:`ISC licensed <license>` library for Python to make working with XML a
 human-friendly activity.
 
 This library exists because Python is awesome, XML is everywhere, and
 combining the two should be a pleasure. With xml4h, it can be.
+
+
+Introduction
+------------
 
 Here is an example of parsing and reading data from an XML document using
 "magic" element and attribute lookups:
@@ -70,26 +75,11 @@ document itself:
     ...     .up()
     ... )
 
-    >>> # A builder can be created from any element
-    >>> doc_root_elem = b.root
-    >>> doc_root_elem
-    <xml4h.nodes.Element: "MontyPythonFilms">
-    >>> b = (doc_root_elem.builder
-    ...     .e('Film')
-    ...         .attrs(year=1979)
-    ...         .e('Title').t("Monty Python's Life of Brian").up()
-    ...         .e('Description').t(
-    ...             "Brian is born on the first Christmas, in the stable next to"
-    ...             " Jesus'. He spends his life being mistaken for a messiah."
-    ...             ).up()
-    ...         .up()
-    ... )
-
 Pretty-print your XML document with the flexible write() method:
 
 ::
 
-    >>> doc_root_elem.document.write(indent=4, newline=True) # doctest: +ELLIPSIS
+    >>> b.write_doc(indent=4, newline=True) # doctest: +ELLIPSIS
     <?xml version="1.0" encoding="utf-8"?>
     <MontyPythonFilms source="http://en.wikipedia.org/wiki/Monty_Python">
         <Film year="1971">
@@ -100,16 +90,13 @@ Pretty-print your XML document with the flexible write() method:
             <Title>Monty Python and the Holy Grail</Title>
             <Description>King Arthur and his knights embark ...</Description>
         </Film>
-        <Film year="1979">
-            <Title>Monty Python's Life of Brian</Title>
-            <Description>Brian is born on the first Christmas...</Description>
-        </Film>
     </MontyPythonFilms>
 
 
 This project is heavily inspired by the work of
 `Kenneth Reitz <http://kennethreitz.com/pages/open-projects.html>`_ such as
 the excellent `Requests HTTP library <http://docs.python-requests.org/>`_.
+
 
 Why?
 ----
@@ -138,12 +125,12 @@ Given these three options it is hard to choose which library to use,
 especially if you're new to XML processing in Python and haven't already
 used (struggled with) any of them.
 
-In the past your best bet would have been to go with `lxml` for the most
+In the past your best bet would have been to go with *lxml* for the most
 flexibility, even though it may well be overkill, because at least then
 you wouldn't have to rewrite your code if you later find you need XPath
 support or powerful DOM traversal methods.
 
-This is where `xml4h` comes in. It provides an abstraction layer over
+This is where *xml4h* comes in. It provides an abstraction layer over
 the existing XML libraries, taking advantage of their power while offering
 the following improvements:
 
@@ -155,39 +142,36 @@ the following improvements:
   structure and format that you expect, unlike the machine- but
   not human-friendly output you tend to get from the base libraries.
 - A common interface that masks the underlying implementations. Code
-  written against `xml4h` need not be rewritten if you switch between
+  written against *xml4h* need not be rewritten if you switch between
   implementations, such as from minidom to lxml (although not all
   features  are available in all implementations).
-- Easy movement between `xml4h` and the underlying implementation:
+- Easy movement between *xml4h* and the underlying implementation:
   parse your document using the fastest implementation, manipulate all or
-  parts of it with nice code using `xml4h`, then go back to the underlying
+  parts of it with nice code using *xml4h*, then go back to the underlying
   implementation if you need to.
 - More to come, see the TODO section
+
 
 Development Status
 ------------------
 
 Currently the basic features of two base implementations are available:
-minidom and lxml's ElementTree. The project is still at the stage where I am
-playing with ideas and tweaking the APIs to try and get them right, before
-I move on to the TODO list.
+*minidom* and *lxml*'s ElementTree. The project is still at the stage where
+I am playing with ideas and tweaking the APIs to try and get them right,
+before I move on to the TODO list.
 
-The project is under slow development right now, due mainly to my lack of time.
-It is also very much an alpha which is likely to be in flux for a while yet,
-so it is not ready for production use.
+This project is an alpha and is likely to be in flux for a while yet,
+so be aware that individual APIs and even broad approaches may change.
 
-It probably shouldn't even be out in public yet; it isn't fully dressed.
-But I'm putting it out there to encourage myself to work on it more, and in
-case anyone else would like to start playing with it.
 
 TODO
 ----
 
 - Write project documentation, code comments, and user guide
-- Support for XPath querying in lxml implementation
+- Support for XPath querying in *lxml* implementation
 - Add implementation of standard library's (c)ElementTree (if plausible) so
-  XPath is available to all users without installing the extra lxml library.
-- Find a way to make the lxml `nsmap` namespace map mutable, or to fake it?
+  XPath is available to all users without installing the extra *lxml* library.
+- Find a way to make the *lxml* ``nsmap`` namespace map mutable, or to fake it?
   This is necessary to properly abstract namespace definition behaviour.
 - SAX parsing, done nicely -- Need to figure out what that means...
 - Custom nodelist implementations for children, entities, notations, etc to
@@ -195,3 +179,11 @@ TODO
   add/remove children via the nodelist.
 - Complete test coverage and weed out implementation-specific skipped or
   hacky tests
+
+
+.. _license:
+
+License
+-------
+
+.. include:: ../LICENSE

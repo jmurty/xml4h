@@ -1,6 +1,6 @@
-================
-Document Builder
-================
+=======
+Builder
+=======
 
 *xml4h* includes a document builder utility that makes it easy to create valid,
 guaranteed well-formed XML documents using relatively sparse python code. It
