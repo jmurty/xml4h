@@ -12,6 +12,7 @@ Contents:
    :maxdepth: 2
 
    readme
+   parser
    builder
    writer
    nodes

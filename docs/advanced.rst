@@ -9,6 +9,8 @@ XML Libarary Adapters
 =====================
 
 
+.. _best-adapter:
+
 "Best" Adapter
 --------------
 

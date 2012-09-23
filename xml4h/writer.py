@@ -37,6 +37,7 @@ def _sanitize_write_params(indent='', newline=None):
 
 def write(node, writer=None, encoding='utf-8', indent=0, newline='',
         quote_char='"', omit_declaration=False, _depth=0):
+    """TODO"""
 
     if writer is None:
         writer = sys.stdout
