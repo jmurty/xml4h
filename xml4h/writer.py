@@ -25,12 +25,10 @@ def _sanitize_write_params(indent='', newline=None):
     if indent and not newline:
         newline = True
 
-    if newline is None:
+    if newline is None or newline is False:
         newline = ''
     elif newline is True:
         newline = '\n'
-    elif newline is False:
-        newline = ''
 
     return (indent, newline)
 

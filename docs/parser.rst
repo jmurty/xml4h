@@ -5,6 +5,9 @@ Parser
 The *xml4h* parser is a trivial wrapper around the parser provided by an
 underlying :ref:`XML library implementation <xml-lib-adapters>`.
 
+Parse function
+--------------
+
 To parse XML documents with *xml4h* you use the :func:`xml4h.parse` function
 and provide it with XML content in one of three forms:
 

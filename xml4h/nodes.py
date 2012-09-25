@@ -271,24 +271,16 @@ class Node(object):
     def write_doc(self, *args, **kwargs):
         self.document.write(*args, **kwargs)
 
-    def xml(self, encoding='utf-8', indent=4, newline='\n',
-            quote_char='"', omit_declaration=False, _depth=0):
+    def xml(self, indent=4, **kwargs):
         """
         Return XML document as a string
         """
         writer = StringIO()
-        if encoding is not None:
-            codecs.getwriter(encoding)(writer)
-        self.write(writer, encoding=encoding,
-            indent=indent, newline=newline, quote_char=quote_char,
-            omit_declaration=omit_declaration, _depth=_depth)
+        self.write(writer, indent=indent, **kwargs)
         return writer.getvalue()
 
-    def xml_doc(self, encoding='utf-8', indent=4, newline='\n',
-                quote_char='"', omit_declaration=False, _depth=0):
-        return self.document.xml(encoding=encoding,
-            indent=indent, newline=newline, quote_char=quote_char,
-            omit_declaration=omit_declaration, _depth=_depth)
+    def xml_doc(self, **kwargs):
+        return self.document.xml(**kwargs)
 
 
 class _MagicNodeAttrItemLookupsMixin(object):
