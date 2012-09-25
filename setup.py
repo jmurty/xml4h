@@ -33,6 +33,7 @@ setup(
     url='TODO',
     packages=[
         'xml4h',
+        'xml4h.impls',
     ],
     package_data={'': ['LICENSE']},
     include_package_data=True,
