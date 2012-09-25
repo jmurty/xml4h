@@ -331,7 +331,8 @@ class _MagicNodeAttrItemLookupsMixin(object):
         If ``first_only`` is True, only the ``first`` such element is
         returned or None is returned if there are no such child elements.
         """
-        results = [c for c in self.children if c.local_name == child_name]
+        results = [c for c in self.children
+                   if isinstance(c, Element) and c.local_name == child_name]
         if first_only:
             return results[0] if results else None
         else:
