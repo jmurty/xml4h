@@ -5,6 +5,7 @@ from xml4h import nodes
 
 try:
     import xml.dom
+    import xml.dom.minidom
 except ImportError:
     pass
 
