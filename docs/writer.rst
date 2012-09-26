@@ -15,7 +15,7 @@ To write out an XML document with *xml4h* you will generally use the
 available on any *xml4h* node.
 
 The :meth:`~xml4h.nodes.Node.write` method outputs the current node and any
-descendents::
+descendants::
 
     >>> import xml4h
     >>> doc = xml4h.parse('tests/data/monty_python_films.xml')
@@ -64,7 +64,7 @@ and :meth:`~xml4h.nodes.Node.xml_doc` to do this easily.
 
 The :meth:`~xml4h.nodes.Node.xml` method works like the *write* method and
 will return a string of XML content including the current node and its
-descendents::
+descendants::
 
     >>> first_film_elem.xml()  # doctest:+ELLIPSIS
     '<Film year="1971">\n    <Title>And Now for Something Completely...
@@ -90,7 +90,7 @@ to read the data (poor sod!). If your XML needs to be human-friendly they
 can be very helpful.
 
 For the full range of formatting options see the code documentation for
-:meth:`~xml4h.nodes.Node.write` et al, but here are some pointers to get
+:meth:`~xml4h.nodes.Node.write` et al. but here are some pointers to get
 you started:
 
 TODO
