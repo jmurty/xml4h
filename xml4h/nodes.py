@@ -1,4 +1,3 @@
-import codecs
 import collections
 from StringIO import StringIO
 
@@ -21,14 +20,35 @@ NOTATION_NODE = 12
 
 class Node(object):
     """
+    Base class for *xml4h* DOM nodes that represent and interact with a
+    node in the underlying XML implementation.
     """
+
     XMLNS_URI = 'http://www.w3.org/2000/xmlns/'
+    """URI constant for XMLNS"""
 
     def __init__(self, node, adapter):
+        """
+        Construct an object that represents and wraps a DOM node in the
+        underlying XML implementation.
+
+        :param node: node object from the underlying XML implementation.
+        :param adapter: the :class:`xml4h.impls._XmlImplAdapter`
+            subclass implementation to mediate operations on the node in
+            the underlying XML implementation.
+        """
         if node is None or adapter is None:
             raise Exception('Cannot instantiate without node and adapter')
         self._impl_node = node
         self._adapter = adapter
+
+    def __eq__(self, other):
+        if self is other:
+            return True
+        elif not isinstance(other, Node):
+            return False
+        return (self.impl_document == other.impl_document
+            and self.impl_node == other.impl_node)
 
     def __unicode__(self):
         return u'<%s.%s>' % (
@@ -43,29 +63,54 @@ class Node(object):
 
     @property
     def impl_node(self):
+        """
+        :return: the node object from the underlying XML implementation that
+            is represented by this *xml4h* node.
+        """
         return self._impl_node
 
     @property
+    def impl_document(self):
+        """
+        :return: the document object from the underlying XML implementation
+            that contains the node represented by this *xml4h* node.
+        """
+        return self.adapter.impl_document
+
+    @property
     def adapter(self):
+        """
+        :return: the :class:`xml4h.impls._XmlImplAdapter` subclass
+            implementation that mediates operations on the node in the
+            underlying XML implementation.
+        """
         return self._adapter
 
     @property
     def adapter_class(self):
+        """
+        :return: the ``class`` of the :class:`xml4h.impls._XmlImplAdapter`
+            subclass implementation that mediates operations on the node in
+            the underlying XML implementation.
+        """
         return self._adapter.__class__
 
     @property
-    def impl_document(self):
-        return self.adapter.impl_document
-
-    @property
     def document(self):
-        """Return the root Document of the document containing this node"""
+        """
+        :return: the :class:`Document` node that contains this node,
+            or ``self`` if this node is the document.
+        """
         if self.is_document:
             return self
         return self.adapter.wrap_document(self.adapter.impl_document)
 
     @property
     def root(self):
+        """
+        :return: the root :class:`Element` node of the document that
+            contains this node, or ``self`` if this node is the root element.
+        """
         if self.is_root:
             return self
         return self.adapter.wrap_node(
@@ -73,78 +118,121 @@ class Node(object):
 
     @property
     def is_root(self):
+        """:return: *True* if this node is the document's root element"""
         return self.impl_node == self.adapter.impl_root_element
 
     @property
     def node_type(self):
+        """
+        :return: an int constant value that identifies the type of this node,
+            such as :data:`ELEMENT_NODE` or :data:`TEXT_NODE`.
+        """
         return self._node_type
 
     def is_type(self, node_type_constant):
+        """
+        :return: *True* if this node's int type matches the given value.
+        """
         return self.node_type == node_type_constant
 
     @property
     def is_element(self):
+        """
+        :return: *True* if this is an :class:`Element` node.
+        """
         return self.is_type(ELEMENT_NODE)
 
     @property
     def is_attribute(self):
+        """
+        :return: *True* if this is an :class:`Attribute` node.
+        """
         return self.is_type(ATTRIBUTE_NODE)
 
     @property
     def is_text(self):
+        """
+        :return: *True* if this is a :class:`Text` node.
+        """
         return self.is_type(TEXT_NODE)
 
     @property
     def is_cdata(self):
+        """
+        :return: *True* if this is a :class:`CDATA` node.
+        """
         return self.is_type(CDATA_NODE)
 
     @property
     def is_entity_reference(self):
+        """
+        :return: *True* if this is an :class:`EntityReference` node.
+        """
         return self.is_type(ENTITY_REFERENCE_NODE)
 
     @property
     def is_entity(self):
+        """
+        :return: *True* if this is an :class:`Entity` node.
+        """
         return self.is_type(ENTITY_NODE)
 
     @property
     def is_processing_instruction(self):
+        """
+        :return: *True* if this is a :class:`ProcessingInstruction` node.
+        """
         return self.is_type(PROCESSING_INSTRUCTION_NODE)
 
     @property
     def is_comment(self):
+        """
+        :return: *True* if this is a :class:`Comment` node.
+        """
         return self.is_type(COMMENT_NODE)
 
     @property
     def is_document(self):
+        """
+        :return: *True* if this is a :class:`Document` node.
+        """
         return self.is_type(DOCUMENT_NODE)
 
     @property
     def is_document_type(self):
+        """
+        :return: *True* if this is a :class:`DocumentType` node.
+        """
         return self.is_type(DOCUMENT_TYPE_NODE)
 
     @property
     def is_document_fragment(self):
+        """
+        :return: *True* if this is a :class:`DocumentFragment` node.
+        """
         return self.is_type(DOCUMENT_FRAGMENT_NODE)
 
     @property
     def is_notation(self):
+        """
+        :return: *True* if this is a :class:`Notation` node.
+        """
         return self.is_type(NOTATION_NODE)
 
-    def __eq__(self, other):
-        if self is other:
-            return True
-        elif not isinstance(other, Node):
-            return False
-        return (self.impl_document == other.impl_document
-            and self.impl_node == other.impl_node)
-
     def _convert_nodelist(self, nodelist):
+        """
+        Convert a list of underlying implementation nodes into a list of
+        *xml4h* wrapper nodes.
+        """
         # TODO Do something more efficient here, lazy wrapping?
         return [self.adapter.wrap_node(n, self.adapter.impl_document)
                 for n in nodelist]
 
     @property
     def parent(self):
+        """
+        :return: the parent of this node, or *None* of the node has no parent.
+        """
         parent_impl_node = self.adapter.get_node_parent(self.impl_node)
         return self.adapter.wrap_node(
             parent_impl_node, self.adapter.impl_document)
@@ -152,8 +240,8 @@ class Node(object):
     @property
     def ancestors(self):
         """
-        Return the ancestors of this node in an ordered list with this node's
-        parent, grand-parent, great-grand-parent etc.
+        :return: the ancestors of this node in a list ordered by proximity to
+            this node, that is: parent, grandparent, great-grandparent etc.
         """
         ancestors = []
         p = self.parent
@@ -162,7 +250,15 @@ class Node(object):
             p = p.parent
         return ancestors
 
-    def children_in_ns(self, ns_uri):
+    def children_in_ns(self, ns_uri=None):
+        """
+        Return child nodes that belong to this node and that are in the
+        given namespace.
+
+        :param ns_uri: a namespace URI used to filter the child nodes.
+            If *None* all child nodes are returned regardless of namespace.
+        :type ns_uri: string or None
+        """
         nodelist = self.adapter.get_node_children(self.impl_node)
         if ns_uri is not None:
             nodelist = filter(
@@ -172,6 +268,9 @@ class Node(object):
 
     @property
     def children(self):
+        """
+        :return: a list of this node's child nodes.
+        """
         return self.children_in_ns(None)
 
     @property
@@ -182,17 +281,32 @@ class Node(object):
     def attribute_nodes(self):
         return None
 
-    def siblings_in_ns(self, ns_uri):
+    def siblings_in_ns(self, ns_uri=None):
+        """
+        Return nodes that are siblings of this node and that are in the
+        given namespace.
+
+        :param ns_uri: a namespace URI used to filter the sibling nodes.
+            If *None* all sibling nodes are returned regardless of namespace.
+        :type ns_uri: string or None
+        """
         nodelist = self.adapter.get_node_children(self.parent.impl_node)
         return self._convert_nodelist(
             [n for n in nodelist if n != self.impl_node])
 
     @property
     def siblings(self):
+        """
+        :return: a list of this node's sibling nodes.
+        """
         return self.siblings_in_ns(None)
 
     @property
     def siblings_before(self):
+        """
+        :return: a list of this node's siblings that occur *before* this
+            node in the DOM.
+        """
         nodelist = self.adapter.get_node_children(self.parent.impl_node)
         before_nodelist = []
         for n in nodelist:
@@ -203,6 +317,10 @@ class Node(object):
 
     @property
     def siblings_after(self):
+        """
+        :return: a list of this node's siblings that occur *after* this
+            node in the DOM.
+        """
         nodelist = self.adapter.get_node_children(self.parent.impl_node)
         after_nodelist = []
         is_after_myself = False
@@ -215,12 +333,20 @@ class Node(object):
 
     @property
     def namespace_uri(self):
+        """
+        :return: this node's namespace URI or *None*.
+        """
         return self.adapter.get_node_namespace_uri(self.impl_node)
 
     ns_uri = namespace_uri  # Alias
+    """Alias for :meth:`namespace_uri`"""
 
     @property
     def current_namespace_uri(self):
+        """
+        :return: the URI of the namespace this node belongs to, directly or
+            through an ancestor node. *None* if node is not in a namespace.
+        """
         curr_node = self
         while curr_node:
             if curr_node.namespace_uri is not None:
@@ -229,14 +355,29 @@ class Node(object):
         return None
 
     def delete(self):
+        """
+        Delete this node from the owning document.
+        """
         self.adapter.remove_node_child(
             self.adapter.get_node_parent(self.impl_node), self.impl_node,
             destroy_node=True)
 
     def find(self, name=None, ns_uri=None, first_only=False):
         """
-        Return a list of ``xml4h.nodes.Element`` node descendants of this
-        Element that match the given constraints.
+        Find :class:`Element` node descendants of this node, with optional
+        constraints to limit the results.
+
+        :param name: limit results to elements with this name.
+            If *None* or ``'*'`` all element names are matched.
+        :type name: string or None
+        :param ns_uri: limit results to elements within this namespace URI.
+            If *None* all elements are matched, regardless of namespace.
+        :type ns_uri: string or None
+        :param bool first_only: if *True* only return the first result node
+            or *None* if there is no matching node.
+
+        :returns: a list of :class:`Element` nodes matching any given
+            constraints, or a single node if ``first_only=True``.
         """
         if name is None:
             name = '*'  # Match all element names
@@ -253,33 +394,94 @@ class Node(object):
         return self._convert_nodelist(nodelist)
 
     def find_first(self, name=None, ns_uri=None):
+        """
+        Find the first :class:`Element` node descendant of this node that
+        matches any optional constraints.
+
+        Delegates to :meth:`find` with ``first_only=True``.
+        """
         return self.find(name=name, ns_uri=ns_uri, first_only=True)
 
     def find_doc(self, name=None, ns_uri=None, first_only=False):
         """
-        Return a list of all Element nodes in the document that match
-        the given constraints.
+        Find :class:`Element` node descendants of the document containing
+        this node, with optional constraints to limit the results.
+
+        Delegates to :meth:`find` applied to this node's owning document.
         """
         return self.document.find(name=name, ns_uri=ns_uri,
             first_only=first_only)
 
     # Methods that operate on this Node implementation adapter
 
-    def write(self, *args, **kwargs):
-        xml4h.write(self, *args, **kwargs)
+    def write(self, writer=None, encoding='utf-8', indent=0, newline='',
+            omit_declaration=False, node_depth=0, quote_char='"'):
+        """
+        Serialize this node and its descendants to text, writing
+        the output to a given *writer* or to stdout.
+
+        :param writer: an object such as a file or stream to which XML text
+            is sent. If *None* text is sent to :attr:`sys.stdout`.
+        :type writer: a file, stream, etc or None
+        :param string encoding: the character encoding for serialized text.
+        :param indent: indentation prefix to apply to descendent nodes for
+            pretty-printing. The value can take many forms:
+
+            - *int*: the number of spaces to indent. 0 means no indent.
+            - *string*: a literal prefix for indented nodes, such as ``\\t``.
+            - *bool*: no indent if *False*, four spaces indent if *True*.
+            - *None*: no indent
+        :type indent: string, int, bool, or None
+        :param newline: the string value used to separate lines of output.
+            The value can take a number of forms:
+
+            - *string*: the literal newline value, such as ``\\n`` or ``\\r``.
+              An empty string means no newline.
+            - *bool*: no newline if *False*, ``\\n`` newline if *True*.
+            - *None*: no newline.
+        :type newline: string, bool, or None
+        :param boolean omit_declaration: if *True* the XML declaration header
+            is omitted, otherwise it is included. Note that the declaration is
+            only output when serializing an :class:`xml4h.nodes.Document` node.
+        :param int node_depth: the indentation level to start at, such as 2 to
+            indent output as if the given *node* has two ancestors.
+            This parameter will only be useful if you need to output XML text
+            fragments that can be assembled into a document.  This parameter
+            has no effect unless indentation is applied.
+        :param string quote_char: the character that delimits quoted content.
+            You should never need to mess with this.
+
+        Delegates to :func:`xml4h.writer.write` applied to this node.
+        """
+        xml4h.write(self, writer=writer, encoding=encoding, indent=indent,
+            newline=newline, omit_declaration=omit_declaration,
+            node_depth=node_depth, quote_char=quote_char)
 
     def write_doc(self, *args, **kwargs):
+        """
+        Serialize to text the document containing this node, writing
+        the output to a given *writer* or stdout.
+
+        Delegates to :meth:`write`
+        """
         self.document.write(*args, **kwargs)
 
     def xml(self, indent=4, **kwargs):
         """
-        Return XML document as a string
+        :return: this node as XML text.
+
+        Delegates to :meth:`write`
         """
         writer = StringIO()
         self.write(writer, indent=indent, **kwargs)
         return writer.getvalue()
 
     def xml_doc(self, **kwargs):
+        """
+        :return: the document containing this node as XML text.
+
+        Delegates to :meth:`xml`
+        """
         return self.document.xml(**kwargs)
 
 
