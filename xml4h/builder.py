@@ -104,16 +104,14 @@ class Builder(object):
         :return: a builder representing an ancestor of the current element,
                  by default the parent element.
 
-        :param count:   return the n'th ancestor element; defaults to 1 which
-                        means the immediate parent. If *count* is greater than
-                        the number of number of ancestors return the document's
-                        root element.
-        :type count:    integer, 1 or greater
+        :param count: return the n'th ancestor element; defaults to 1 which
+            means the immediate parent. If *count* is greater than the number
+            of number of ancestors return the document's root element.
+        :type count: integer >= 1 or None
         :param to_name: return the nearest ancestor element with the matching
-                        name, or the document's root element if there are no
-                        matching elements. This argument trumps the
-                        ``count`` argument.
-        :type to_name:  string
+            name, or the document's root element if there are no matching
+            elements. This argument trumps the ``count`` argument.
+        :type to_name: string or None
         """
         elem = self._element
         up_count = 0
@@ -144,8 +142,10 @@ class Builder(object):
         return Builder(child_element)
 
     elem = element  # Alias
+    """Alias of :meth:`element`"""
 
     e = element  # Alias
+    """Alias of :meth:`element`"""
 
     def attributes(self, *args, **kwargs):
         """
@@ -160,8 +160,10 @@ class Builder(object):
         return self
 
     attrs = attributes  # Alias
+    """Alias of :meth:`attributes`"""
 
     a = attributes  # Alias
+    """Alias of :meth:`attributes`"""
 
     def text(self, text):
         """
@@ -176,6 +178,7 @@ class Builder(object):
         return self
 
     t = text  # Alias
+    """Alias of :meth:`text`"""
 
     def comment(self, text):
         """
@@ -190,6 +193,7 @@ class Builder(object):
         return self
 
     c = comment  # Alias
+    """Alias of :meth:`comment`"""
 
     def processing_instruction(self, target, data):
         """
@@ -204,8 +208,10 @@ class Builder(object):
         return self
 
     instruction = processing_instruction  # Alias
+    """Alias of :meth:`processing_instruction`"""
 
     i = instruction  # Alias
+    """Alias of :meth:`processing_instruction`"""
 
     def cdata(self, text):
         """
@@ -220,8 +226,10 @@ class Builder(object):
         return self
 
     data = cdata  # Alias
+    """Alias of :meth:`cdata`"""
 
     d = cdata  # Alias
+    """Alias of :meth:`cdata`"""
 
     def ns_prefix(self, prefix, ns_uri):
         """
