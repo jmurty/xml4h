@@ -7,7 +7,7 @@ import sys
 import codecs
 
 
-def write(node, writer=None, encoding='utf-8', indent=0, newline='',
+def write_node(node, writer=None, encoding='utf-8', indent=0, newline='',
         omit_declaration=False, node_depth=0, quote_char='"'):
     """
     Serialize an *xml4h* DOM node and its descendants to text, writing
@@ -58,7 +58,7 @@ def write(node, writer=None, encoding='utf-8', indent=0, newline='',
             .replace(">", "&gt;")
             )
 
-    def _write_impl(node, node_depth):
+    def _write_node_impl(node, node_depth):
         """
         Internal write implementation that does the real work while keeping
         track of node depth.
@@ -73,7 +73,8 @@ def write(node, writer=None, encoding='utf-8', indent=0, newline='',
                         % (quote_char, encoding, quote_char))
                 writer.write('?>%s' % newline)
             for child in node.children:
-                _write_impl(child, node_depth)  # node_depth not incremented
+                _write_node_impl(child,
+                    node_depth)  # node_depth not incremented
             writer.write(newline)
         elif node.is_document_type:
             writer.write("<!DOCTYPE %s SYSTEM %s%s%s"
@@ -84,7 +85,7 @@ def write(node, writer=None, encoding='utf-8', indent=0, newline='',
             if node.children:
                 writer.write("[")
                 for child in node.children:
-                    _write_impl(child, node_depth + 1)
+                    _write_node_impl(child, node_depth + 1)
                 writer.write("]")
             writer.write(">")
         elif node.is_text:
@@ -130,12 +131,12 @@ def write(node, writer=None, encoding='utf-8', indent=0, newline='',
             writer.write("<" + node.name)
 
             for attr in node.attribute_nodes:
-                _write_impl(attr, node_depth)
+                _write_node_impl(attr, node_depth)
             if node.children:
                 found_indented_child = False
                 writer.write(">")
                 for child in node.children:
-                    _write_impl(child, node_depth + 1)
+                    _write_node_impl(child, node_depth + 1)
                     if not (child.is_text
                             or child.is_comment
                             or child.is_cdata):
@@ -176,4 +177,4 @@ def write(node, writer=None, encoding='utf-8', indent=0, newline='',
         writer = codecs.getwriter(encoding)(writer)
 
     # Do the business...
-    _write_impl(node, node_depth)
+    _write_node_impl(node, node_depth)

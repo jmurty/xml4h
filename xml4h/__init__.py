@@ -4,7 +4,7 @@ import xml4h
 from xml4h.impls.xml_dom_minidom import XmlDomImplAdapter
 from xml4h.impls.lxml_etree import LXMLAdapter
 from xml4h.builder import Builder
-from xml4h.writer import write
+from xml4h.writer import write_node
 
 
 __title__ = 'xml4h'

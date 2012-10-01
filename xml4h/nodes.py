@@ -451,9 +451,10 @@ class Node(object):
         :param string quote_char: the character that delimits quoted content.
             You should never need to mess with this.
 
-        Delegates to :func:`xml4h.writer.write` applied to this node.
+        Delegates to :func:`xml4h.writer.write_node` applied to this node.
         """
-        xml4h.write(self, writer=writer, encoding=encoding, indent=indent,
+        xml4h.write_node(self,
+            writer=writer, encoding=encoding, indent=indent,
             newline=newline, omit_declaration=omit_declaration,
             node_depth=node_depth, quote_char=quote_char)
 
