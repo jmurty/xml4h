@@ -486,11 +486,20 @@ class Node(object):
         return self.document.xml(**kwargs)
 
 
-class _MagicNodeAttrItemLookupsMixin(object):
+class NodeAttrAndChildElementLookupsMixin(object):
+    """
+    Perform "magical" lookup of a node's attributes via dict-style keyword
+    reference, and child elements via class attribute reference.
+    """
 
     def __getitem__(self, attr_name):
         """
-        Magical retrieval of this XML element's attribute values.
+        Retrieve this node's attribute value by name using dict-style keyword
+        lookup.
+
+        :param string attr_name: name of the attribute.
+
+        :raise: IndexError if the node has no such attribute.
         """
         result = self.attributes[attr_name]
         if result is None:
@@ -500,9 +509,25 @@ class _MagicNodeAttrItemLookupsMixin(object):
 
     def __getattr__(self, child_name):
         """
-        Magical traversal of child XML elements by name when name contains
-        an uppercase character, or ends with an underscore (for lowercase
-        element names). Ignores namespaces.
+        Retrieve this node's child element by tag name regardless of the
+        elements namespace, assuming the name given doesn't match an existing
+        attribute of this class.
+
+        :param string child_name: tag name of the child element. The name must
+            match the following pattern rules for *xml4h* to attempt a child
+            element lookup, otherwise an AttributeError will be raised
+            immediately:
+            - name contains one or more uppercase characters, or
+            - name is all lowercase but ends with a single underscore character
+            - **in all cases** the name does not begin with an underscore
+              character.
+        :return: the type of the return value depends on how many child
+            elements match the name:
+            - a single :class:`Element` node if only one child element matches
+            - a list of :class:`Element` nodes if there is more than 1 match.
+
+        :raise: AttributeError if the node has no child element with the given
+            name, or if the given name does not match the required pattern.
         """
         if child_name.startswith('_'):
             # Never match names with underscore leaders, for safety
@@ -520,11 +545,24 @@ class _MagicNodeAttrItemLookupsMixin(object):
 
     def get(self, child_name, first_only=False):
         """
-        Return a list of child elements with the given node name, ignoring
-        namespaces.
+        Retrieve this node's child element by tag name regardless of the
+        elements namespace.
 
-        If ``first_only`` is True, only the ``first`` such element is
-        returned or None is returned if there are no such child elements.
+        :param string child_name: tag name of the child element.
+        :param book first_only: if True, return only the first matching
+            child node instead of a list of nodes.
+        :return: the type of the return value depends on the value of the
+            ``first_only`` parameter and how many child elements match:
+
+            - if ``first_only=False`` return a list of :class:`Element` nodes;
+              this list will be empty if there are no matching child elements.
+            - if ``first_only=True`` and at least one child element matches,
+              return the first matching :class:`Element` node
+            - if ``first_only=True`` and there are no matching child elements,
+              return *None*
+
+        :raise: AttributeError if the node has no child element with the given
+            name, or if the given name does not match the required pattern.
         """
         results = [c for c in self.children
                    if isinstance(c, Element) and c.local_name == child_name]
@@ -534,10 +572,17 @@ class _MagicNodeAttrItemLookupsMixin(object):
             return results
 
     def get_first(self, child_name):
+        """
+        :return: this node's first child element matching the given tag name
+            regardless of the elements namespace, or *None* if there are no
+            matching nodes.
+
+        Delegates to :meth:`get`.
+        """
         return self.get(child_name, first_only=True)
 
 
-class _XPathMixin(object):
+class XPathMixin(object):
 
     def _maybe_wrap_node(self, node):
         # Don't try and wrap base types (e.g. attribute values or node text)
@@ -554,7 +599,7 @@ class _XPathMixin(object):
             return self._maybe_wrap_node(result)
 
 
-class Document(Node, _MagicNodeAttrItemLookupsMixin, _XPathMixin):
+class Document(Node, NodeAttrAndChildElementLookupsMixin, XPathMixin):
     _node_type = DOCUMENT_NODE
     # TODO: doc_type, document_element
 
@@ -588,7 +633,7 @@ class EntityReference(Node):
     # TODO
 
 
-class _NameValueNode(Node):
+class NameValueNodeMixin(Node):
 
     def __unicode__(self):
         return u'<%s.%s: "%s">' % (
@@ -620,23 +665,23 @@ class _NameValueNode(Node):
         self.adapter.set_node_value(self.impl_node, value)
 
 
-class Text(_NameValueNode):
+class Text(NameValueNodeMixin):
     _node_type = TEXT_NODE
 
 
-class CDATA(_NameValueNode):
+class CDATA(NameValueNodeMixin):
     _node_type = CDATA_NODE
 
 
-class Entity(_NameValueNode):
+class Entity(NameValueNodeMixin):
     _node_type = ENTITY_NODE
 
 
-class Comment(_NameValueNode):
+class Comment(NameValueNodeMixin):
     _node_type = COMMENT_NODE
 
 
-class Attribute(_NameValueNode):
+class Attribute(NameValueNodeMixin):
     _node_type = ATTRIBUTE_NODE
 
     # Cannot set/change name of attribute
@@ -650,15 +695,16 @@ class Attribute(_NameValueNode):
         return super(Attribute, self).value
 
 
-class ProcessingInstruction(_NameValueNode):
+class ProcessingInstruction(NameValueNodeMixin):
     _node_type = PROCESSING_INSTRUCTION_NODE
 
-    target = _NameValueNode.name
+    target = NameValueNodeMixin.name
 
-    data = _NameValueNode.value
+    data = NameValueNodeMixin.value
 
 
-class Element(_NameValueNode, _MagicNodeAttrItemLookupsMixin, _XPathMixin):
+class Element(NameValueNodeMixin,
+        NodeAttrAndChildElementLookupsMixin, XPathMixin):
     """
     Wrap underlying XML document-building libarary/implementation and
     expose utility functions to easily build XML nodes.
