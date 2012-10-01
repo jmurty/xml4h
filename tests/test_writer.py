@@ -87,6 +87,17 @@ class BaseWriterTest(object):
             u'</DocRoot>'.encode('utf-8'),
             self.iostr.getvalue())
 
+    def test_default_indent_and_newline(self):
+        """Default indent of 4 spaces with newlines when indent=True"""
+        self.builder.dom_element.write_doc(self.iostr, indent=True)
+        self.assertEqual(
+            u'<?xml version="1.0" encoding="utf-8"?>\n'
+            u'<DocRoot>\n'
+            u'    <Elem1>默认جذ</Elem1>\n'
+            u'    <Elem2/>\n'
+            u'</DocRoot>\n'.encode('utf-8'),
+            self.iostr.getvalue())
+
     def test_custom_indent_and_newline(self):
         self.builder.dom_element.write_doc(self.iostr,
             indent=8, newline='\t')

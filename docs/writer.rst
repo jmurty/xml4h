@@ -23,8 +23,8 @@ descendants::
     >>> first_film_elem = doc.find('Film')[0]
     >>> first_film_elem.write(indent=True)  # doctest:+ELLIPSIS
     <Film year="1971">
-     <Title>And Now for Something Completely Different</Title>
-     <Description>A collection of sketches from the first and second...
+        <Title>And Now for Something Completely Different</Title>
+        <Description>A collection of sketches from the first and second...
     </Film>
 
 The :meth:`~xml4h.nodes.Node.write_doc` method outputs the entire document no
@@ -33,10 +33,10 @@ matter which node you call it on::
     >>> first_film_elem.write_doc(indent=True)  # doctest:+ELLIPSIS
     <?xml version="1.0" encoding="utf-8"?>
     <MontyPythonFilms source="http://en.wikipedia.org/wiki/Monty_Python">
-     <Film year="1971">
-      <Title>And Now for Something Completely Different</Title>
-      <Description>A collection of sketches from the first and second TV...
-     </Film>
+        <Film year="1971">
+            <Title>And Now for Something Completely Different</Title>
+            <Description>A collection of sketches from the first and second...
+        </Film>
      ...
 
 If you don't supply a writer object to the *write* methods they send output

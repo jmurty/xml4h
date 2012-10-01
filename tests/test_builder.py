@@ -619,9 +619,10 @@ class BaseBuilderNodesTest(object):
         # Compare output of builder with pre-prepared example document
         example_file_path = os.path.join(
             os.path.dirname(__file__), 'data/monty_python_films.xml')
+        expected_xml = open(example_file_path).read()
         writer = StringIO()
-        doc_root_elem.write(writer, indent=True)
-        self.assertEqual(open(example_file_path).read(), writer.getvalue())
+        doc_root_elem.write_doc(writer, indent=True)
+        self.assertEqual(expected_xml, writer.getvalue())
 
 
 class TestXmlDomBuilder(BaseBuilderNodesTest, unittest.TestCase):

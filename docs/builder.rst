@@ -42,17 +42,17 @@ Here is some example code::
 
 That produces the XML document::
 
-    >>> xmlb.write_doc(indent=True)
+    >>> xmlb.write_doc(indent=True)  # doctest:+ELLIPSIS
     <?xml version="1.0" encoding="utf-8"?>
     <MontyPythonFilms source="http://en.wikipedia.org/wiki/Monty_Python">
-     <Film year="1971">
-      <Title>And Now for Something Completely Different</Title>
-      <Description>A collection of sketches from the first and second TV series of Monty Python's Flying Circus purposely re-enacted and shot for film.</Description>
-     </Film>
-     <Film year="1974">
-      <Title>Monty Python and the Holy Grail</Title>
-      <Description>King Arthur and his knights embark on a low-budget search for the Holy Grail, encountering humorous obstacles along the way. Some of these turned into standalone sketches.</Description>
-     </Film>
+        <Film year="1971">
+            <Title>And Now for Something Completely Different</Title>
+            <Description>A collection of sketches from the first and second...
+        </Film>
+        <Film year="1974">
+            <Title>Monty Python and the Holy Grail</Title>
+            <Description>King Arthur and his knights embark on a low-budget...
+        </Film>
     </MontyPythonFilms>
 
 
@@ -258,11 +258,11 @@ content. Luckily, the code is simpler than that description...
     >>> # Add content
     >>> (lob_builder.attrs(stars=5)
     ...     .elem('Review').t('One of my favourite films!').up()
-    ...     ).write(indent=True)
+    ...     ).write(indent=True)  # doctest:+ELLIPSIS
     <Film stars="5" year="1979">
-     <Title>Monty Python's Life of Brian</Title>
-     <Description>Brian is born on the first Christmas, in the stable next to Jesus'. He spends his life being mistaken for a messiah.</Description>
-     <Review>One of my favourite films!</Review>
+        <Title>Monty Python's Life of Brian</Title>
+        <Description>Brian is born on the first Christmas, in the stable...
+        <Review>One of my favourite films!</Review>
     </Film>
 
 
@@ -292,18 +292,18 @@ Here is a trivial example of this technique::
     >>> odd_b.write_doc(indent=True)
     <?xml version="1.0" encoding="utf-8"?>
     <EvenAndOdd>
-     <Odd>
-      <Number>1</Number>
-      <Number>3</Number>
-      <Number>5</Number>
-      <Number>7</Number>
-      <Number>9</Number>
-     </Odd>
-     <Even>
-      <Number>2</Number>
-      <Number>4</Number>
-      <Number>6</Number>
-      <Number>8</Number>
-      <Number>10</Number>
-     </Even>
+        <Odd>
+            <Number>1</Number>
+            <Number>3</Number>
+            <Number>5</Number>
+            <Number>7</Number>
+            <Number>9</Number>
+        </Odd>
+        <Even>
+            <Number>2</Number>
+            <Number>4</Number>
+            <Number>6</Number>
+            <Number>8</Number>
+            <Number>10</Number>
+        </Even>
     </EvenAndOdd>

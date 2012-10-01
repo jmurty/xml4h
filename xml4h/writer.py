@@ -151,12 +151,12 @@ def write_node(node, writer=None, encoding='utf-8', indent=0, newline='',
                 'Cannot write node with class: %s' % node.__class__)
 
     # Sanitize whitespace parameters
-    if isinstance(indent, int):
-        indent = ' ' * indent
-    elif indent is True:
+    if indent is True:
         indent = ' ' * 4
     elif indent is False:
         indent = ''
+    elif isinstance(indent, int):
+        indent = ' ' * indent
     # If indent but no newline set, always apply a newline (it makes sense)
     if indent and not newline:
         newline = True
