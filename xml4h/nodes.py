@@ -583,6 +583,9 @@ class NodeAttrAndChildElementLookupsMixin(object):
 
 
 class XPathMixin(object):
+    """
+    Provide :meth:`xpath` method to nodes that support XPath searching.
+    """
 
     def _maybe_wrap_node(self, node):
         # Don't try and wrap base types (e.g. attribute values or node text)
@@ -592,6 +595,17 @@ class XPathMixin(object):
             return self.adapter.wrap_node(node, self.adapter.impl_document)
 
     def xpath(self, xpath, **kwargs):
+        """
+        Perform an XPath query on the current node.
+
+        :param string xpath: XPath query.
+        :param dict kwargs: Optional keyword arguments that are passed through
+            to the underlying XML library implementation.
+
+        :return: results of the query as a list of :class:`Node` objects, or
+            a list of base type objects if the XPath query does not reference
+            node objects.
+        """
         result = self.adapter.xpath_on_node(self.impl_node, xpath, **kwargs)
         if isinstance(result, (list, tuple)):
             return [self._maybe_wrap_node(r) for r in result]
@@ -600,26 +614,41 @@ class XPathMixin(object):
 
 
 class Document(Node, NodeAttrAndChildElementLookupsMixin, XPathMixin):
+    """
+    Node representing an entire XML document.
+    """
     _node_type = DOCUMENT_NODE
     # TODO: doc_type, document_element
 
 
 class DocumentType(Node):
+    """
+    Node representing the type of an XML document.
+    """
     _node_type = DOCUMENT_TYPE_NODE
     # TODO: name, entities, notations, public_id, system_id
 
 
 class DocumentFragment(Node):
+    """
+    Node representing an XML document fragment.
+    """
     _node_type = DOCUMENT_FRAGMENT_NODE
     # TODO
 
 
 class Notation(Node):
+    """
+    Node representing a notation in an XML document.
+    """
     _node_type = NOTATION_NODE
     # TODO: public_id, system_id
 
 
 class Entity(Node):
+    """
+    Node representing an entity in an XML document.
+    """
     _node_type = ENTITY_NODE
     # public_id, system_id
 
@@ -629,11 +658,18 @@ class Entity(Node):
 
 
 class EntityReference(Node):
+    """
+    Node representing an entity reference in an XML document.
+    """
     _node_type = ENTITY_REFERENCE_NODE
     # TODO
 
 
 class NameValueNodeMixin(Node):
+    """
+    Provide methods to access node name and value attributes, where the node
+    name may also be composed of "prefix" and "local" components.
+    """
 
     def __unicode__(self):
         return u'<%s.%s: "%s">' % (
@@ -642,14 +678,24 @@ class NameValueNodeMixin(Node):
 
     @property
     def prefix(self):
+        """
+        :return: the namespace prefix component of a node name, or None.
+        """
         return self.adapter.get_node_name_prefix(self.impl_node)
 
     @property
     def local_name(self):
+        """
+        :return: the local component of a node name excluding any prefix.
+        """
         return self.adapter.get_node_local_name(self.impl_node)
 
     @property
     def name(self):
+        """
+        Get or set the name of a node, possibly including prefix and local
+            components.
+        """
         return self.adapter.get_node_name(self.impl_node)
 
     @name.setter
@@ -658,6 +704,9 @@ class NameValueNodeMixin(Node):
 
     @property
     def value(self):
+        """
+        Get or set the value of a node.
+        """
         return self.adapter.get_node_value(self.impl_node)
 
     @value.setter
@@ -666,36 +715,38 @@ class NameValueNodeMixin(Node):
 
 
 class Text(NameValueNodeMixin):
+    """
+    Node representing text content in an XML document.
+    """
     _node_type = TEXT_NODE
 
 
 class CDATA(NameValueNodeMixin):
+    """
+    Node representing character data in an XML document.
+    """
     _node_type = CDATA_NODE
 
 
-class Entity(NameValueNodeMixin):
-    _node_type = ENTITY_NODE
-
-
 class Comment(NameValueNodeMixin):
+    """
+    Node representing a comment in an XML document.
+    """
     _node_type = COMMENT_NODE
 
 
 class Attribute(NameValueNodeMixin):
+    """
+    Node representing an attribute of a :class:`Document` or
+    :class:`Element` node.
+    """
     _node_type = ATTRIBUTE_NODE
-
-    # Cannot set/change name of attribute
-    @property
-    def name(self):
-        return super(Attribute, self).name
-
-    # Cannot set/change value of attribute
-    @property
-    def value(self):
-        return super(Attribute, self).value
 
 
 class ProcessingInstruction(NameValueNodeMixin):
+    """
+    Node representing a processing instruction in an XML document.
+    """
     _node_type = PROCESSING_INSTRUCTION_NODE
 
     target = NameValueNodeMixin.name
@@ -706,24 +757,38 @@ class ProcessingInstruction(NameValueNodeMixin):
 class Element(NameValueNodeMixin,
         NodeAttrAndChildElementLookupsMixin, XPathMixin):
     """
-    Wrap underlying XML document-building libarary/implementation and
-    expose utility functions to easily build XML nodes.
+    Node representing an element in an XML document, with support for
+    manipulating and adding content to the element.
     """
     _node_type = ELEMENT_NODE
 
     @property
     def builder(self):
+        """
+        :return: a :class:`~xml4h.builder.Builder` representing this element with
+            convenience methods for adding XML content.
+        """
         return xml4h.Builder(self)
 
     @property
     def text(self):
+        """
+        Get or set the text content of this element.
+        """
         return self.adapter.get_node_text(self.impl_node)
 
     @text.setter
     def text(self, text):
         self.adapter.set_node_text(self.impl_node, text)
 
-    def attributes_by_ns(self, ns_uri):
+    def attributes_by_ns(self, ns_uri=None):
+        """
+        :param ns_uri: namespace URI attributes must have.
+        :type ns_uri: string or None
+
+        :return: attributes of this elements in the given namespace, or in
+            any namespace if ``ns_uri`` is *None*.
+        """
         attr_impl_nodes = self.adapter.get_node_attributes(
             self.impl_node, ns_uri=ns_uri)
         return AttributeDict(attr_impl_nodes, self.impl_node, self.adapter)
@@ -733,7 +798,7 @@ class Element(NameValueNodeMixin,
         if attr_obj is not None:
             if isinstance(attr_obj, dict):
                 attr_dict.update(attr_obj)
-            elif isinstance(attr_obj, list):
+            elif isinstance(attr_obj, (list, tuple)):
                 for n, v in attr_obj:
                     attr_dict[n] = v
             else:
@@ -783,29 +848,50 @@ class Element(NameValueNodeMixin,
 
     def set_attributes(self, attr_obj=None, ns_uri=None, **attr_dict):
         """
-        Add one or more attributes to the current element node.
+        Add or update this element's attributes, where attributes can be
+        specified in a number of ways.
+
+        :param attr_obj: a dictionary or list of attribute name/value pairs.
+        :type attr_obj: dict, list, tuple, or None
+        :param ns_uri: a URI defining a namespace for the new attributes.
+        :type ns_uri: string or None
+        :param dict attr_dict: attribute name and values specified as keyword
+            arguments.
         """
         self._set_element_attributes(self.impl_node,
             attr_obj=attr_obj, ns_uri=ns_uri, **attr_dict)
 
     @property
     def attributes(self):
+        """
+        Get or set this element's attributes as name/value pairs.
+
+        .. note::
+            Setting element attributes via this accessor will **remove**
+            any existing attributes, as opposed to the :meth:`set_attributes`
+            method which only updates and replaces them.
+        """
         return self.attributes_by_ns(None)
 
     @attributes.setter
-    def attributes(self, attr_obj=None, ns_uri=None, **attr_dict):
+    def attributes(self, attr_obj):
         # Remove existing attributes
         for attr_name in self.attributes:
-            self.adapter.remove_node_attribute(
-                self.impl_node, attr_name, ns_uri)
+            self.adapter.remove_node_attribute(self.impl_node, attr_name)
         # Add new attributes
-        self._set_element_attributes(self.impl_node,
-            attr_obj=attr_obj, ns_uri=ns_uri, **attr_dict)
+        self._set_element_attributes(self.impl_node, attr_obj=attr_obj)
 
-    attrib = attributes  # Alias
+    attrib = set_attributes  # Alias
+    """
+    Alias of :meth:`set_attributes`
+    """
 
     @property
     def attribute_nodes(self):
+        """
+        :return: a list of this element's attributes as
+            :class:`Attribute` nodes.
+        """
         impl_attr_nodes = self.adapter.get_node_attributes(self.impl_node)
         wrapped_attr_nodes = [
             self.adapter.wrap_node(a, self.adapter.impl_document)
@@ -813,6 +899,14 @@ class Element(NameValueNodeMixin,
         return sorted(wrapped_attr_nodes, key=lambda x: x.name)
 
     def attribute_node(self, name, ns_uri=None):
+        """
+        :param string name: the name of the attribute to return.
+        :param ns_uri: a URI defining a namespace constraint on the attribute.
+        :type ns_uri: string or None
+
+        :return: this element's attributes that match ``ns_uri`` as
+            :class:`Attribute` nodes.
+        """
         attr_impl_node = self.adapter.get_node_attribute_node(
             self.impl_node, name, ns_uri)
         return self.adapter.wrap_node(
@@ -828,20 +922,53 @@ class Element(NameValueNodeMixin,
             {ns_name: ns_uri}, ns_uri=self.XMLNS_URI)
 
     def set_ns_prefix(self, prefix, ns_uri):
+        """
+        Define a namespace prefix that will serve as shorthand for the given
+        namespace URI in element names.
+
+        :param string prefix: prefix that will serve as an alias for a
+            the namespace URI.
+        :param string ns_uri: namespace URI that will be denoted by the
+            prefix.
+        """
         self._add_ns_prefix_attr(self.impl_node, prefix, ns_uri)
 
-    def add_element(self, tagname, ns_uri=None, prefix=None,
-            attributes=None, text=None, before_this_element=False):
+    def add_element(self, name, ns_uri=None, attributes=None,
+            text=None, before_this_element=False):
         """
-        Add a child element to the current element node and return the child.
+        Add a new child element to this element, with an optional namespace
+        definition. If no namespace is provided the child will be assigned
+        to the default namespace.
+
+        :param string name: a name for the child node. The name may be used
+            to apply a namespace to the child by including:
+
+            - a prefix component in the name of the form
+              ``ns_prefix:element_name``, where the prefix has already been
+              defined for a namespace URI (such as via :meth:`set_ns_prefix`).
+            - a literal namespace URI value delimited by curly braces, of
+              the form ``{ns_uri}element_name``.
+        :param ns_uri: a URI specifying the new element's namespace. If the
+            ``name`` parameter specifies a namespace this parameter is ignored.
+        :type ns_uri: string or None
+        :param attributes: collection of attributes to assign to the new child.
+        :type attributes: dict, list, tuple, or None
+        :param text: text value to assign to the new child.
+        :type text: string or None
+        :param bool before_this_element: if *True* the new element is
+            added as a sibling preceding this element, instead of as a child.
+            In other words, the new element will be a child of this element's
+            parent node, and will immediately precent this element in the DOM.
+
+        :return: the new child as a an :class:`Element` node.
         """
         # Determine local name, namespace and prefix info from tag name
-        prefix, name, node_ns_uri = self.adapter.get_ns_info_from_node_name(
-            tagname, self.impl_node)
+        prefix, local_name, node_ns_uri = \
+            self.adapter.get_ns_info_from_node_name(name, self.impl_node)
         if prefix:
-            qname = '%s:%s' % (prefix, name)
+            qname = '%s:%s' % (prefix, local_name)
         else:
-            qname = name
+            qname = local_name
         # If no name-derived namespace, apply an alternate namespace
         if node_ns_uri is None:
             if ns_uri is None:
@@ -856,7 +983,7 @@ class Element(NameValueNodeMixin,
             qname, node_ns_uri, parent=self.impl_node)
         # If element's default namespace was defined by literal uri prefix,
         # create corresponding xmlns attribute for element...
-        if not prefix and '}' in tagname:
+        if not prefix and '}' in name:
             self._set_element_attributes(child_elem,
                 {'xmlns': node_ns_uri}, ns_uri=self.XMLNS_URI)
         # ...otherwise define keyword-defined namespace as the default, if any
@@ -884,11 +1011,14 @@ class Element(NameValueNodeMixin,
 
     def add_text(self, text):
         """
-        Add a text node to the current element node.
+        Add a text node to this element.
 
-        :param text: string data content for the node
-        :param type: basestring, or any object that can be converted to
-                     a string by :func:`unicode`
+        Adding text with this method is subtly different from assigning a new
+        text value with :meth:`text` accessor, because it "appends" to rather
+        than replacing this element's set of text nodes.
+
+        :param text: text content to add to this element.
+        :param type: string or anything that can be coerced by :func:`unicode`.
         """
         if not isinstance(text, basestring):
             text = unicode(text)
@@ -899,6 +1029,11 @@ class Element(NameValueNodeMixin,
         self.adapter.add_node_child(element, comment_node)
 
     def add_comment(self, text):
+        """
+        Add a comment node to this element.
+
+        :param string text: text content to add as a comment.
+        """
         self._add_comment(self.impl_node, text)
 
     def _add_instruction(self, element, target, data):
@@ -906,6 +1041,11 @@ class Element(NameValueNodeMixin,
         self.adapter.add_node_child(element, instruction_node)
 
     def add_instruction(self, target, data):
+        """
+        Add an instruction node to this element.
+
+        :param string text: text content to add as an instruction.
+        """
         self._add_instruction(self.impl_node, target, data)
 
     def _add_cdata(self, element, data):
@@ -913,6 +1053,11 @@ class Element(NameValueNodeMixin,
         self.adapter.add_node_child(element, cdata_node)
 
     def add_cdata(self, data):
+        """
+        Add a character data node to this element.
+
+        :param string data: text content to add as character data.
+        """
         self._add_cdata(self.impl_node, data)
 
 
@@ -973,22 +1118,43 @@ class AttributeDict(object):
         return self.__str__()
 
     def keys(self):
+        """
+        :return: a list of attribute name strings.
+        """
         return [self.adapter.get_node_name(a) for a in self.impl_attributes]
 
     def values(self):
+        """
+        :return: a list of attribute value strings.
+        """
         return [self.adapter.get_node_value(a) for a in self.impl_attributes]
 
     def items(self):
+        """
+        :return: a list of name/value attribute pairs sorted by attribute name.
+        """
         sorted_keys = sorted(self.keys())
         return [(k, self[k]) for k in sorted_keys]
 
     def namespace_uri(self, name):
+        """
+        :param string name: the name of an attribute to look up.
+
+        :return: the namespace URI associated with the named attribute,
+            or None.
+        """
         a_node = self.adapter.get_node_attribute_node(self.impl_element, name)
         if a_node is None:
             return None
         return self.adapter.get_node_namespace_uri(a_node)
 
     def prefix(self, name):
+        """
+        :param string name: the name of an attribute to look up.
+
+        :return: the prefix component of the named attribute's name,
+            or None.
+        """
         a_node = self.adapter.get_node_attribute_node(self.impl_element, name)
         if a_node is None:
             return None
@@ -996,14 +1162,25 @@ class AttributeDict(object):
 
     @property
     def to_dict(self):
+        """
+        :return: an :class:`~collections.OrderedDict` of attribute name/value
+            pairs.
+        """
         """Return attribute dictionary as an ordered dict"""
         return collections.OrderedDict(self.items())
 
     @property
     def element(self):
+        """
+        :return: the :class:`Element` that contains these attributes.
+        """
         return self.adapter.wrap_node(
             self.impl_element, self.adapter.impl_document)
 
     @property
     def impl_attributes(self):
+        """
+        :return: the attribute node objects from the underlying XML
+            implementation.
+        """
         return self.adapter.get_node_attributes(self.impl_element)
