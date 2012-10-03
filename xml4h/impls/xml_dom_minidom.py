@@ -1,6 +1,6 @@
 from StringIO import StringIO
 
-from xml4h.impls.interface import _XmlImplAdapter
+from xml4h.impls.interface import XmlImplAdapter
 from xml4h import nodes
 
 try:
@@ -10,7 +10,7 @@ except ImportError:
     pass
 
 
-class XmlDomImplAdapter(_XmlImplAdapter):
+class XmlDomImplAdapter(XmlImplAdapter):
 
     @classmethod
     def is_available(cls):

@@ -33,7 +33,7 @@ class Node(object):
         underlying XML implementation.
 
         :param node: node object from the underlying XML implementation.
-        :param adapter: the :class:`xml4h.impls._XmlImplAdapter`
+        :param adapter: the :class:`xml4h.impls.XmlImplAdapter`
             subclass implementation to mediate operations on the node in
             the underlying XML implementation.
         """
@@ -80,7 +80,7 @@ class Node(object):
     @property
     def adapter(self):
         """
-        :return: the :class:`xml4h.impls._XmlImplAdapter` subclass
+        :return: the :class:`xml4h.impls.XmlImplAdapter` subclass
             implementation that mediates operations on the node in the
             underlying XML implementation.
         """
@@ -89,7 +89,7 @@ class Node(object):
     @property
     def adapter_class(self):
         """
-        :return: the ``class`` of the :class:`xml4h.impls._XmlImplAdapter`
+        :return: the ``class`` of the :class:`xml4h.impls.XmlImplAdapter`
             subclass implementation that mediates operations on the node in
             the underlying XML implementation.
         """

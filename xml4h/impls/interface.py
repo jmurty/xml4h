@@ -1,7 +1,17 @@
 from xml4h import nodes, exceptions
 
 
-class _XmlImplAdapter(object):
+class XmlImplAdapter(object):
+    """
+    Base class that defines how *xml4h* interacts with an underlying XML
+    library that the adaptor "wraps" to provide additional (or at least
+    different) functionality.
+
+    This class should be treated as an abstract class. It provides some
+    common implementation code used by all *xml4h* adapter implementations,
+    but mostly it sketches out the methods the real implementaiton subclasses
+    must provide.
+    """
 
     # List of extra features supported (or not) by an adapter implementation
     SUPPORTED_FEATURES = {
@@ -10,31 +20,19 @@ class _XmlImplAdapter(object):
 
     @classmethod
     def has_feature(cls, feature_name):
+        """
+        :return: *True* if a named feature is supported by this adapter.
+        """
         return cls.SUPPORTED_FEATURES.get(feature_name.lower(), False)
-
-    @classmethod
-    def is_available(cls):
-        """
-        Return ``True`` if this implementation is available for use because
-        it's underlying XML library is installed in the Python environment,
-        ``False`` otherwise.
-        """
-        raise NotImplementedError("Implementation missing for %s" % cls)
-
-    @classmethod
-    def parse_string(cls, xml_str, ignore_whitespace_text_nodes=True):
-        raise NotImplementedError("Implementation missing for %s" % cls)
-
-    @classmethod
-    def parse_file(cls, xml_file, ignore_whitespace_text_nodes=True):
-        raise NotImplementedError("Implementation missing for %s" % cls)
 
     @classmethod
     def ignore_whitespace_text_nodes(cls, wrapped_node):
         """
-        Find and delete in node and descendents any text nodes that contain
-        nothing but whitespace. Useful for cleaning up excess text nodes
-        in a document DOM after parsing a pretty-printed XML document.
+        Find and delete any text nodes containing nothing but whitespace in
+        in the given node and its descendents.
+
+        This is useful for cleaning up excess low-value text nodes in a
+        document DOM after parsing a pretty-printed XML document.
         """
         for child in wrapped_node.children:
             if child.is_text and child.value.strip() == '':
@@ -66,6 +64,23 @@ class _XmlImplAdapter(object):
         adapter = cls(document)
         impl_class = adapter.map_node_to_class(node)
         return impl_class(node, adapter)
+
+    @classmethod
+    def is_available(cls):
+        """
+        :return: *True* if this adapter's underlying XML library is available \
+            in the Python environment.
+        """
+        raise NotImplementedError("Implementation missing for %s" % cls)
+
+    @classmethod
+    def parse_string(cls, xml_str, ignore_whitespace_text_nodes=True):
+        raise NotImplementedError("Implementation missing for %s" % cls)
+
+    @classmethod
+    def parse_file(cls, xml_file, ignore_whitespace_text_nodes=True):
+        raise NotImplementedError("Implementation missing for %s" % cls)
+
 
     def __init__(self, document):
         if not document:
@@ -161,11 +176,14 @@ class _XmlImplAdapter(object):
 
     def find_node_elements(self, node, name='*', ns_uri='*'):
         """
-        Return NodeList containing element node descendants of the given node
-        which match the search constraints.
+        :return: element node descendents of the given node that match the \
+            search constraints.
 
-        If name is '*', elements with any name will be returned.
-        If ns_uri is '*', elements in any namespace will be returned.
+        :param node: a node object from the underlying XML library.
+        :param string name: only elements with a matching name will be
+            returned. If the value is ``*`` all names will match.
+        :param string ns_uri: only elements with a matching namespace URI
+            will be returned. If the value is ``*`` all namespaces will match.
         """
         raise NotImplementedError("Implementation missing for %s" % self)
 

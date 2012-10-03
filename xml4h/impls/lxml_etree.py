@@ -1,6 +1,6 @@
 import re
 
-from xml4h.impls.interface import _XmlImplAdapter
+from xml4h.impls.interface import XmlImplAdapter
 from xml4h import nodes
 
 try:
@@ -9,7 +9,9 @@ except ImportError:
     pass
 
 
-class LXMLAdapter(_XmlImplAdapter):
+class LXMLAdapter(XmlImplAdapter):
+    """
+    """
 
     SUPPORTED_FEATURES = {
         'xpath': True,
@@ -107,13 +109,6 @@ class LXMLAdapter(_XmlImplAdapter):
         return LXMLText(text, is_cdata=True)
 
     def find_node_elements(self, node, name='*', ns_uri='*'):
-        """
-        Return NodeList containing element node descendants of the given node
-        which match the search constraints.
-
-        If name is '*', elements with any name will be returned.
-        If ns_uri is '*', elements in any namespace will be returned.
-        """
         # TODO Any proper way to find namespaced elements by name?
         name_match_nodes = node.getiterator()
         # Filter nodes by name and ns_uri if necessary
@@ -131,6 +126,7 @@ class LXMLAdapter(_XmlImplAdapter):
                 continue
             results.append(n)
         return results
+    find_node_elements.__doc__ = XmlImplAdapter.find_node_elements.__doc__
 
     def xpath_on_node(self, node, xpath, **kwargs):
         """
