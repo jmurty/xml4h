@@ -44,13 +44,13 @@ to :attr:`sys.stdout` by default. To send output to a file, or any other
 object that provides a *write* method, you provide the writer to the methods::
 
     >>> # Write to a file
-    >>> with open('example.xml', 'wb') as f:
-    ...     first_film_elem.write_doc(writer=f)
+    >>> with open('/tmp/example.xml', 'wb') as f:
+    ...     first_film_elem.write_doc(f)
 
     >>> # Write to a string (BUT SEE SECTION BELOW...)
     >>> from StringIO import StringIO
     >>> str_writer = StringIO()
-    >>> first_film_elem.write_doc(writer=str_writer)
+    >>> first_film_elem.write_doc(str_writer)
     >>> str_writer.getvalue()  # doctest:+ELLIPSIS
     '<?xml version="1.0" encoding="utf-8"?><MontyPythonFilms source...
 
