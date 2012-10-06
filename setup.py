@@ -21,6 +21,9 @@ elif sys.argv[-1] == 'test-coverage':
     os.system(r'nosetests --nocapture'
               r' --with-coverage --cover-package=xml4h')
     sys.exit()
+elif sys.argv[-1] == 'test':
+    os.system(r'nosetests --nocapture --cover-package=xml4h')
+    sys.exit()
 
 
 setup(
