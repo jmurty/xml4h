@@ -32,6 +32,8 @@ DOM Nodes
 
 .. automodule:: xml4h.nodes
    :members:
+   :special-members:
+   :private-members:
 
 
 XML Libarary Adapters

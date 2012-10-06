@@ -502,12 +502,14 @@ class NodeAttrAndChildElementLookupsMixin(object):
             match the following pattern rules for *xml4h* to attempt a child
             element lookup, otherwise an AttributeError will be raised
             immediately:
+
             - name contains one or more uppercase characters, or
             - name is all lowercase but ends with a single underscore character
             - **in all cases** the name does not begin with an underscore
               character.
         :return: the type of the return value depends on how many child
             elements match the name:
+
             - a single :class:`Element` node if only one child element matches
             - a list of :class:`Element` nodes if there is more than 1 match.
 
@@ -1113,7 +1115,6 @@ class AttributeDict(object):
         :return: an :class:`~collections.OrderedDict` of attribute name/value
             pairs.
         """
-        """Return attribute dictionary as an ordered dict"""
         return collections.OrderedDict(self.items())
 
     @property
@@ -1135,7 +1136,7 @@ class AttributeDict(object):
 
 class NodeList(list):
     """
-    Custom list object for document :class:`Node`s that provides additional
+    Custom implementation for :class:`Node` lists that provides additional
     functionality, such as node filtering.
     """
 
@@ -1144,9 +1145,9 @@ class NodeList(list):
         """
         Apply filters to the set of nodes in this list.
 
+        :param local_name: a local name used to filter the nodes.
+        :type local_name: string or None
         :param name: a name used to filter the nodes.
-        :type name: string or None
-        :param name: a local name used to filter the nodes.
         :type name: string or None
         :param ns_uri: a namespace URI used to filter the nodes.
             If *None* all nodes are returned regardless of namespace.
@@ -1157,8 +1158,10 @@ class NodeList(list):
             This function must accept a single :class:`Node` argument and
             return a bool indicating whether to include the node in the
             filtered results.
+
             .. note:: if ``filter_fn`` is provided all other filter arguments
                 are ignore.
+        :type filter_fn: function or None
 
         :return: the type of the return value depends on the value of the
             ``first_only`` parameter and how many nodes match the filter:
@@ -1197,8 +1200,8 @@ class NodeList(list):
         else:
             return NodeList(nodelist)
 
-    __call__ = filter
-    __call__.__doc__ = "Alias for :meth:`filter`."
+    __call__ = filter  # Alias
+    """Alias for :meth:`filter`."""
 
     def first(self, local_name=None, name=None, ns_uri=None, node_type=None,
             filter_fn=None):
