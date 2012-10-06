@@ -86,12 +86,54 @@ class BaseTestNodes(object):
             self.my_adapter.wrap_node(
                 self.elem3_second, self.doc).ancestors[-1].is_document)
 
-    def test_children(self):
+    def test_children_attribute(self):
         self.assertEquals(self.elem1, self.xml4h_root.children[0].impl_node)
         self.assertEquals(['Element1', 'Element2', 'Element3', 'Element4'],
             [n.name for n in self.xml4h_root.children])
         self.assertEquals(['Element2'],
             [n.name for n in self.xml4h_root.find_first('Element3').children])
+
+    def test_children_nodelist_callable(self):
+        """Use callable feature of children attribute's returned NodeList"""
+        self.assertEquals(self.elem1, self.xml4h_root.children()[0].impl_node)
+        self.assertEquals(['Element1', 'Element2', 'Element3', 'Element4'],
+            [n.name for n in self.xml4h_root.children()])
+        self.assertEquals(['Element2'],
+            [n.name for n in
+                self.xml4h_root.find_first('Element3').children()])
+        # Filter children by name
+        self.assertEquals(['Element2'],
+            [n.name for n in self.xml4h_root.children(name='Element2')])
+        # Filter children by local name
+        self.assertEquals(['Element2'],
+            [n.name for n in self.xml4h_root.children(local_name='Element2')])
+        # Filter children by namespace
+        self.assertEquals(['Element3', 'Element4'],
+            [n.name for n in self.xml4h_root.children(ns_uri='urn:ns1')])
+        # Filter by node type
+        self.assertEquals([],
+            [n.name for n in self.xml4h_root.children(
+                                  node_type=xml4h.nodes.Text)])
+        self.assertEquals(['Element1', 'Element2', 'Element3', 'Element4'],
+            [n.name for n in self.xml4h_root.children(
+                                  node_type=xml4h.nodes.ELEMENT_NODE)])
+        self.assertEquals(['Element1', 'Element2', 'Element3', 'Element4'],
+            [n.name for n in self.xml4h_root.children(
+                                  node_type=xml4h.nodes.Element)])
+        # Filter by arbitrary function
+        fn = lambda x: x.name[-1] in ('1', '3')
+        self.assertEquals(['Element1', 'Element3'],
+            [n.name for n in self.xml4h_root.children(filter_fn=fn)])
+        # Return first result only via `first_only` flag
+        self.assertEquals('Element3',
+            self.xml4h_root.children(ns_uri='urn:ns1', first_only=True).name)
+        self.assertEqual(None,
+            self.xml4h_root.children(ns_uri='urn:wrong', first_only=True))
+        # Return first result only via `first` method
+        self.assertEquals('Element3',
+            self.xml4h_root.children.first(ns_uri='urn:ns1').name)
+        self.assertEqual(None,
+            self.xml4h_root.children.first(ns_uri='urn:wrong'))
 
     def test_siblings(self):
         wrapped_node = self.xml4h_root.children[1]

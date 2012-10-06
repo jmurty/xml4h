@@ -276,11 +276,11 @@ class BaseBuilderNodesTest(object):
         self.assertEqual(1, len(xmlb.find_doc(ns_uri='urn:elem1')))
         self.assertEqual(0, len(xmlb.find(name='Elem1', ns_uri='urn:wrong')))
         self.assertEqual(['Elem1'],
-            [n.name for n in xmlb.dom_element.children_in_ns('urn:elem1')])
+            [n.name for n in xmlb.dom_element.children(ns_uri='urn:elem1')])
         self.assertEqual(['DocRoot', 'Elem2'],
             [n.name for n in xmlb.find_doc(ns_uri='urn:default')])
         self.assertEqual(['Elem2'],
-            [n.name for n in xmlb.dom_element.children_in_ns('urn:default')])
+            [n.name for n in xmlb.dom_element.children(ns_uri='urn:default')])
         # Set namespaces of elements and attributes on creation
         xmlb = (
             self.my_builder('DocRoot', ns_uri='urn:default')

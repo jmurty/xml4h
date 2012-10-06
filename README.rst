@@ -168,14 +168,15 @@ TODO
 ----
 
 - Write project documentation, code comments, and user guide
-- Support for XPath querying in *lxml* implementation
 - Add implementation of standard library's (c)ElementTree (if plausible) so
   XPath is available to all users without installing the extra *lxml* library.
+- Proper support for more esoteric node types: DocumentType, DocumentFragment,
+  Notation, Entity, EntityReference
 - Find a way to make the *lxml* ``nsmap`` namespace map mutable, or to fake it?
   This is necessary to properly abstract namespace definition behaviour.
 - SAX parsing, done nicely -- Need to figure out what that means...
-- Custom nodelist implementations for children, entities, notations, etc to
+- Improve NodeList implementations for children, entities, notations, etc to
   allow for human-friendly interactions with lists, such as easily
-  add/remove children via the nodelist.
+  add/remove document nodes via the nodelist.
 - Complete test coverage and weed out implementation-specific skipped or
   hacky tests

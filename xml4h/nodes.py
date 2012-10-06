@@ -219,14 +219,14 @@ class Node(object):
         """
         return self.is_type(NOTATION_NODE)
 
-    def _convert_nodelist(self, nodelist):
+    def _convert_nodelist(self, impl_nodelist):
         """
         Convert a list of underlying implementation nodes into a list of
         *xml4h* wrapper nodes.
         """
-        # TODO Do something more efficient here, lazy wrapping?
-        return [self.adapter.wrap_node(n, self.adapter.impl_document)
-                for n in nodelist]
+        nodelist = [self.adapter.wrap_node(n, self.adapter.impl_document)
+                    for n in impl_nodelist]
+        return NodeList(nodelist)
 
     @property
     def parent(self):
@@ -250,28 +250,13 @@ class Node(object):
             p = p.parent
         return ancestors
 
-    def children_in_ns(self, ns_uri=None):
-        """
-        Return child nodes that belong to this node and that are in the
-        given namespace.
-
-        :param ns_uri: a namespace URI used to filter the child nodes.
-            If *None* all child nodes are returned regardless of namespace.
-        :type ns_uri: string or None
-        """
-        nodelist = self.adapter.get_node_children(self.impl_node)
-        if ns_uri is not None:
-            nodelist = filter(
-                lambda x: self.adapter.get_node_namespace_uri(x) == ns_uri,
-                nodelist)
-        return self._convert_nodelist(nodelist)
-
     @property
     def children(self):
         """
         :return: a list of this node's child nodes.
         """
-        return self.children_in_ns(None)
+        impl_nodelist = self.adapter.get_node_children(self.impl_node)
+        return self._convert_nodelist(impl_nodelist)
 
     @property
     def attributes(self):
@@ -290,9 +275,9 @@ class Node(object):
             If *None* all sibling nodes are returned regardless of namespace.
         :type ns_uri: string or None
         """
-        nodelist = self.adapter.get_node_children(self.parent.impl_node)
+        impl_nodelist = self.adapter.get_node_children(self.parent.impl_node)
         return self._convert_nodelist(
-            [n for n in nodelist if n != self.impl_node])
+            [n for n in impl_nodelist if n != self.impl_node])
 
     @property
     def siblings(self):
@@ -307,9 +292,9 @@ class Node(object):
         :return: a list of this node's siblings that occur *before* this
             node in the DOM.
         """
-        nodelist = self.adapter.get_node_children(self.parent.impl_node)
+        impl_nodelist = self.adapter.get_node_children(self.parent.impl_node)
         before_nodelist = []
-        for n in nodelist:
+        for n in impl_nodelist:
             if n == self.impl_node:
                 break
             before_nodelist.append(n)
@@ -321,10 +306,10 @@ class Node(object):
         :return: a list of this node's siblings that occur *after* this
             node in the DOM.
         """
-        nodelist = self.adapter.get_node_children(self.parent.impl_node)
+        impl_nodelist = self.adapter.get_node_children(self.parent.impl_node)
         after_nodelist = []
         is_after_myself = False
-        for n in nodelist:
+        for n in impl_nodelist:
             if is_after_myself:
                 after_nodelist.append(n)
             elif n == self.impl_node:
@@ -383,15 +368,15 @@ class Node(object):
             name = '*'  # Match all element names
         if ns_uri is None:
             ns_uri = '*'  # Match all namespaces
-        nodelist = self.adapter.find_node_elements(
+        impl_nodelist = self.adapter.find_node_elements(
             self.impl_node, name=name, ns_uri=ns_uri)
         if first_only:
-            if nodelist:
+            if impl_nodelist:
                 return self.adapter.wrap_node(
-                    nodelist[0], self.adapter.impl_document)
+                    impl_nodelist[0], self.adapter.impl_document)
             else:
                 return None
-        return self._convert_nodelist(nodelist)
+        return self._convert_nodelist(impl_nodelist)
 
     def find_first(self, name=None, ns_uri=None):
         """
@@ -534,7 +519,7 @@ class NodeAttrAndChildElementLookupsMixin(object):
             pass
         elif child_name != child_name.lower() or child_name.endswith('_'):
             # Names with uppercase characters or trailing '_' are fair game
-            results = self.get(child_name)
+            results = self.children(local_name=child_name, node_type=Element)
             if len(results) == 1:
                 return results[0]
             elif len(results) > 1:
@@ -542,44 +527,6 @@ class NodeAttrAndChildElementLookupsMixin(object):
         raise AttributeError(
             "'%s' object has no attribute '%s'"
             % (self.__class__.__name__, child_name))
-
-    def get(self, child_name, first_only=False):
-        """
-        Retrieve this node's child element by tag name regardless of the
-        elements namespace.
-
-        :param string child_name: tag name of the child element.
-        :param book first_only: if True, return only the first matching
-            child node instead of a list of nodes.
-        :return: the type of the return value depends on the value of the
-            ``first_only`` parameter and how many child elements match:
-
-            - if ``first_only=False`` return a list of :class:`Element` nodes;
-              this list will be empty if there are no matching child elements.
-            - if ``first_only=True`` and at least one child element matches,
-              return the first matching :class:`Element` node
-            - if ``first_only=True`` and there are no matching child elements,
-              return *None*
-
-        :raise: AttributeError if the node has no child element with the given
-            name, or if the given name does not match the required pattern.
-        """
-        results = [c for c in self.children
-                   if isinstance(c, Element) and c.local_name == child_name]
-        if first_only:
-            return results[0] if results else None
-        else:
-            return results
-
-    def get_first(self, child_name):
-        """
-        :return: this node's first child element matching the given tag name
-            regardless of the elements namespace, or *None* if there are no
-            matching nodes.
-
-        Delegates to :meth:`get`.
-        """
-        return self.get(child_name, first_only=True)
 
 
 class XPathMixin(object):
@@ -650,7 +597,7 @@ class Entity(Node):
     Node representing an entity in an XML document.
     """
     _node_type = ENTITY_NODE
-    # public_id, system_id
+    # TODO: public_id, system_id
 
     @property
     def notation_name(self):
@@ -765,8 +712,8 @@ class Element(NameValueNodeMixin,
     @property
     def builder(self):
         """
-        :return: a :class:`~xml4h.builder.Builder` representing this element with
-            convenience methods for adding XML content.
+        :return: a :class:`~xml4h.builder.Builder` representing this element
+            with convenience methods for adding XML content.
         """
         return xml4h.Builder(self)
 
@@ -1184,3 +1131,82 @@ class AttributeDict(object):
             implementation.
         """
         return self.adapter.get_node_attributes(self.impl_element)
+
+
+class NodeList(list):
+    """
+    Custom list object for document :class:`Node`s that provides additional
+    functionality, such as node filtering.
+    """
+
+    def filter(self, local_name=None, name=None, ns_uri=None, node_type=None,
+            filter_fn=None, first_only=False):
+        """
+        Apply filters to the set of nodes in this list.
+
+        :param name: a name used to filter the nodes.
+        :type name: string or None
+        :param name: a local name used to filter the nodes.
+        :type name: string or None
+        :param ns_uri: a namespace URI used to filter the nodes.
+            If *None* all nodes are returned regardless of namespace.
+        :type ns_uri: string or None
+        :param node_type: a node type definition used to filter the nodes.
+        :type node_type: int node type constant, class, or None
+        :param filter_fn: an arbitrary function to filter nodes in this list.
+            This function must accept a single :class:`Node` argument and
+            return a bool indicating whether to include the node in the
+            filtered results.
+            .. note:: if ``filter_fn`` is provided all other filter arguments
+                are ignore.
+
+        :return: the type of the return value depends on the value of the
+            ``first_only`` parameter and how many nodes match the filter:
+
+            - if ``first_only=False`` return a :class:`NodeList` of filtered
+              nodes, which will be empty if there are no matching nodes.
+            - if ``first_only=True`` and at least one node matches,
+              return the first matching :class:`Node`
+            - if ``first_only=True`` and there are no matching nodes,
+              return *None*
+        """
+        # Build our own filter function unless a custom function is provided
+        if filter_fn is None:
+            def filter_fn(n):
+                # Test node type first in case other tests require this type
+                if node_type is not None:
+                    # Node type can be specified as an integer constant (e.g.
+                    # ELEMENT_NODE) or a class.
+                    if isinstance(node_type, int):
+                        if not n.is_type(node_type):
+                            return False
+                    elif n.__class__ != node_type:
+                        return False
+                if name is not None and n.name != name:
+                    return False
+                if local_name is not None and n.local_name != local_name:
+                    return False
+                if ns_uri is not None and n.ns_uri != ns_uri:
+                    return False
+                return True
+        # Filter nodes
+        nodelist = filter(filter_fn, self)
+        # If requested, return just the first node (or None if no nodes)
+        if first_only:
+            return nodelist[0] if nodelist else None
+        else:
+            return NodeList(nodelist)
+
+    __call__ = filter
+    __call__.__doc__ = "Alias for :meth:`filter`."
+
+    def first(self, local_name=None, name=None, ns_uri=None, node_type=None,
+            filter_fn=None):
+        """
+        :return: the first node matching the given constraints, or *None* if
+            there are no matching nodes.
+
+        Delegates to :meth:`filter`.
+        """
+        return self(name=name, local_name=local_name, ns_uri=ns_uri,
+            node_type=node_type, filter_fn=filter_fn, first_only=True)
