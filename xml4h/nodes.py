@@ -248,7 +248,7 @@ class Node(object):
         while p:
             ancestors.append(p)
             p = p.parent
-        return ancestors
+        return NodeList(ancestors)
 
     @property
     def children(self):
@@ -266,25 +266,15 @@ class Node(object):
     def attribute_nodes(self):
         return None
 
-    def siblings_in_ns(self, ns_uri=None):
-        """
-        Return nodes that are siblings of this node and that are in the
-        given namespace.
-
-        :param ns_uri: a namespace URI used to filter the sibling nodes.
-            If *None* all sibling nodes are returned regardless of namespace.
-        :type ns_uri: string or None
-        """
-        impl_nodelist = self.adapter.get_node_children(self.parent.impl_node)
-        return self._convert_nodelist(
-            [n for n in impl_nodelist if n != self.impl_node])
-
     @property
     def siblings(self):
         """
         :return: a list of this node's sibling nodes.
+        :rtype: NodeList
         """
-        return self.siblings_in_ns(None)
+        impl_nodelist = self.adapter.get_node_children(self.parent.impl_node)
+        return self._convert_nodelist(
+            [n for n in impl_nodelist if n != self.impl_node])
 
     @property
     def siblings_before(self):
