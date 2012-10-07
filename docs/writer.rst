@@ -66,14 +66,21 @@ The :meth:`~xml4h.nodes.Node.xml` method works like the *write* method and
 will return a string of XML content including the current node and its
 descendants::
 
-    >>> first_film_elem.xml()  # doctest:+ELLIPSIS
-    '<Film year="1971">\n    <Title>And Now for Something Completely...
+    >>> print first_film_elem.xml()  # doctest:+ELLIPSIS
+    <Film year="1971">
+        <Title>And Now for Something Completely...
 
 The :meth:`~xml4h.nodes.Node.xml_doc` method works like the *write_doc*
 method and returns a string for the whole document::
 
-    >>> first_film_elem.xml_doc()  # doctest:+ELLIPSIS
-    '<?xml version="1.0" encoding="utf-8"?>\n<MontyPythonFilms source...
+    >>> print first_film_elem.xml_doc()  # doctest:+ELLIPSIS
+    <?xml version="1.0" encoding="utf-8"?>
+    <MontyPythonFilms source="http://en.wikipedia.org/wiki/Monty_Python">
+        <Film year="1971">
+            <Title>And Now for Something Completely Different</Title>
+            <Description>A collection of sketches from the first and second...
+        </Film>
+        ...
 
 .. note::
    *xml4h* assumes that when you directly generate an XML string you or
@@ -85,18 +92,54 @@ Format Output
 -------------
 
 The *write* and *xml* methods accept a range of formatting options to control
-how XML content is serialized. These are only useful if you expect a human
-to read the data (poor sod!). If your XML needs to be human-friendly they
-can be very helpful.
+how XML content is serialized. These are useful if you expect a human to read
+the resulting data.
 
 For the full range of formatting options see the code documentation for
-:meth:`~xml4h.nodes.Node.write` et al. but here are some pointers to get
-you started:
+:meth:`~xml4h.nodes.Node.write` and :meth:`~xml4h.nodes.Node.xml` et al.
+but here are some pointers to get you started:
 
-TODO
+- Set ``indent=True`` to write a pretty-printed XML document with four space
+  characters for indentation and ``\n`` for newlines.
+- To use a tab character for indenting and ``\r\n`` for indents:
+  ``indent='\t', newline='\r\n'``.
+- *lxml* writes *utf-8*-encoded documents by default, to write with a
+  different encoding (if you must): ``encoding='iso-8859-1'``.
+- To avoid outputting the XML declaration when writing a document:
+  ``omit_declaration=True``.
 
 
 Write using the underlying implementation
 -----------------------------------------
 
-TODO
+Because *xml4h* sits on top of an underlying
+:ref:`XML library implementation <xml-lib-adapters>` you can use that
+library's serialization methods if you prefer, and if you don't mind having
+some implementation-specific code.
+
+For example, if you are using *lxml* as the underlying library you can use
+its serialisation methods by accessing the implementation node::
+
+    >>> # Get the implementation root node, in this case an lxml node
+    >>> lxml_root_node = first_film_elem.root.impl_node
+    >>> lxml_root_node.__class__
+    <type 'lxml.etree._Element'>
+
+    >>> # Use lxml features as normal; xml4h is no longer in the picture
+    >>> from lxml import etree
+    >>> print etree.tostring(lxml_root_node,
+    ...     encoding='utf-8', xml_declaration=True, pretty_print=True)  # doctest:+ELLIPSIS
+    <?xml version='1.0' encoding='utf-8'?>
+    <MontyPythonFilms source="http://en.wikipedia.org/wiki/Monty_Python"><Film year="1971"><Title>And Now for Something Completely Different</Title>
+            <Description>A collection of sketches from the first and second...
+        </Film>
+        <Film year="1974"><Title>Monty Python and the Holy Grail</Title>
+            <Description>King Arthur and his knights embark on a low-budget...
+        </Film>
+        ...
+
+.. note::
+   The output from *lxml* is a little quirky, at least on the author's machine.
+   Note for example the single-quote characters in the XML declaration, and
+   the missing newline and indent before the first ``<Film>`` element. But
+   don't worry, that's why you have *xml4h* ;)
