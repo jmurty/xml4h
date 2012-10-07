@@ -26,9 +26,8 @@ Writer
 
 .. _api-nodes:
 
-
-DOM Nodes
----------
+DOM Nodes API
+-------------
 
 .. automodule:: xml4h.nodes
    :members:

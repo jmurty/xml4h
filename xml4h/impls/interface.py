@@ -81,9 +81,8 @@ class XmlImplAdapter(object):
     def parse_file(cls, xml_file, ignore_whitespace_text_nodes=True):
         raise NotImplementedError("Implementation missing for %s" % cls)
 
-
     def __init__(self, document):
-        if not document:
+        if not isinstance(document, object):
             raise Exception(
                 'Cannot instantiate adapter with invalid document: %s'
                 % document)
