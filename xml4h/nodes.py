@@ -95,6 +95,13 @@ class Node(object):
         """
         return self._adapter.__class__
 
+    def has_feature(self, feature_name):
+        """
+        :return: *True* if a named feature is supported by the adapter\
+                 implementation underlying this node.
+        """
+        return self.adapter.has_feature(feature_name)
+
     @property
     def document(self):
         """
