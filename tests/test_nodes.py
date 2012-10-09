@@ -423,6 +423,60 @@ class BaseTestNodes(object):
             namespaces={'x': 'urn:ns2'})
         self.assertEqual(3, result)
 
+    def test_magical_traversal(self):
+        # Look up a non-existent child element by Python attribute
+        try:
+            self.xml4h_root.DoesNotExist
+            self.fail('Expected AttributeError')
+        except AttributeError, e:
+            self.assertEqual(
+                "'Element' object has no attribute 'DoesNotExist'",
+                str(e))
+        # Look up non-existent attribute by Python key name
+        try:
+            self.xml4h_root['not-an-attribute']
+        except KeyError, e:
+            self.assertEqual("'not-an-attribute'", str(e))
+
+        # Look up child element by attribute
+        self.assertEqual(self.xml4h_root, self.xml4h_doc.DocRoot)
+        # Look up child element by attribute to depth
+        self.assertEqual('A comment',
+            self.xml4h_doc.DocRoot.Element3.Element2.children.first().value)
+        # Look up a namespaced element; namespace prefix is not required
+        self.assertEqual(self.elem3_second,
+            self.xml4h_doc.DocRoot.Element4.Element3.impl_node)
+
+        # Create and look up a lowercase element name, need trailing underscore
+        self.xml4h_root.add_element('lowercasename', text='value')
+        self.assertEqual('value', self.xml4h_root.lowercasename_.text)
+        try:
+            self.xml4h_root.lowercasename.text
+            self.fail('Expected AttributeError')
+        except AttributeError, e:
+            self.assertEqual(
+                "'Element' object has no attribute 'lowercasename'",
+                str(e))
+
+        # Create and look up an illegal element name
+        self.xml4h_root.add_element('_leadingunderscore', text='value2')
+        self.assertEqual(
+            'value2',
+            self.xml4h_root.children('_leadingunderscore').first().text)
+        try:
+            self.xml4h_root._leadingunderscore
+            self.fail('Expected AttributeError')
+        except AttributeError, e:
+            pass
+        try:
+            self.xml4h_root._leadingunderscore_
+            self.fail('Expected AttributeError')
+        except AttributeError, e:
+            pass
+
+        # Look up an attribute by key name
+        self.assertEqual('2', self.xml4h_doc.DocRoot.Element1['ns1:b'])
+
 
 class TestMinidomNodes(BaseTestNodes, unittest.TestCase):
 

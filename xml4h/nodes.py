@@ -378,7 +378,8 @@ class Node(object):
     def find_first(self, name=None, ns_uri=None):
         """
         Find the first :class:`Element` node descendant of this node that
-        matches any optional constraints.
+        matches any optional constraints, or None if there are no matching
+        elements.
 
         Delegates to :meth:`find` with ``first_only=True``.
         """
@@ -479,13 +480,15 @@ class NodeAttrAndChildElementLookupsMixin(object):
         Retrieve this node's attribute value by name using dict-style keyword
         lookup.
 
-        :param string attr_name: name of the attribute.
+        :param string attr_name: name of the attribute. If the attribute has
+            a namespace prefix that must be included, in other words the name
+            must be a qname not local name.
 
-        :raise: IndexError if the node has no such attribute.
+        :raise: KeyError if the node has no such attribute.
         """
         result = self.attributes[attr_name]
         if result is None:
-            raise IndexError()
+            raise KeyError(attr_name)
         else:
             return result
 
@@ -517,6 +520,8 @@ class NodeAttrAndChildElementLookupsMixin(object):
             # Never match names with underscore leaders, for safety
             pass
         elif child_name != child_name.lower() or child_name.endswith('_'):
+            if child_name.endswith('_'):
+                child_name = child_name[:-1]
             # Names with uppercase characters or trailing '_' are fair game
             results = self.children(local_name=child_name, node_type=Element)
             if len(results) == 1:
