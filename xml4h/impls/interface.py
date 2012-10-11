@@ -158,7 +158,7 @@ class XmlImplAdapter(object):
 
     # Document implementation methods
 
-    def new_impl_element(self, tagname, ns_uri):
+    def new_impl_element(self, tagname, ns_uri=None, parent=None):
         raise NotImplementedError("Implementation missing for %s" % self)
 
     def new_impl_text(self, text):

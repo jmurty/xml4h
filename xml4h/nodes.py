@@ -529,8 +529,7 @@ class NodeAttrAndChildElementLookupsMixin(object):
             elif len(results) > 1:
                 return results
         raise AttributeError(
-            "'%s' object has no attribute '%s'"
-            % (self.__class__.__name__, child_name))
+            "%s object has no attribute '%s'" % (self, child_name))
 
 
 class XPathMixin(object):

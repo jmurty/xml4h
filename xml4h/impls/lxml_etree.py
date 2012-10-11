@@ -78,7 +78,7 @@ class LXMLAdapter(XmlImplAdapter):
 
     # Document implementation methods
 
-    def new_impl_element(self, tagname, ns_uri, parent):
+    def new_impl_element(self, tagname, ns_uri=None, parent=None):
         if ns_uri is not None:
             if ':' in tagname:
                 tagname = tagname.split(':')[1]

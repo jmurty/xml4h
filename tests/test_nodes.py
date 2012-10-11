@@ -430,7 +430,8 @@ class BaseTestNodes(object):
             self.fail('Expected AttributeError')
         except AttributeError, e:
             self.assertEqual(
-                "'Element' object has no attribute 'DoesNotExist'",
+                """<xml4h.nodes.Element: "DocRoot"> object"""
+                """ has no attribute 'DoesNotExist'""",
                 str(e))
         # Look up non-existent attribute by Python key name
         try:
@@ -455,7 +456,8 @@ class BaseTestNodes(object):
             self.fail('Expected AttributeError')
         except AttributeError, e:
             self.assertEqual(
-                "'Element' object has no attribute 'lowercasename'",
+                """<xml4h.nodes.Element: "DocRoot"> object"""
+                """ has no attribute 'lowercasename'""",
                 str(e))
 
         # Create and look up an illegal element name
