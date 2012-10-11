@@ -344,6 +344,28 @@ class Node(object):
             self.adapter.get_node_parent(self.impl_node), self.impl_node,
             destroy_node=True)
 
+    def import_node(self, node):
+        """
+        Import a node from another document to become a child of this node.
+        The node to be imported can be a :class:`Node` based on the same
+        underlying XML library implementation and adapter, or a "raw" node
+        from that implementation.
+
+        :param node: the node in another document import.
+        :type node: xml4h or implementation node
+
+        .. note::
+           Depending on the type of the node and the underlying XML library
+           implementation, the imported node may or may not be removed from
+           its original document.
+        """
+        if isinstance(node, xml4h.nodes.Node):
+            child_impl_node = node.impl_node
+        else:
+            # Assuming incoming node is an implementation node
+            child_impl_node = node
+        self.adapter.add_node_child(self.impl_node, child_impl_node)
+
     def find(self, name=None, ns_uri=None, first_only=False):
         """
         Find :class:`Element` node descendants of this node, with optional

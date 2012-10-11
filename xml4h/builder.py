@@ -129,6 +129,22 @@ class Builder(object):
                     break
         return Builder(elem)
 
+    def import_node(self, node):
+        """
+        Import a node from another document to become a child of the
+        :class:`xml4h.nodes.Element` node represented by this Builder.
+
+        :return: a new Builder that represents the current element \
+                 (not the imported node).
+
+        Delegates to :meth:`xml4h.nodes.Node.import_node`.
+        """
+        self._element.import_node(node)
+        return self
+
+    node = import_node  # Alias
+    """Alias of :meth:`import_node`"""
+
     def element(self, *args, **kwargs):
         """
         Add a child element to the :class:`xml4h.nodes.Element` node

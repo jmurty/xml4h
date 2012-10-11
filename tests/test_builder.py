@@ -528,6 +528,65 @@ class BaseBuilderNodesTest(object):
         self.assertEqual(u'tvö',
             doc.find_first(u'yếutố2').attributes[u'důl:עודתכונה'])
 
+    def test_import_xml4h_element(self):
+        """
+        Test importing/relocating an xml4h element node from one document to
+        another using the node import_node method.
+        """
+        cat_b = (
+            xml4h.build('Animal')
+                .element('Cat')
+                    .element('Feature').text('Independent')
+            )
+        dog_b = (
+            xml4h.build('Animal')
+                .element('Dog')
+                    .element('Feature').text('Loyal')
+            )
+        # Import an xml4h element node from one doc into another
+        cat_b.document.Animal.import_node(
+            dog_b.document.Animal.Dog)
+        self.assertEqual(
+            '<Animal>'
+                '<Cat><Feature>Independent</Feature></Cat>'
+                '<Dog><Feature>Loyal</Feature></Dog>'
+            '</Animal>',
+            cat_b.root.xml(indent=False))
+        # Check element node is no longer in original document
+        self.assertEqual('<Animal/>', dog_b.root.xml(indent=False))
+
+    def test_import_impl_text_node(self):
+        """
+        Test importing/relocating an implementation Text node from one
+        document to another using the builder import method.
+        """
+        cat_b = (
+            xml4h.build('Animal')
+                .element('Cat')
+                    .element('Feature').text('Independent')
+            )
+        dog_b = (
+            xml4h.build('Animal')
+                .element('Dog')
+                    .element('Feature').text('Loyal')
+            )
+        # Import an implementation Text node from one doc into another
+        cat_feature_b = cat_b
+        self.assertEqual('Feature', cat_feature_b.dom_element.name)
+        cat_feature_b.node(
+            dog_b.document.Animal.Dog.Feature.children[0].impl_node) \
+            .up().element('X')  # Check method chaining works after import
+        self.assertEqual(
+            '<Animal>'
+                '<Cat><Feature>IndependentLoyal</Feature><X/></Cat>'
+            '</Animal>',
+            cat_b.root.xml(indent=False))
+        # Check text node is *still* in original document (different behaviour
+        # from element import/relocation, I'm not sure why...)
+        self.assertEqual(
+            '<Animal><Dog><Feature>Loyal</Feature></Dog></Animal>',
+            dog_b.root.xml(indent=False))
+
     def test_build_monty_python_film_example(self):
         """
         Test production of a simple example XML doc; to be reused as project
