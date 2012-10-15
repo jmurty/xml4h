@@ -259,6 +259,8 @@ nodes you need:
       Monty Python's Life of Brian
 
 
+.. _magical-node-traversal:
+
 "Magical" Node Traversal
 ------------------------
 
@@ -303,17 +305,242 @@ There are more gory details in the documentation at
    you must include that prefix in the name e.g. ``prefix:attribute-name``.
 
 
-Manipulating Nodes
-------------------
+Manipulating Nodes and Elements
+-------------------------------
 
-- Set name and value
-- delete
+*xml4h* provides simple methods to manipulate the structure and content of an
+XML DOM. The methods available depend on the kind of node you are interacting
+with, and by far the majority are for working with
+:class:`~xml4h.nodes.Element` nodes.
 
 
+Delete a Node
+.............
+
+Any node can be removes from its owner document with
+:meth:`~xml4h.nodes.Node.delete`::
+
+    >>> # Before deleting a Film element there are 7 films
+    >>> len(doc.MontyPythonFilms.Film)
+    7
+
+    >>> doc.MontyPythonFilms.children('Film')[-1].delete()
+    >>> len(doc.MontyPythonFilms.Film)
+    6
+
+.. note::
+   By default deleting a node also destroys it, but it can optionally be left
+   intact after removal from the document by including the ``destroy=False``
+   option.
+
+Name and Value Attributes
+.........................
+
+Many nodes have low-level name and value properties that can be read from and
+written to.  Nodes with names and values include Text, CDATA, Comment,
+ProcessingInstruction, Attribute, and Element nodes.
+
+Here is an example of accessing the low-level name and value properties of a
+Text node::
+
+    >>> text_node = doc.MontyPythonFilms.child('Film').child('Title').child()
+    >>> text_node.is_text
+    True
+
+    >>> text_node.name
+    '#text'
+    >>> text_node.value
+    'And Now for Something Completely Different'
+
+And here is the same for an Attribute node::
+
+    >>> # Access the name/value properties of an Attribute node
+    >>> year_attr = doc.MontyPythonFilms.child('Film').attribute_node('year')
+    >>> year_attr.is_attribute
+    True
+
+    >>> year_attr.name
+    'year'
+    >>> year_attr.value
+    '1971'
+
+The name attribute of a node is not necessarily a plain string, in the case of
+nodes within a defined namespaced the ``name`` attribute may comprise two
+components: a ``prefix`` that represents the namespace, and a ``local_name``
+which is the plain name of the node ignoring the namespace. For more
+information on namespaces see :ref:`xml4h-namespaces`.
+
+Import a Node and its Subtree
+.............................
+
+In addition to manipulating nodes in a single XML document directly you can
+also import a node (and all the descendant nodes it contains) from one document
+into another.
+
+There are two ways to import a node/subtree:
+
+- Use the :meth:`~xml4h.nodes.Node.import_node` Node method, for when you are
+  traversing a document.
+- Use the :meth:`~xml4h.Builder.node` method on a document :ref:`builder`, for
+  when you are constructing a document.
+
+Here is an example of importing a subtree into a document (which undoes the
+damage done to our example document by the ``delete()`` example above)::
+
+    >>> # Build a new document containing a Film element
+    >>> film_builder = (xml4h.build('DeletedFilm')
+    ...     .element('Film').attrs(year='1971')
+    ...         .element('Title')
+    ...             .text('And Now for Something Completely Different').up()
+    ...         .element('Description').text(
+    ...             "A collection of sketches from the first and second TV"
+    ...             " series of Monty Python's Flying Circus purposely"
+    ...             " re-enacted and shot for film.")
+    ...     )
+
+    >>> # Import the Film element from the new doc into our example document
+    >>> node_to_import = film_builder.root.child('Film')
+    >>> doc.MontyPythonFilms.import_node(node_to_import)
+    >>> len(doc.MontyPythonFilms.Film)
+    7
+
+When you import a node from another document there is a good chance that it
+will be removed from that document when it is imported into the new one, due to
+the way the underlying XML libraries work. This is the case for our example::
+
+    >>> # After importing the Film node it is no longer in the original doc
+    >>> len(film_builder.root.find('Film'))
+    0
+
+If you need to leave the original document unchanged when importing a node you
+can do so by providing the ``copy=True`` argument to the import methods. But be
+aware that this could be an expensive operation in terms of time and memory if
+you are importing a large document subtree.
 
 Working with Elements
----------------------
+.....................
 
+Element nodes have the most methods to access and manipulate their content,
+which is fitting since this is the most useful type of node and you will deal
+with elements regularly.
+
+The leaf elements in XML documents often have one or more
+:class:`~xml4h.nodes.Text` node children that contain the element's data
+content. While you could iterate over such text nodes as child nodes, *xml4h*
+provides the more convenient text accessors you would expect::
+
+    >>> title_elem = doc.MontyPythonFilms.Film[0].Title
+    >>> orig_title = title_elem.text
+    >>> orig_title
+    'And Now for Something Completely Different'
+
+    >>> title_elem.text = 'A new, and wrong, title'
+    >>> title_elem.text
+    'A new, and wrong, title'
+
+    >>> # Let's put it back the way it was...
+    >>> title_elem.text = orig_title
+
+Elements also have attributes that can be manipulated in a number of ways.
+
+Look up an element's attributes with:
+
+- the :meth:`~xml4h.nodes.Element.attributes` attribute, which returns an
+  ordered dictionary of attribute names and values::
+
+      >>> film_elem = doc.MontyPythonFilms.Film[0]
+      >>> film_elem.attributes
+      <xml4h.nodes.AttributeDict: [('year', '1971')]>
+
+- or by obtaining an element's attributes as :class:`~xml4h.nodes.Attribute`
+  nodes, though that is only likely to be useful in unusual circumstances::
+
+      >>> film_elem.attribute_nodes
+      [<xml4h.nodes.Attribute: "year">]
+
+      >>> # Get a specific attribute node by name or namespace URI
+      >>> film_elem.attribute_node('year')
+      <xml4h.nodes.Attribute: "year">
+
+- and there's also the "magical" keyword lookup technique discussed in
+  :ref:`magical-node-traversal` for quickly grabbing attribute values.
+
+Set attribute values with:
+
+- the :meth:`~xml4h.nodes.Element.set_attributes` method, which allows you to
+  add attributes without replacing existing ones. This method also supports
+  defining XML attributes as a dictionary, list of name/value pairs, or
+  keyword arguments::
+
+      >>> # Set/add attributes as a dictionary
+      >>> film_elem.set_attributes({'a1': 'v1'})
+
+      >>> # Set/add attributes as a list of name/value pairs
+      >>> film_elem.set_attributes([('a2', 'v2')])
+
+      >>> # Set/add attributes as keyword arguments
+      >>> film_elem.set_attributes(a3='v3', a4=4)
+
+      >>> film_elem.attributes
+      <xml4h.nodes.AttributeDict: [('a1', 'v1'), ('a2', 'v2'), ('a3', 'v3'), ('a4', '4'), ('year', '1971')]>
+
+- the setter version of the :meth:`~xml4h.nodes.Element.attributes` attribute,
+  which replaces any existing attributes with the new set::
+
+      >>> film_elem.attributes = {'year': '1971', 'note': 'funny'}
+      >>> film_elem.attributes
+      <xml4h.nodes.AttributeDict: [('note', 'funny'), ('year', '1971')]>
+
+Delete attributes from an element by:
+
+- using Python's delete-in-dict technique::
+
+      >>> del(film_elem.attributes['note'])
+      >>> film_elem.attributes
+      <xml4h.nodes.AttributeDict: [('year', '1971')]>
+
+- or by calling the ``delete()`` method on an :class:`~xml4h.nodes.Attribute`
+  node.
+
+Finally, the :class:`~xml4h.nodes.Element` class provides a number of methods
+for programmatically adding child nodes, for cases where you would rather work
+directly with nodes instead of using a :ref:`builder`.
+
+The most complex of these methods is :meth:`~xml4h.nodes.Element.add_element`
+which allows you to add a named child element, and optionally to set the new
+element's namespace, text content, and attributes all at the same time. Let's
+try an example::
+
+    >>> # Add a Film element with an attribute
+    >>> new_film_elem = doc.MontyPythonFilms.add_element(
+    ...     'Film', attributes={'year': 'never'})
+
+    >>> # Add a Description element with text content
+    >>> desc_elem = new_film_elem.add_element(
+    ...     'Description', text='Just testing...')
+
+    >>> # Add a Title element with text *before* the description element
+    >>> title_elem = desc_elem.add_element(
+    ...     'Title', text='The Film that Never Was', before_this_element=True)
+
+    >>> print doc.MontyPythonFilms.Film[-1].xml()
+    <Film year="never">
+        <Title>The Film that Never Was</Title>
+        <Description>Just testing...</Description>
+    </Film>
+
+There are similar methods for handling simpler cases like adding text nodes,
+comments etc. Here is an example of adding text nodes::
+
+    >>> # Add a text node
+    >>> title_elem = doc.MontyPythonFilms.Film[-1].Title
+    >>> title_elem.add_text(', and Never Will Be')
+
+    >>> title_elem.text
+    'The Film that Never Was, and Never Will Be'
+
+Refer to the :class:`~xml4h.nodes.Element` documentation for more information
+about the other methods for adding nodes.
 
 
 .. _wrap-unwrap-nodes:

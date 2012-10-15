@@ -1107,7 +1107,7 @@ class AttributeDict(object):
     def __unicode__(self):
         return u'<%s.%s: %s>' % (
             self.__class__.__module__, self.__class__.__name__,
-            self.to_dict)
+            self.to_dict.items())
 
     def __str__(self):
         # TODO Degrade non-ASCII characters gracefully

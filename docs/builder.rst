@@ -84,7 +84,7 @@ current element::
     <xml4h.nodes.Element: "RootElement">
 
     >>> root_b.dom_element.attributes
-    <xml4h.nodes.AttributeDict: OrderedDict([('a', '1'), ('b', '2'), ('c', '3')])>
+    <xml4h.nodes.AttributeDict: [('a', '1'), ('b', '2'), ('c', '3')]>
 
 .. note::
    As you can see above, the element node represented by a builder instance is
