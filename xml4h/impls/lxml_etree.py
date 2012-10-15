@@ -335,9 +335,12 @@ class LXMLAdapter(XmlImplAdapter):
         if isinstance(child, LXMLText):
             parent.text = None
             return
+        parent.remove(child)
         if destroy_node:
             child.clear()
-        parent.remove(child)
+            return None
+        else:
+            return child
 
     def lookup_ns_uri_by_attr_name(self, node, name):
         if name == 'xmlns':

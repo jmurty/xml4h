@@ -347,13 +347,22 @@ class Node(object):
             curr_node = curr_node.parent
         return None
 
-    def delete(self):
+    def delete(self, destroy=True):
         """
         Delete this node from the owning document.
+
+        :param bool destroy: if True the child node will be destroyed in
+            addition to being removed from the document.
+
+        :returns: the removed child node, or *None* if the child was destroyed.
         """
-        self.adapter.remove_node_child(
+        removed_child = self.adapter.remove_node_child(
             self.adapter.get_node_parent(self.impl_node), self.impl_node,
-            destroy_node=True)
+            destroy_node=destroy)
+        if removed_child is not None:
+            return self.adapter.wrap_node(removed_child, None)
+        else:
+            return None
 
     def import_node(self, node):
         """

@@ -292,22 +292,23 @@ class BaseTestNodes(object):
         self.assertEqual([], wrapped_node.children)
 
     def test_delete(self):
-        # Remove single Element using delete() method
+        # Remove single Element using delete() method without destroying it
         self.assertEqual(
             ['Element1', 'Element2', 'Element3', 'Element4'],
             [n.name for n in self.xml4h_root.children])
-        self.xml4h_root.children[0].delete()
+        removed_child = self.xml4h_root.children[0].delete(destroy=False)
+        self.assertEqual('Element1', removed_child.name)
         self.assertEqual(
             ['Element2', 'Element3', 'Element4'],
             [n.name for n in self.xml4h_root.children])
         self.assertEqual(6, len(self.xml4h_root.find_doc()))
-        # Remove element with child elements using __del__()
-        # TODO Implement __del__()
-#        del(self.xml4h_root.children[2])
-#        self.assertEqual(
-#            ['Element2', 'Element3'],
-#            [n.name for n in self.xml4h_root.children])
-#        self.assertEqual(4, len(self.xml4h_root.find_doc()))
+        # Remove Element using delete() and destroy it
+        removed_child = self.xml4h_root.children.first.delete()
+        self.assertIs(None, removed_child)
+        self.assertEqual(
+            ['Element3', 'Element4'],
+            [n.name for n in self.xml4h_root.children])
+        self.assertEqual(5, len(self.xml4h_root.find_doc()))
 
     def test_find_methods(self):
         # Find all elements in document

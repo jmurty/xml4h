@@ -194,6 +194,9 @@ class XmlDomImplAdapter(XmlImplAdapter):
         parent.removeChild(child)
         if destroy_node:
             child.unlink()
+            return None
+        else:
+            return child
 
     def lookup_ns_uri_by_attr_name(self, node, name):
         curr_node = node
