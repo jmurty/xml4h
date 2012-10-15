@@ -543,7 +543,14 @@ class BaseBuilderNodesTest(object):
                 .element('Dog')
                     .element('Feature').text('Loyal')
             )
-        # Import an xml4h element node from one doc into another
+        horse_b = (
+            xml4h.build('Animal')
+                .element('Horse')
+                    .element('Feature').text('Transport')
+            )
+
+        # Transplant an xml4h element node from one doc into another (it is not
+        # left in the original document)
         cat_b.document.Animal.import_node(
             dog_b.document.Animal.Dog)
         self.assertEqual(
@@ -552,8 +559,26 @@ class BaseBuilderNodesTest(object):
                 '<Dog><Feature>Loyal</Feature></Dog>'
             '</Animal>',
             cat_b.root.xml(indent=False))
-        # Check element node is no longer in original document
+        # Node and descendants are removed from original document
         self.assertEqual('<Animal/>', dog_b.root.xml(indent=False))
+
+        # Import/copy an xml4h element node from one doc into another (it is
+        # left in place in the original document)
+        cat_b.document.Animal.import_node(
+            horse_b.document.Animal.Horse, copy=True)
+        self.assertEqual(
+            '<Animal>'
+                '<Cat><Feature>Independent</Feature></Cat>'
+                '<Dog><Feature>Loyal</Feature></Dog>'
+                '<Horse><Feature>Transport</Feature></Horse>'
+            '</Animal>',
+            cat_b.root.xml(indent=False))
+        # Node and descendants remain in original document
+        self.assertEqual(
+            '<Animal>'
+                '<Horse><Feature>Transport</Feature></Horse>'
+            '</Animal>',
+            horse_b.root.xml(indent=False))
 
     def test_import_impl_text_node(self):
         """

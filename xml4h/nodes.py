@@ -1,5 +1,6 @@
 import collections
 from StringIO import StringIO
+from copy import deepcopy
 
 import xml4h
 
@@ -364,7 +365,7 @@ class Node(object):
         else:
             return None
 
-    def import_node(self, node):
+    def import_node(self, node, copy=False):
         """
         Import a node from another document to become a child of this node.
         The node to be imported can be a :class:`Node` based on the same
@@ -373,17 +374,23 @@ class Node(object):
 
         :param node: the node in another document import.
         :type node: xml4h or implementation node
+        :param bool copy: if *True* a copy of the incoming node is imported,
+            not the original node itself. In other words, perform a copy and
+            leaves the original document unchanged.
 
         .. note::
            Depending on the type of the node and the underlying XML library
            implementation, the imported node may or may not be removed from
-           its original document.
+           its original document. Be sure to use ``copy=True`` if you need the
+           original document to be left unchanged.
         """
         if isinstance(node, xml4h.nodes.Node):
             child_impl_node = node.impl_node
         else:
             # Assuming incoming node is an implementation node
             child_impl_node = node
+        if copy:
+            child_impl_node = deepcopy(child_impl_node)
         self.adapter.add_node_child(self.impl_node, child_impl_node)
 
     def find(self, name=None, ns_uri=None, first_only=False):

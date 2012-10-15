@@ -129,7 +129,7 @@ class Builder(object):
                     break
         return Builder(elem)
 
-    def import_node(self, node):
+    def import_node(self, node, copy=False):
         """
         Import a node from another document to become a child of the
         :class:`xml4h.nodes.Element` node represented by this Builder.
@@ -139,7 +139,7 @@ class Builder(object):
 
         Delegates to :meth:`xml4h.nodes.Node.import_node`.
         """
-        self._element.import_node(node)
+        self._element.import_node(node, copy=copy)
         return self
 
     node = import_node  # Alias
