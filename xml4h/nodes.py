@@ -260,10 +260,21 @@ class Node(object):
     @property
     def children(self):
         """
-        :return: a list of this node's child nodes.
+        :return: a :class:`NodeList` of this node's child nodes.
         """
         impl_nodelist = self.adapter.get_node_children(self.impl_node)
         return self._convert_nodelist(impl_nodelist)
+
+    def child(self, local_name=None, name=None, ns_uri=None, node_type=None,
+            filter_fn=None):
+        """
+        :return: the first child node matching the given constraints, or \
+                 *None* if there are no matching child nodes.
+
+        Delegates to :meth:`NodeList.filter`.
+        """
+        return self.children(name=name, local_name=local_name, ns_uri=ns_uri,
+            node_type=node_type, filter_fn=filter_fn, first_only=True)
 
     @property
     def attributes(self):
@@ -1226,13 +1237,13 @@ class NodeList(list):
     __call__ = filter  # Alias
     """Alias for :meth:`filter`."""
 
-    def first(self, local_name=None, name=None, ns_uri=None, node_type=None,
-            filter_fn=None):
+    @property
+    def first(self):
         """
-        :return: the first node matching the given constraints, or *None* if
-            there are no matching nodes.
-
-        Delegates to :meth:`filter`.
+        :return: the first of the available children nodes, or *None* if \
+                 there are no children.
         """
-        return self(name=name, local_name=local_name, ns_uri=ns_uri,
-            node_type=node_type, filter_fn=filter_fn, first_only=True)
+        if len(self) > 0:
+            return self[0]
+        else:
+            return None

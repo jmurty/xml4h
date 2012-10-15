@@ -214,15 +214,20 @@ nodes you need:
   behind the scenes, but since doing it the callable way is quicker and
   clearer in code we will use that approach from now on.
 
-- Get the first child node with the ``first`` filtering method, which accepts
+- Get the first child node with the ``child`` filtering method, which accepts
   the same constraints as the ``filter`` method::
 
-      >>> doc.root.children.first()
+      >>> doc.root.child()
       <xml4h.nodes.Element: "Film">
 
-      >>> # Apply filtering with first
-      >>> print doc.root.children.first('WrongName')
+      >>> # Apply filtering with child
+      >>> print doc.root.child('WrongName')
       None
+
+- Get the first of a set of children with the ``first`` attribute::
+
+      >>> doc.root.children.first
+      <xml4h.nodes.Element: "Film">
 
 
 - Filter the node list by name::

@@ -129,11 +129,16 @@ class BaseTestNodes(object):
             self.xml4h_root.children(ns_uri='urn:ns1', first_only=True).name)
         self.assertEqual(None,
             self.xml4h_root.children(ns_uri='urn:wrong', first_only=True))
-        # Return first result only via `first` method
+        # Return first result only via `first` attribute on children
         self.assertEquals('Element3',
-            self.xml4h_root.children.first(ns_uri='urn:ns1').name)
+            self.xml4h_root.children(ns_uri='urn:ns1').first.name)
         self.assertEqual(None,
-            self.xml4h_root.children.first(ns_uri='urn:wrong'))
+            self.xml4h_root.children(ns_uri='urn:wrong').first)
+        # Return first result only via `child` method
+        self.assertEquals('Element3',
+            self.xml4h_root.child(ns_uri='urn:ns1').name)
+        self.assertEqual(None,
+            self.xml4h_root.child(ns_uri='urn:wrong'))
 
     def test_siblings(self):
         wrapped_node = self.xml4h_root.children[1]
@@ -443,7 +448,7 @@ class BaseTestNodes(object):
         self.assertEqual(self.xml4h_root, self.xml4h_doc.DocRoot)
         # Look up child element by attribute to depth
         self.assertEqual('A comment',
-            self.xml4h_doc.DocRoot.Element3.Element2.children.first().value)
+            self.xml4h_doc.DocRoot.Element3.Element2.children.first.value)
         # Look up a namespaced element; namespace prefix is not required
         self.assertEqual(self.elem3_second,
             self.xml4h_doc.DocRoot.Element4.Element3.impl_node)
@@ -464,7 +469,7 @@ class BaseTestNodes(object):
         self.xml4h_root.add_element('_leadingunderscore', text='value2')
         self.assertEqual(
             'value2',
-            self.xml4h_root.children('_leadingunderscore').first().text)
+            self.xml4h_root.child('_leadingunderscore').text)
         try:
             self.xml4h_root._leadingunderscore
             self.fail('Expected AttributeError')
