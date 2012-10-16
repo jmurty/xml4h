@@ -9,3 +9,6 @@ docs/.*
 
 # Nosetests coverage report
 .coverage
+
+# Tox virtualenvs
+.tox/

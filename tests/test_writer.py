@@ -1,5 +1,8 @@
 # -*- coding: utf-8 name> -*-
-import unittest
+try:
+    import unittest2 as unittest
+except ImportError:
+    import unittest
 import functools
 from StringIO import StringIO
 
