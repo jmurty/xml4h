@@ -370,22 +370,24 @@ components: a ``prefix`` that represents the namespace, and a ``local_name``
 which is the plain name of the node ignoring the namespace. For more
 information on namespaces see :ref:`xml4h-namespaces`.
 
-Import a Node and its Subtree
-.............................
+Import a Node and its Descendants
+.................................
 
-In addition to manipulating nodes in a single XML document directly you can
-also import a node (and all the descendant nodes it contains) from one document
-into another.
+In addition to manipulating nodes in a single XML document directly, you can
+also import a node (and all its descendant) from another document using a node
+clone or transplant operation.
 
-There are two ways to import a node/subtree:
+There are two ways to import a node and its descendants:
+- Use the :meth:`~xml4h.nodes.Node.clone_node` Node method or
+  :meth:`~xml4h.Builder.clone` Builder method to copy a node into your
+  document without removing it from its original document.
+- Use the :meth:`~xml4h.nodes.Node.transplant_node` Node method or
+  :meth:`~xml4h.Builder.transplant` Builder method to transplant a node into
+  your document and remove it from its original document.
 
-- Use the :meth:`~xml4h.nodes.Node.import_node` Node method, for when you are
-  traversing a document.
-- Use the :meth:`~xml4h.Builder.node` method on a document :ref:`builder`, for
-  when you are constructing a document.
-
-Here is an example of importing a subtree into a document (which undoes the
-damage done to our example document by the ``delete()`` example above)::
+Here is an example of transplanting a node into a document (which also happens
+to undo the damage we did to our example DOM in the ``delete()`` example
+above)::
 
     >>> # Build a new document containing a Film element
     >>> film_builder = (xml4h.build('DeletedFilm')
@@ -398,24 +400,21 @@ damage done to our example document by the ``delete()`` example above)::
     ...             " re-enacted and shot for film.")
     ...     )
 
-    >>> # Import the Film element from the new doc into our example document
-    >>> node_to_import = film_builder.root.child('Film')
-    >>> doc.MontyPythonFilms.import_node(node_to_import)
+    >>> # Transplant the Film element from the new document
+    >>> node_to_transplant = film_builder.root.child('Film')
+    >>> doc.MontyPythonFilms.transplant_node(node_to_transplant)
     >>> len(doc.MontyPythonFilms.Film)
     7
 
-When you import a node from another document there is a good chance that it
-will be removed from that document when it is imported into the new one, due to
-the way the underlying XML libraries work. This is the case for our example::
+When you transplant a node from another document it is removed from that
+document::
 
-    >>> # After importing the Film node it is no longer in the original doc
+    >>> # After transplanting the Film node it is no longer in the original doc
     >>> len(film_builder.root.find('Film'))
     0
 
-If you need to leave the original document unchanged when importing a node you
-can do so by providing the ``copy=True`` argument to the import methods. But be
-aware that this could be an expensive operation in terms of time and memory if
-you are importing a large document subtree.
+If you need to leave the original document unchanged when importing a node use
+the clone methods instead.
 
 Working with Elements
 .....................

@@ -1,4 +1,5 @@
 import re
+import copy
 
 from xml4h.impls.interface import XmlImplAdapter
 from xml4h import nodes
@@ -330,6 +331,29 @@ class LXMLAdapter(XmlImplAdapter):
             else:
                 parent.append(child)
             return child
+
+    def import_node(self, parent, node, clone=False):
+        original_node = node
+        if clone:
+            node = self.clone_node(node)
+        self.add_node_child(parent, node)
+        # Hack to remove text node content from original parent by manually
+        # deleting matching text content
+        if not clone and isinstance(original_node, LXMLText):
+            original_parent = self.get_node_parent(original_node)
+            if original_parent.text == original_node.text:
+                # Must set to None if there would be no remaining text,
+                # otherwise parent element won't realise it's empty
+                original_parent.text = None
+            else:
+                original_parent.text = \
+                    original_parent.text.replace(original_node.text, '', 1)
+
+    def clone_node(self, node, deep=True):
+        if deep:
+            return copy.deepcopy(node)
+        else:
+            return copy.copy(node)
 
     def remove_node_child(self, parent, child, destroy_node=True):
         if isinstance(child, LXMLText):

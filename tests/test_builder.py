@@ -531,10 +531,10 @@ class BaseBuilderNodesTest(object):
         self.assertEqual(u'tvö',
             doc.find_first(u'yếutố2').attributes[u'důl:עודתכונה'])
 
-    def test_import_xml4h_element(self):
+    def test_transplant_and_clone_xml4h_element(self):
         """
-        Test importing/relocating an xml4h element node from one document to
-        another using the node import_node method.
+        Test transplanting and cloning an xml4h element node from one document
+        to another using methods on the xml4h Node.
         """
         cat_b = (
             xml4h.build('Animal')
@@ -554,8 +554,7 @@ class BaseBuilderNodesTest(object):
 
         # Transplant an xml4h element node from one doc into another (it is not
         # left in the original document)
-        cat_b.document.Animal.import_node(
-            dog_b.document.Animal.Dog)
+        cat_b.document.Animal.transplant_node(dog_b.document.Animal.Dog)
         self.assertEqual(
             '<Animal>'
                 '<Cat><Feature>Independent</Feature></Cat>'
@@ -565,10 +564,9 @@ class BaseBuilderNodesTest(object):
         # Node and descendants are removed from original document
         self.assertEqual('<Animal/>', dog_b.root.xml(indent=False))
 
-        # Import/copy an xml4h element node from one doc into another (it is
-        # left in place in the original document)
-        cat_b.document.Animal.import_node(
-            horse_b.document.Animal.Horse, copy=True)
+        # Clone an xml4h element node from one doc into another (it is left in
+        # place in the original document)
+        cat_b.document.Animal.clone_node(horse_b.document.Animal.Horse)
         self.assertEqual(
             '<Animal>'
                 '<Cat><Feature>Independent</Feature></Cat>'
@@ -583,10 +581,10 @@ class BaseBuilderNodesTest(object):
             '</Animal>',
             horse_b.root.xml(indent=False))
 
-    def test_import_impl_text_node(self):
+    def test_transplant_and_clone_impl_text_node(self):
         """
-        Test importing/relocating an implementation Text node from one
-        document to another using the builder import method.
+        Test transplanting and cloning an implementation Text node from one
+        document to another using builder methods.
         """
         cat_b = (
             xml4h.build('Animal')
@@ -598,22 +596,40 @@ class BaseBuilderNodesTest(object):
                 .element('Dog')
                     .element('Feature').text('Loyal')
             )
-        # Import an implementation Text node from one doc into another
+        horse_b = (
+            xml4h.build('Animal')
+                .element('Horse')
+                    .element('Feature').text('Transport')
+            )
+
+        # Transplant an implementation Text node from one doc into another
         cat_feature_b = cat_b
         self.assertEqual('Feature', cat_feature_b.dom_element.name)
-        cat_feature_b.node(
+        cat_feature_b.transplant(
             dog_b.document.Animal.Dog.Feature.children[0].impl_node) \
-            .up().element('X')  # Check method chaining works after import
+            .up().element('X')  # Check method chaining works after transplant
         self.assertEqual(
             '<Animal>'
                 '<Cat><Feature>IndependentLoyal</Feature><X/></Cat>'
             '</Animal>',
             cat_b.root.xml(indent=False))
-        # Check text node is *still* in original document (different behaviour
-        # from element import/relocation, I'm not sure why...)
+        # Check text node is no longer in original document
         self.assertEqual(
-            '<Animal><Dog><Feature>Loyal</Feature></Dog></Animal>',
+            '<Animal><Dog><Feature/></Dog></Animal>',
             dog_b.root.xml(indent=False))
+
+        # Clone an Text node from one doc into another
+        cat_feature_b.clone(
+            horse_b.document.Animal.Horse.Feature.children[0].impl_node)
+        self.assertEqual(
+            '<Animal>'
+                '<Cat><Feature>IndependentLoyalTransport</Feature><X/></Cat>'
+            '</Animal>',
+            cat_b.root.xml(indent=False))
+        # Check text node is no longer in original document
+        self.assertEqual(
+            '<Animal><Horse><Feature>Transport</Feature></Horse></Animal>',
+            horse_b.root.xml(indent=False))
 
     def test_build_monty_python_film_example(self):
         """

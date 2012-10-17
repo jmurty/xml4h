@@ -190,6 +190,14 @@ class XmlDomImplAdapter(XmlImplAdapter):
         else:
             parent.appendChild(child)
 
+    def import_node(self, parent, node, clone=False):
+        if clone:
+            node = self.clone_node(node)
+        self.add_node_child(parent, node)
+
+    def clone_node(self, node, deep=True):
+        return node.cloneNode(deep)
+
     def remove_node_child(self, parent, child, destroy_node=True):
         parent.removeChild(child)
         if destroy_node:

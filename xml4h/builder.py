@@ -129,21 +129,31 @@ class Builder(object):
                     break
         return Builder(elem)
 
-    def import_node(self, node, copy=False):
+    def transplant(self, node):
         """
-        Import a node from another document to become a child of the
-        :class:`xml4h.nodes.Element` node represented by this Builder.
+        Transplant a node from another document to become a child of
+        the :class:`xml4h.nodes.Element` node represented by this Builder.
 
         :return: a new Builder that represents the current element \
-                 (not the imported node).
+                 (not the transplanted node).
 
-        Delegates to :meth:`xml4h.nodes.Node.import_node`.
+        Delegates to :meth:`xml4h.nodes.Node.transplant_node`.
         """
-        self._element.import_node(node, copy=copy)
+        self._element.transplant_node(node)
         return self
 
-    node = import_node  # Alias
-    """Alias of :meth:`import_node`"""
+    def clone(self, node):
+        """
+        Clone a node from another document to become a child of
+        the :class:`xml4h.nodes.Element` node represented by this Builder.
+
+        :return: a new Builder that represents the current element \
+                 (not the cloned node).
+
+        Delegates to :meth:`xml4h.nodes.Node.clone_node`.
+        """
+        self._element.clone_node(node)
+        return self
 
     def element(self, *args, **kwargs):
         """
