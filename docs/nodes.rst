@@ -378,6 +378,7 @@ also import a node (and all its descendant) from another document using a node
 clone or transplant operation.
 
 There are two ways to import a node and its descendants:
+
 - Use the :meth:`~xml4h.nodes.Node.clone_node` Node method or
   :meth:`~xml4h.Builder.clone` Builder method to copy a node into your
   document without removing it from its original document.
