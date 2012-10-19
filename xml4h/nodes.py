@@ -784,18 +784,6 @@ class Element(NameValueNodeMixin,
     def text(self, text):
         self.adapter.set_node_text(self.impl_node, text)
 
-    def attributes_by_ns(self, ns_uri=None):
-        """
-        :param ns_uri: namespace URI attributes must have.
-        :type ns_uri: string or None
-
-        :return: attributes of this elements in the given namespace, or in
-            any namespace if ``ns_uri`` is *None*.
-        """
-        attr_impl_nodes = self.adapter.get_node_attributes(
-            self.impl_node, ns_uri=ns_uri)
-        return AttributeDict(attr_impl_nodes, self.impl_node, self.adapter)
-
     def _set_element_attributes(self, element,
             attr_obj=None, ns_uri=None, **attr_dict):
         if attr_obj is not None:
@@ -874,7 +862,8 @@ class Element(NameValueNodeMixin,
             any existing attributes, as opposed to the :meth:`set_attributes`
             method which only updates and replaces them.
         """
-        return self.attributes_by_ns(None)
+        attr_impl_nodes = self.adapter.get_node_attributes(self.impl_node)
+        return AttributeDict(attr_impl_nodes, self.impl_node, self.adapter)
 
     @attributes.setter
     def attributes(self, attr_obj):
