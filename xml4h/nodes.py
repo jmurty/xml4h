@@ -865,6 +865,11 @@ class Element(NameValueNodeMixin,
     Alias of :meth:`set_attributes`
     """
 
+    attrs = set_attributes  # Alias
+    """
+    Alias of :meth:`set_attributes`
+    """
+
     @property
     def attribute_nodes(self):
         """
