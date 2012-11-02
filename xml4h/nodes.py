@@ -334,19 +334,6 @@ class Node(object):
     ns_uri = namespace_uri  # Alias
     """Alias for :meth:`namespace_uri`"""
 
-    @property
-    def current_namespace_uri(self):
-        """
-        :return: the URI of the namespace this node belongs to, directly or
-            through an ancestor node. *None* if node is not in a namespace.
-        """
-        curr_node = self
-        while curr_node:
-            if curr_node.namespace_uri is not None:
-                return self.namespace_uri
-            curr_node = curr_node.parent
-        return None
-
     def delete(self, destroy=True):
         """
         Delete this node from the owning document.
