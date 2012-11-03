@@ -4,26 +4,9 @@ DOM Nodes
 
 *xml4h* provides node objects and convenience methods that make it easier to
 work with an in-memory XML document object model (DOM) produced by parsing an
-existing document or building a new one.
+existing document, or by building a new one.
 
 For API-level documentation about *xml4h* nodes see :ref:`api-nodes`.
-
-
-What is an *xml4h* Node?
-------------------------
-
-To best understand what an *xml4h* node is, you should know what it isn't.
-*xml4h* is not a fully-fledged XML library in its own right, instead it sits
-on top of an underlying :ref:`XML library implementation <xml-lib-adapters>`
-and provides an improved API and tool suite.
-
-This means that an *xml4h* node is really a decorator or wrapper of a node
-(or similar) object provided by an underlying XML library, such as *lxml*'s
-``lxml.etree._Element`` or the *minidom*'s ``xml.dom.minidom.Element``. The
-work done by *xml4h*'s :class:`~xml4h.nodes.Node` and its subclasses is to
-mediate your interactions with the underlying XML implementation, whatever
-that implementation is. See the section :ref:`wrap-unwrap-nodes` for more
-information about converting to and from *xml4h* nodes.
 
 
 Traversing Nodes

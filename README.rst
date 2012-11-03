@@ -117,8 +117,8 @@ drawbacks:
   your doing something subtly different form XML (because you are).
 - `lxml <http://lxml.de/>`_ is a fast, full-featured XML library with an API
   based on ElementTree but extended. It is your best choice for doing serious
-  work with XML but it is not included in the standard library, can be
-  difficult to install, and suffers from the same it's-XML-but-not-quite
+  work with XML in Python, but it is not included in the standard library, can
+  be difficult to install, and gives you the same it's-XML-but-not-quite
   feeling as its ElementTree forebear.
 
 Given these three options it is hard to choose which library to use,

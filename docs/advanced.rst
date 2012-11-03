@@ -164,16 +164,115 @@ node attributes::
     'Elem1'
 
 
+.. _xml-lib-architecture:
+
+xml4h Architecture
+==================
+
+To best understand the *xml4h* library and to use it appropriately in demanding
+situations, you should appreciate what the library is not.
+
+*xml4h* is not a full-fledged XML library in its own right, far from it.
+Instead of implementing low-level document parsing and manipulation tools, it
+operates as an abstraction layer on top of the pre-existing XML processing
+libraries you already know.
+
+This means the improved API and tool suite provided by *xml4h* works by
+mediating operations you perform, asking the underlying XML library to do the
+work, and packaging up the results of this work as wrapped *xml4h* objects.
+
+This approach has a number of implications, good and bad.
+
+On the good side:
+
+- you can start using and benefiting from *xml4h* in an existing projects that
+  already use a supported XML library without any impact, it can fit right in.
+- *xml4h* can take advantage of the existing powerful and fast XML libraries to
+  do its work.
+- by providing an abstraction layer over multiple libraries, *xml4h* can make
+  it (relatively) easy to switch the underlying library without you needing to
+  rewrite your own XML handling code.
+- by building on the shoulders of giants, *xml4h* itself can remain relatively
+  lightweight and focussed on simplicity and usability.
+- the author of *xml4h* does not have to write XML-handling code in C...
+
+On the bad side:
+
+- if the underlying XML libraries available in the Python environment do not
+  support a feature (like XPath querying) then that feature will not be
+  available in *xml4h*.
+- *xml4h* cannot provide radical new XML processing features, since the bulk of
+  its work must be done by the underlying library.
+- the abstraction layer *xml4h* uses to do its work requires more resources
+  than it would to use the underlying library directly, so if you absolutely
+  need maximal speed or minimal memory use the library might prove too
+  expensive.
+- *xml4h* sometimes needs to jump through some hoops to maintain the shared
+  abstraction interface over multiple libraries, which means extra work is
+  done in Python instead of by the underlying library code in C.
+
+The author believes the benefits of using *xml4h* outweighs the drawbacks in
+the majority of real-world situations, or he wouldn't have created the library
+in the first place, but ultimately it is up to you to decide where you should
+or should not use it.
+
+
 .. _xml-lib-adapters:
 
-XML Libarary Adapters
-=====================
+Library Adapters
+----------------
+
+To provide an abstraction layer over multiple underlying XML libraries, *xml4h*
+uses an "adapter" mechanism to mediate operations on documents. There is an
+adapter implementation for each library *xml4h* can work with, each of which
+extends the :class:`~xml4h.impls.interface.XmlImplAdapter` class. This base
+class includes some standard behaviour, and defines the interface for adapter
+implementations (to the extent you can define such interfaces in Python).
+
+The current version of *xml4h* includes two adapter implementations:
+
+- :class:`~xml4h.impls.lxml_etree.LXMLAdapter` works with the excellent
+  `lxml <http://lxml.de>`_ library which is very full-featured and fast, but
+  which is not included in the standard library.
+- :class:`~xml4h.impls.xml_dom_minidom.XmlDomImplAdapter` works with the
+  `minidom <http://docs.python.org/2/library/xml.dom.minidom.html>`_ W3C-style
+  XML library included with the standard library. This library is always
+  available but is slower and has fewer features than alternative libraries
+  (e.g. no support for XPath)
+
+.. note:
+   Over time, we expect that *xml4h* will gain more adapter implementations and
+   that the implementations themselves will improve to work faster and expose
+   more features.
+
+The adapter layer allows the rest of the *xml4h* library code to remain almost
+entirely oblivious to the underlying XML library that happens to be available
+at the time. The *xml4h* Builder, Node objects, writer etc. call adapter
+methods to perform document operations, and the adapter is responsible for
+doing the necessary work with the underlying library.
 
 
 .. _best-adapter:
 
 "Best" Adapter
 --------------
+
+While *xml4h* can work with multiple underlying XML libraries, some of these
+libraries are better (faster, more fully-featured) than others so it would be
+smart to use the best of the libraries available.
+
+*xml4h* does exactly that: unless you explicitly choose an adapter (see below)
+*xml4h* will find the supported libraries in the Python environment and choose
+the "best" adapter for you.
+
+With only two adapter implementations in *xml4h* right now the algorithm for
+making this choice isn't exactly complex, so let's spell it out explicitly:
+
+- use *lxml* if it is available.
+- use the *minidom* if nothing else is available.
+
+The :attr:`xml4h.best_adapter` attribute stores the adapter class that *xml4h*
+considers to be the best.
 
 
 Choose Your Own Adapter
