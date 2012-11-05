@@ -29,11 +29,11 @@ elif sys.argv[-1] == 'test':
 setup(
     name='xml4h',
     version=xml4h.__version__,
-    description='Python XML for Humans.',
+    description='XML for Humans in Python',
     long_description=open('README.rst').read(),
     author='James Murty',
     author_email='james@murty.co',
-    url='TODO',
+    url='https://github.com/jmurty/xml4h',
     packages=[
         'xml4h',
         'xml4h.impls',

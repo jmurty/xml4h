@@ -1,12 +1,12 @@
-=====================
-xml4h: XML for Humans
-=====================
+===============================
+xml4h: XML for Humans in Python
+===============================
 
-xml4h is an ISC licensed library for Python to make working with XML a
-human-friendly activity.
+*xml4h* is an ISC licensed library for Python to make working with XML
+a human-friendly activity.
 
-This library exists because Python is awesome, XML is everywhere, and
-combining the two should be a pleasure. With xml4h, it can be.
+This library exists because Python is awesome, XML is everywhere, and combining
+the two should be a pleasure. With *xml4h*, it can be.
 
 
 Introduction
@@ -36,7 +36,7 @@ You can also use a more traditional approach to traverse the DOM:
     1974 : Monty Python and the Holy Grail
     1979 : Monty Python's Life of Brian
 
-With xml4h you can build XML documents with a method-chaining approach that
+With *xml4h* you can build XML documents with a method-chaining approach that
 needs minimal syntax and permits a code structure that mirrors the
 document itself:
 
