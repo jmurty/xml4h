@@ -666,19 +666,27 @@ class NameValueNodeMixin(Node):
             self.__class__.__module__, self.__class__.__name__,
             self.name)
 
+    def _tounicode(self, value):
+        if value is None or isinstance(value, unicode):
+            return value
+        else:
+            return unicode(value)
+
     @property
     def prefix(self):
         """
         :return: the namespace prefix component of a node name, or None.
         """
-        return self.adapter.get_node_name_prefix(self.impl_node)
+        return self._tounicode(
+            self.adapter.get_node_name_prefix(self.impl_node))
 
     @property
     def local_name(self):
         """
         :return: the local component of a node name excluding any prefix.
         """
-        return self.adapter.get_node_local_name(self.impl_node)
+        return self._tounicode(
+            self.adapter.get_node_local_name(self.impl_node))
 
     @property
     def name(self):
@@ -686,7 +694,8 @@ class NameValueNodeMixin(Node):
         Get or set the name of a node, possibly including prefix and local
             components.
         """
-        return self.adapter.get_node_name(self.impl_node)
+        return self._tounicode(
+            self.adapter.get_node_name(self.impl_node))
 
     @name.setter
     def name(self, name):
@@ -697,7 +706,8 @@ class NameValueNodeMixin(Node):
         """
         Get or set the value of a node.
         """
-        return self.adapter.get_node_value(self.impl_node)
+        return self._tounicode(
+            self.adapter.get_node_value(self.impl_node))
 
     @value.setter
     def value(self, value):
@@ -950,7 +960,7 @@ class Element(NameValueNodeMixin,
         prefix, local_name, node_ns_uri = \
             self.adapter.get_ns_info_from_node_name(name, self.impl_node)
         if prefix:
-            qname = '%s:%s' % (prefix, local_name)
+            qname = u'%s:%s' % (prefix, local_name)
         else:
             qname = local_name
         # If no name-derived namespace, apply an alternate namespace

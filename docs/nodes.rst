@@ -67,7 +67,7 @@ Find Methods
       >>> # Find ALL elements in the document
       >>> elems = doc.find()
       >>> [e.name for e in elems]  # doctest:+ELLIPSIS
-      ['MontyPythonFilms', 'Film', 'Title', 'Description', 'Film', 'Title', 'Description',...
+      [u'MontyPythonFilms', u'Film', u'Title', u'Description', u'Film', u'Title', u'Description',...
 
       >>> # Find the seven <Film> elements in the XML document
       >>> film_elems = doc.find('Film')
@@ -131,7 +131,7 @@ XPath Querying
       >>> # Query for ALL elements in the document
       >>> elems = doc.xpath('//*')  # doctest:+ELLIPSIS
       >>> [e.name for e in elems]  # doctest:+ELLIPSIS
-      ['MontyPythonFilms', 'Film', 'Title', 'Description', 'Film', 'Title', 'Description',...
+      [u'MontyPythonFilms', u'Film', u'Title', u'Description', u'Film', u'Title', u'Description',...
 
       >>> # Query for the seven <Film> elements in the XML document
       >>> film_elems = doc.xpath('//Film')
@@ -331,9 +331,9 @@ Text node::
     True
 
     >>> text_node.name
-    '#text'
+    u'#text'
     >>> text_node.value
-    'And Now for Something Completely Different'
+    u'And Now for Something Completely Different'
 
 And here is the same for an Attribute node::
 
@@ -343,9 +343,9 @@ And here is the same for an Attribute node::
     True
 
     >>> year_attr.name
-    'year'
+    u'year'
     >>> year_attr.value
-    '1971'
+    u'1971'
 
 The name attribute of a node is not necessarily a plain string, in the case of
 nodes within a defined namespaced the ``name`` attribute may comprise two

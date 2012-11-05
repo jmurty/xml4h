@@ -103,10 +103,10 @@ return only elements in that namespace::
 
     >>> # By default, find ignores namespaces...
     >>> [n.local_name for n in root.find()]
-    ['Elem1', 'Elem2', 'Elem3', 'Elem4']
+    [u'Elem1', u'Elem2', u'Elem3', u'Elem4']
     >>> # ...but will filter by namespace URI if you wish
     >>> [n.local_name for n in root.find(ns_uri='fourth-ns-uri')]
-    ['Elem4']
+    [u'Elem4']
 
 Similarly, a node's children listing can be filtered::
 
@@ -147,21 +147,21 @@ node attributes::
 
     # The full node name...
     >>> elem2.name
-    'my-ns:Elem2'
+    u'my-ns:Elem2'
     >>> # ...comprises a prefix...
     >>> elem2.prefix
-    'my-ns'
+    u'my-ns'
     >>> # ...and a local name component
     >>> elem2.local_name
-    'Elem2'
+    u'Elem2'
 
     >>> # Here is an element without a prefix alias
     >>> elem1.name
-    'Elem1'
+    u'Elem1'
     >>> elem1.prefix == None
     True
     >>> elem1.local_name
-    'Elem1'
+    u'Elem1'
 
 
 .. _xml-lib-architecture:
