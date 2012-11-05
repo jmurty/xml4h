@@ -12,6 +12,7 @@ except ImportError:
 
 class LXMLAdapter(XmlImplAdapter):
     """
+    Adapter to the `lxml <http://lxml.de>`_ XML library implementation.
     """
 
     SUPPORTED_FEATURES = {

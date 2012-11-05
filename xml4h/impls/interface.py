@@ -188,7 +188,7 @@ class XmlImplAdapter(object):
 
     def xpath_on_node(self, node, xpath, **kwargs):
         if not self.has_feature('xpath'):
-            raise exceptions.FeatureUnavailableException()
+            raise exceptions.FeatureUnavailableException('xpath')
         raise NotImplementedError("Implementation missing for %s" % self)
 
     # Node implementation methods

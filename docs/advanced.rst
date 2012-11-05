@@ -274,11 +274,108 @@ making this choice isn't exactly complex, so let's spell it out explicitly:
 The :attr:`xml4h.best_adapter` attribute stores the adapter class that *xml4h*
 considers to be the best.
 
+.. note:
+   *xml4h* is not always able to choose which underlying XML library
+   implementation to use. If you are working with pre-parsed documents for
+   example you will need to use an adapter that works with the existing DOM,
+   see `wrap-unwrap-nodes`_.
+
 
 Choose Your Own Adapter
 -----------------------
 
+By default, *xml4h* will choose an adapter and underlying XML library
+implementation that it considers the best available. However, in some cases you
+may need to have full control over which underlying implementation *xml4h*
+uses, perhaps because you will use features of the underlying XML
+implementation later on, or because you need the performance characteristics
+only available in a particular library.
 
-Quirks
-------
+For these situations it is possible to tell *xml4h* which adapter
+implementation, and therefore which underlying XML library, it should use.
 
+To use a specific adapter implementation when parsing a document, or when
+creating a new document using the builder, simply provide the optional
+``adapter`` keyword argument to the relevant method:
+
+- Parsing::
+
+    >>> # Explicitly use the minidom adapter to parse a document
+    >>> minidom_doc = xml4h.parse('tests/data/monty_python_films.xml',
+    ...                           adapter=xml4h.XmlDomImplAdapter)
+    >>> minidom_doc.root.impl_node  #doctest:+ELLIPSIS
+    <DOM Element: MontyPythonFilms at ...
+
+- Building::
+
+    >>> # Explicitly use the lxml adapter to build a document
+    >>> lxml_b = xml4h.build('MyDoc', adapter=xml4h.LXMLAdapter)
+    >>> lxml_b.root.impl_node  #doctest:+ELLIPSIS
+    <Element {http://www.w3.org/2000/xmlns/}MyDoc at ...
+
+
+Check Feature Support
+.....................
+
+Because not all underlying XML libraries support all the features exposed by
+*xml4h*, the library includes a simple mechanism to check whether a given
+feature is available in the current Python environment or with the current
+adapter.
+
+To check for feature support call the :meth:`~xml4h.nodes.Node.has_feature`
+method on a document node, or
+:meth:`~xml4h.impl.interface.XmlImplAdapter.has_feature` on an adapter class.
+
+List of features that are not available in all adapters:
+
+- ``xpath`` - Can perform XPath queries using the
+  :meth:`~xml4h.nodes.Node.xpath` method.
+- More to come later, probably...
+
+For example, here is how you would test for XPath support in the *minidom*
+adapter, which doesn't include it::
+
+    >>> minidom_doc.root.has_feature('xpath')
+    False
+
+If you forget to check for a feature and use it anyway, you will get
+a :class:`~xml4h.exceptions.FeatureUnavailableException`::
+
+    >>> try:
+    ...     minidom_doc.root.xpath('//*')
+    ... except Exception, e:
+    ...     e
+    FeatureUnavailableException('xpath',)
+
+
+Adapter/Implementation Quirks
+-----------------------------
+
+Although *xml4h* aims to provide a seamless abstraction over underlying XML
+library implementations this isn't always possible, or is only possible by
+performing lots of extra work that affects performance. This section describes
+some implementation-specific quirks or differences you may encounter.
+
+.. note:
+   This set of quirks is almost certainly incomplete, please report issues you
+   find so they can either be fixed (in the best case) or captured here as
+   known trouble-spots.
+
+LXMLAdapter - *lxml*
+....................
+
+- *lxml* does not have full support for CDATA nodes, which devolve into plain
+  text node values when written (by *xml4h* or by *lxml*'s writer).
+- Namespaces defined by adding ``xmlns`` element attributes are not properly
+  represented in the underlying implementation due to the *lxml* library's
+  immutable ``nsmap`` namespace map. Such namespaces are written correcly
+  by the *xml4h* writer, but to avoid quirks it is best to specify namespace
+  when creating nodes by setting the ``ns_uri`` keyword attribute.
+- When *xml4h* writes *lxml*-based documents with namespaces, some node tag
+  names may have unnecessary namespace prefix aliases.
+
+XmlImplAdapter - *minidom*
+..........................
+
+- No support for performing XPath queries.
+- Slower than alternative C-based implementations.

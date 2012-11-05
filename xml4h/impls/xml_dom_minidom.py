@@ -11,6 +11,11 @@ except ImportError:
 
 
 class XmlDomImplAdapter(XmlImplAdapter):
+    """
+    Adapter to the
+    `minidom <http://docs.python.org/2/library/xml.dom.minidom.html>`_ XML
+    library implementation.
+    """
 
     @classmethod
     def is_available(cls):
