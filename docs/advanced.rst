@@ -1,6 +1,6 @@
-===============
-Advanced Topics
-===============
+========
+Advanced
+========
 
 
 .. _xml4h-namespaces:
@@ -166,8 +166,8 @@ node attributes::
 
 .. _xml-lib-architecture:
 
-xml4h Architecture
-==================
+*xml4h* Architecture
+====================
 
 To best understand the *xml4h* library and to use it appropriately in demanding
 situations, you should appreciate what the library is not.
@@ -348,8 +348,8 @@ a :class:`~xml4h.exceptions.FeatureUnavailableException`::
     FeatureUnavailableException('xpath',)
 
 
-Adapter/Implementation Quirks
------------------------------
+Adapter & Implementation Quirks
+-------------------------------
 
 Although *xml4h* aims to provide a seamless abstraction over underlying XML
 library implementations this isn't always possible, or is only possible by

@@ -231,7 +231,7 @@ nodes you need:
   .. note::
      Passing a node name as the first argument will match the *local* name of
      a node. You can match the full node name, which might include a prefix
-     for example, with a call like: ``.children(local_name='SomeName')``.
+     for example, with a call like: ``.children(name='SomeName')``.
 
 - Filter with a custom function::
 
@@ -267,7 +267,7 @@ document using element names as Python attributes (``MontyPythonFilms``,
     1974 : Monty Python and the Holy Grail
     ...
 
-To minimise the chances of unexpected behaviour from too much (black) magic
+To minimise the chances of unexpected behaviour from too much black magic
 there are restrictions on the format of Python attribute names that *xml4h*
 use to look up child Elements. The attribute name:
 
@@ -363,11 +363,11 @@ clone or transplant operation.
 There are two ways to import a node and its descendants:
 
 - Use the :meth:`~xml4h.nodes.Node.clone_node` Node method or
-  :meth:`~xml4h.Builder.clone` Builder method to copy a node into your
+  :meth:`~xml4h.builder.Builder.clone` Builder method to copy a node into your
   document without removing it from its original document.
 - Use the :meth:`~xml4h.nodes.Node.transplant_node` Node method or
-  :meth:`~xml4h.Builder.transplant` Builder method to transplant a node into
-  your document and remove it from its original document.
+  :meth:`~xml4h.builder.Builder.transplant` Builder method to transplant a node
+  into your document and remove it from its original document.
 
 Here is an example of transplanting a node into a document (which also happens
 to undo the damage we did to our example DOM in the ``delete()`` example

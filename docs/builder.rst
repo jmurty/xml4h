@@ -66,7 +66,7 @@ You typically create a new XML document and builder by calling the
 
     >>> root_b = xml4h.build('RootElement')
 
-The function returns an :class:`xml4h.builder.Builder` object that represents
+The function returns a :class:`~xml4h.builder.Builder` object that represents
 the *RootElement* and allows you to manipulate this element's attributes
 or to add child elements.
 

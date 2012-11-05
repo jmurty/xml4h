@@ -152,22 +152,21 @@ the following improvements:
 - More to come, see the TODO section
 
 
-Development Status
-------------------
+Development Status: αlphα
+-------------------------
 
 Currently the basic features of two base implementations are available:
-*minidom* and *lxml*'s ElementTree. The project is still at the stage where
-I am playing with ideas and tweaking the APIs to try and get them right,
-before I move on to the TODO list.
+*minidom* and *lxml*'s ElementTree. The project is still at the alpha stage,
+where I am playing with ideas and tweaking the APIs to try and get them right
+before I move on to building out the feature set.
 
-This project is an alpha and is likely to be in flux for a while yet,
-so be aware that individual APIs and even broad approaches may change.
+This project is likely to be in flux for a while yet, so be aware that
+individual APIs and even broad approaches may change.
 
 
 TODO
 ----
 
-- Write project documentation, code comments, and user guide
 - Add implementation of standard library's (c)ElementTree (if plausible) so
   XPath is available to all users without installing the extra *lxml* library.
 - Proper support for more esoteric node types: DocumentType, DocumentFragment,

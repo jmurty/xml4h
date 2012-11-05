@@ -3,8 +3,8 @@ Writer
 ======
 
 The *xml4h* writer produces serialized XML text documents much as you would
-expect, and in that it is a little unlike the writer methods in many of the
-Python XML libraries.
+expect, and in respect that it is a little unlike the writer methods in some of
+the other Python XML libraries.
 
 
 Write methods
@@ -127,8 +127,8 @@ its serialisation methods by accessing the implementation node::
 
     >>> # Use lxml features as normal; xml4h is no longer in the picture
     >>> from lxml import etree
-    >>> print etree.tostring(lxml_root_node,
-    ...     encoding='utf-8', xml_declaration=True, pretty_print=True)  # doctest:+ELLIPSIS
+    >>> print etree.tostring(lxml_root_node, encoding='utf-8',
+    ...                      xml_declaration=True, pretty_print=True)  # doctest:+ELLIPSIS
     <?xml version='1.0' encoding='utf-8'?>
     <MontyPythonFilms source="http://en.wikipedia.org/wiki/Monty_Python"><Film year="1971"><Title>And Now for Something Completely Different</Title>
             <Description>A collection of sketches from the first and second...
