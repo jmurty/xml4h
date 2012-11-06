@@ -3,11 +3,8 @@ from StringIO import StringIO
 from xml4h.impls.interface import XmlImplAdapter
 from xml4h import nodes
 
-try:
-    import xml.dom
-    import xml.dom.minidom
-except ImportError:
-    pass
+import xml.dom
+import xml.dom.minidom
 
 
 class XmlDomImplAdapter(XmlImplAdapter):
@@ -48,12 +45,6 @@ class XmlDomImplAdapter(XmlImplAdapter):
         # Create Document from factory
         doc = factory.createDocument(ns_uri, root_tagname, doctype)
         return doc
-
-    @classmethod
-    def get_impl_document(cls, node):
-        if node.nodeType == node.DOCUMENT_NODE:
-            return node
-        return node.ownerDocument
 
     def map_node_to_class(self, impl_node):
         try:
@@ -224,14 +215,11 @@ class XmlDomImplAdapter(XmlImplAdapter):
         curr_node = node
         while curr_node:
             attrs = self.get_node_attributes(curr_node)
-            if not attrs:
-                pass
-            else:
-                for attr in attrs:
-                    if attr.value == uri:
-                        if ':' in attr.name:
-                            return attr.name.split(':')[1]
-                        else:
-                            return attr.name
+            for attr in attrs:
+                if attr.value == uri:
+                    if ':' in attr.name:
+                        return attr.name.split(':')[1]
+                    else:
+                        return attr.name
             curr_node = self.get_node_parent(curr_node)
         return None

@@ -368,6 +368,18 @@ class BaseTestNodes(object):
         self.assertEqual(self.elem2,
                 self.xml4h_root.find_first('Element2').impl_node)
 
+    def test_has_feature(self):
+        # Adapter and node has_feature tests must agree
+        self.assertEqual(
+            self.my_adapter.has_feature('xpath'),
+            self.xml4h_root.has_feature('xpath'))
+        # XPath is available in lxml adapter
+        if isinstance(self.my_adapter, xml4h.LXMLAdapter):
+            self.assertTrue(self.my_adapter.has_feature('xpath'))
+        # XPath is not available in minidom adapter
+        if isinstance(self.my_adapter, xml4h.XmlDomImplAdapter):
+            self.assertFalse(self.my_adapter.has_feature('xpath'))
+
     def test_xpath(self):
         # Ensure appropriate exception thrown if XPath is not supported
         if not self.my_adapter.has_feature('xpath'):

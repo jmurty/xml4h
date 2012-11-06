@@ -3,6 +3,7 @@ try:
     import unittest2 as unittest
 except ImportError:
     import unittest
+import sys
 import functools
 from StringIO import StringIO
 
@@ -19,6 +20,23 @@ class BaseWriterTest(object):
                 .element('Elem2'))
         # Handy IO writer
         self.iostr = StringIO()
+
+    def test_write_to_stdout_by_default(self):
+        # Default write output is utf-8, with no pretty-printing
+        xml = (
+            u'<?xml version="1.0" encoding="utf-8"?>'
+            u'<DocRoot>'
+            u'<Elem1>默认جذ</Elem1>'
+            u'<Elem2/>'
+            u'</DocRoot>'
+            )
+        try:
+            old_stdout = sys.stdout
+            sys.stdout = StringIO()
+            self.builder.write_doc()
+            self.assertEqual(xml.encode('utf-8'), sys.stdout.getvalue())
+        finally:
+            sys.stdout = old_stdout
 
     def test_write_current_node_and_descendents(self):
         self.builder.dom_element.write(self.iostr)

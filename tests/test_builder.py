@@ -52,6 +52,11 @@ class BaseBuilderNodesTest(object):
                 .e('Deeper')
                 .e('AndDeeper')
                 .e('DeeperStill'))
+        # Check builder's current node is at deepest element
+        writer = StringIO()
+        xmlb.write(writer)
+        self.assertEqual('<DeeperStill/>', writer.getvalue())
+        # Check builder produces expected XML doc as string
         self.assertEqual(
             '<?xml version="1.0" encoding="utf-8"?>\n'
             '<DocRoot>\n'
@@ -670,7 +675,7 @@ class BaseBuilderNodesTest(object):
         )
         # A builder can be created from any element
         doc_root_elem = b.root
-        (doc_root_elem.builder
+        b = (doc_root_elem.builder
             .e('Film')
                 .attrs(year=1979)
                 .e('Title').t("Monty Python's Life of Brian").up()
@@ -724,7 +729,7 @@ class BaseBuilderNodesTest(object):
             os.path.dirname(__file__), 'data/monty_python_films.xml')
         expected_xml = open(example_file_path).read()
         writer = StringIO()
-        doc_root_elem.write_doc(writer, indent=True)
+        b.write_doc(writer, indent=True)
         self.assertEqual(expected_xml, writer.getvalue())
 
 

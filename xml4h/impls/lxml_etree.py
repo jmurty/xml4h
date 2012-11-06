@@ -160,15 +160,15 @@ class LXMLAdapter(XmlImplAdapter):
     # Node implementation methods
 
     def get_node_namespace_uri(self, node):
-        if isinstance(node, LXMLAttribute):
+        if '}' in node.tag:
+            return node.tag.split('}')[0][1:]
+        elif isinstance(node, LXMLAttribute):
             return node.namespace_uri
         elif isinstance(node, etree._ElementTree):
             return None
         elif isinstance(node, etree._Element):
             qname, ns_uri = self._unpack_name(node.tag, node)[:2]
             return ns_uri
-        elif '}' in node.tag:
-            return node.tag.split('}')[0][1:]
         else:
             return None
 
@@ -276,19 +276,15 @@ class LXMLAdapter(XmlImplAdapter):
         return None
 
     def set_node_attribute_value(self, element, name, value, ns_uri=None):
-        if ns_uri is not None:
-            if ':' in name:
-                prefix, name = name.split(':')
-            name = '{%s}%s' % (ns_uri, name)
-        elif ':' in name:
+        prefix = None
+        if ':' in name:
             prefix, name = name.split(':')
+        if ns_uri is None and prefix is not None:
             ns_uri = self.lookup_ns_uri_by_attr_name(element, prefix)
+        if ns_uri is not None:
             name = '{%s}%s' % (ns_uri, name)
         if name.startswith('{%s}' % nodes.Node.XMLNS_URI):
-            if element.nsmap.get(name) == value:
-                # No need to apply namespace attribute
-                pass
-            else:
+            if element.nsmap.get(name) != value:
                 # Ideally we would apply namespace (xmlns) attributes to the
                 # element's `nsmap` only, but the lxml/etree nsmap attribute
                 # is immutable and there's no non-hacky way around this.
