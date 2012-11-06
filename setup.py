@@ -27,7 +27,7 @@ elif sys.argv[-1] == 'test':
 
 
 setup(
-    name='xml4h',
+    name=xml4h.__title__,
     version=xml4h.__version__,
     description='XML for Humans in Python',
     long_description=open('README.rst').read(),
@@ -58,4 +58,3 @@ setup(
         # 'Programming Language :: Python :: 3.2',
     ),
 )
-

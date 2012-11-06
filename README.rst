@@ -9,53 +9,72 @@ This library exists because Python is awesome, XML is everywhere, and combining
 the two should be a pleasure. With *xml4h*, it can be.
 
 
+Features
+--------
+
+*xml4h* is a simplifying layer over existing Python XML processing libraries
+such as *lxml* and the *minidom*. It provides:
+
+- a rich pythonic API to traverse and manipulate the XML DOM.
+- a document builder to simply and safely construct complex documents with
+  minimal code.
+- a writer that serialises XML documents with the structure and format that you
+  expect, unlike the machine- but not human-friendly output you tend to get
+  from other libraries.
+
+The *xml4h* abstraction layer also offers some other benefits, beyond a nice
+API and tool set:
+
+- The common interface to different underlying XML libraries means that code
+  written for *xml4h* need not be rewritten if you switch implementations, such
+  as from *minidom* to *lxml*.
+- You can easily move between the *xml4h* world and the underlying
+  implementation: parse your document using the fastest implementation,
+  manipulate the DOM with human-friendly code using *xml4h*, then get back to
+  the underlying implementation if you need to.
+
+
+Installation
+------------
+
+Install *xml4h* with pip::
+
+    $ pip install xml4h
+
+
 Introduction
 ------------
 
 Here is an example of parsing and reading data from an XML document using
-"magic" element and attribute lookups:
-
-::
+"magic" element and attribute lookups::
 
     >>> import xml4h
-
     >>> doc = xml4h.parse('tests/data/monty_python_films.xml')
+
     >>> for film in doc.MontyPythonFilms.Film[:3]:
     ...     print film['year'], ':', film.Title.text
     1971 : And Now for Something Completely Different
     1974 : Monty Python and the Holy Grail
     1979 : Monty Python's Life of Brian
 
-You can also use a more traditional approach to traverse the DOM:
+You can also use a more traditional approach to traverse the DOM::
 
-::
-
-    >>> for film in doc.find('Film')[:3]:
-    ...     print film.attributes['year'], ':', film.children[0].text
+    >>> for film in doc.child('MontyPythonFilms').children('Film')[:3]:
+    ...     print film.attributes['year'], ':', film.children.first.text
     1971 : And Now for Something Completely Different
     1974 : Monty Python and the Holy Grail
     1979 : Monty Python's Life of Brian
 
-With *xml4h* you can build XML documents with a method-chaining approach that
-needs minimal syntax and permits a code structure that mirrors the
-document itself:
+The *xml4h* builder helps to create documents, with a method-chaining feature
+that allows for expressive but sparse code that mirrors the document itself::
 
-::
-
-    >>> # Create builder with the name of the root element
     >>> b = (xml4h.build('MontyPythonFilms')
-    ...     # Assign attributes to the new root element
     ...     .attributes({'source': 'http://en.wikipedia.org/wiki/Monty_Python'})
-    ...     # Create a child element
     ...     .element('Film')
-    ...         # When an element is added, later method calls apply to it
     ...         .attributes({'year': 1971})
     ...         .element('Title')
-    ...             # Set text content of element with text()
     ...             .text('And Now for Something Completely Different')
-    ...             # Use up() to perform later actions on parent element
     ...             .up()
-    ...         # Builder methods element(), text() etc. have shorter aliases
     ...         .elem('Description').t(
     ...             "A collection of sketches from the first and second TV"
     ...             " series of Monty Python's Flying Circus purposely"
@@ -75,9 +94,7 @@ document itself:
     ...     .up()
     ... )
 
-Pretty-print your XML document with the flexible write() method:
-
-::
+Pretty-print your XML document with the flexible write() and xml() methods::
 
     >>> b.write_doc(indent=4, newline=True) # doctest: +ELLIPSIS
     <?xml version="1.0" encoding="utf-8"?>
@@ -101,27 +118,27 @@ the excellent `Requests HTTP library <http://docs.python-requests.org/>`_.
 Why?
 ----
 
-Python has three popular libraries for working with XML, each of which has its
-drawbacks:
+Python has three popular libraries for working with XML, none of which are
+particularly easy to use:
 
 - `xml.dom.minidom <http://docs.python.org/library/xml.dom.minidom.html>`_
   is a light-weight, moderately-featured implementation of the W3C DOM
   that is included in the standard library. Unfortunately the W3C DOM API is
-  terrible – the very opposite of pythonic – and the minidom does not
+  terrible – the very opposite of pythonic – and the *minidom* does not
   support XPath expressions.
 - `xml.etree.ElementTree <http://docs.python.org/library/xml.etree.elementtree.html>`_
   is a fast hierarchical data container that is included in the standard
   library and can be used to represent XML, mostly. The API is fairly pythonic
   and supports XPath, but it lacks some DOM traversal niceties you might
-  expect (e.g. to get an element's parent) and working with it feels like
-  your doing something subtly different form XML (because you are).
+  expect (e.g. to get an element's parent) and when using it you often feel
+  like your working with something subtly different from XML, because you are.
 - `lxml <http://lxml.de/>`_ is a fast, full-featured XML library with an API
   based on ElementTree but extended. It is your best choice for doing serious
-  work with XML in Python, but it is not included in the standard library, can
-  be difficult to install, and gives you the same it's-XML-but-not-quite
+  work with XML in Python but it is not included in the standard library, it
+  can be difficult to install, and it gives you the same it's-XML-but-not-quite
   feeling as its ElementTree forebear.
 
-Given these three options it is hard to choose which library to use,
+Given these three options it can be difficult to choose which library to use,
 especially if you're new to XML processing in Python and haven't already
 used (struggled with) any of them.
 
@@ -131,25 +148,8 @@ you wouldn't have to rewrite your code if you later find you need XPath
 support or powerful DOM traversal methods.
 
 This is where *xml4h* comes in. It provides an abstraction layer over
-the existing XML libraries, taking advantage of their power while offering
-the following improvements:
-
-- A richer, W3C-like yet pythonic API for DOM traversal and manipulation.
-- A document builder that makes it simple to safely construct complex
-  documents with very little code; no more string concatenation and crossed
-  fingers.
-- Write XML documents you have constructed and see in the output a
-  structure and format that you expect, unlike the machine- but
-  not human-friendly output you tend to get from the base libraries.
-- A common interface that masks the underlying implementations. Code
-  written against *xml4h* need not be rewritten if you switch between
-  implementations, such as from minidom to lxml (although not all
-  features  are available in all implementations).
-- Easy movement between *xml4h* and the underlying implementation:
-  parse your document using the fastest implementation, manipulate all or
-  parts of it with nice code using *xml4h*, then go back to the underlying
-  implementation if you need to.
-- More to come, see the TODO section
+the existing XML libraries, taking advantage of their power while offering an
+improved API and tool set.
 
 
 Development Status: αlphα
@@ -177,5 +177,3 @@ TODO
 - Improve NodeList implementations for children, entities, notations, etc to
   allow for human-friendly interactions with lists, such as easily
   add/remove document nodes via the nodelist.
-- Complete test coverage and weed out implementation-specific skipped or
-  hacky tests
