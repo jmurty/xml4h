@@ -3,15 +3,16 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-xml4h is XML for Humans in Python
-=================================
+.. include:: ../README.rst
 
-Contents:
+
+==========
+User Guide
+==========
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 3
 
-   readme
    parser
    builder
    writer
@@ -20,6 +21,7 @@ Contents:
    api
 
 
+==================
 Indices and tables
 ==================
 

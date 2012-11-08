@@ -23,14 +23,14 @@ extras.
 
 Namespace URI values are assigned to a node in one of three ways:
 
-- an "xmlns" attribute on an element assigns a *namespace URI* to that
-  element, and also defines the shorthand *prefix* for the namespace::
+- an ``xmlns`` attribute on an element assigns a *namespace URI* to that
+  element, and may also define a shorthand *prefix* for the namespace::
 
       <AnElement xmlns:my-prefix="urn:example-uri">
 
   .. note::
-     Technically the "xmlns" attribute must itself also be in the special XML
-     namespacing namespace "http://www.w3.org/2000/xmlns/". You needn't care
+     Technically the ``xmlns`` attribute must itself also be in the special XML
+     namespacing namespace http://www.w3.org/2000/xmlns/. You needn't care
      about this.
 
 - a tag or attribute name includes a *prefix* alias portion that specifies the
@@ -177,7 +177,7 @@ Instead of implementing low-level document parsing and manipulation tools, it
 operates as an abstraction layer on top of the pre-existing XML processing
 libraries you already know.
 
-This means the improved API and tool suite provided by *xml4h* works by
+This means the improved API and tool suite provided by *xml4h* work by
 mediating operations you perform, asking the underlying XML library to do the
 work, and packaging up the results of this work as wrapped *xml4h* objects.
 

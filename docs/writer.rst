@@ -39,9 +39,9 @@ matter which node you call it on::
         </Film>
      ...
 
-If you don't supply a writer object to the *write* methods they send output
-to :attr:`sys.stdout` by default. To send output to a file, or any other
-object that provides a *write* method, you provide the writer to the methods::
+The *write* methods send output to :attr:`sys.stdout` by default. To send
+output to a file, or any other writer-like object, provide the target writer
+as an argument::
 
     >>> # Write to a file
     >>> with open('/tmp/example.xml', 'wb') as f:
@@ -83,9 +83,9 @@ method and returns a string for the whole document::
         ...
 
 .. note::
-   *xml4h* assumes that when you directly generate an XML string you or
-   another human will be reading it, so it applies some pretty-print
-   formatting options by default.
+   *xml4h* assumes that when you directly generate an XML string in this way it
+   is intended for human consumption, so it applies pretty-print formatting
+   by default.
 
 
 Format Output
@@ -103,8 +103,8 @@ but here are some pointers to get you started:
   characters for indentation and ``\n`` for newlines.
 - To use a tab character for indenting and ``\r\n`` for indents:
   ``indent='\t', newline='\r\n'``.
-- *lxml* writes *utf-8*-encoded documents by default, to write with a
-  different encoding (if you must): ``encoding='iso-8859-1'``.
+- *xml4h* writes *utf-8*-encoded documents by default, to write with a
+  different encoding: ``encoding='iso-8859-1'``.
 - To avoid outputting the XML declaration when writing a document:
   ``omit_declaration=True``.
 

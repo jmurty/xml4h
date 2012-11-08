@@ -12,7 +12,7 @@ the two should be a pleasure. With *xml4h*, it can be.
 Features
 --------
 
-*xml4h* is a simplifying layer over existing Python XML processing libraries
+*xml4h* is a simplification layer over existing Python XML processing libraries
 such as *lxml* and the *minidom*. It provides:
 
 - a rich pythonic API to traverse and manipulate the XML DOM.
@@ -25,13 +25,12 @@ such as *lxml* and the *minidom*. It provides:
 The *xml4h* abstraction layer also offers some other benefits, beyond a nice
 API and tool set:
 
-- The common interface to different underlying XML libraries means that code
-  written for *xml4h* need not be rewritten if you switch implementations, such
-  as from *minidom* to *lxml*.
-- You can easily move between the *xml4h* world and the underlying
-  implementation: parse your document using the fastest implementation,
-  manipulate the DOM with human-friendly code using *xml4h*, then get back to
-  the underlying implementation if you need to.
+- A common interface to different underlying XML libraries, so code written
+  against *xml4h* need not be rewritten if you switch implementations.
+- You can easily move between *xml4h* and the underlying implementation: parse
+  your document using the fastest implementation, manipulate the DOM with
+  human-friendly code using *xml4h*, then get back to the underlying
+  implementation if you need to.
 
 
 Installation
@@ -65,8 +64,9 @@ You can also use a more traditional approach to traverse the DOM::
     1974 : Monty Python and the Holy Grail
     1979 : Monty Python's Life of Brian
 
-The *xml4h* builder helps to create documents, with a method-chaining feature
-that allows for expressive but sparse code that mirrors the document itself::
+The *xml4h* builder makes programmatic document creation simple, with
+a method-chaining feature that allows for expressive but sparse code that
+mirrors the document itself::
 
     >>> b = (xml4h.build('MontyPythonFilms')
     ...     .attributes({'source': 'http://en.wikipedia.org/wiki/Monty_Python'})
@@ -110,11 +110,6 @@ Pretty-print your XML document with the flexible write() and xml() methods::
     </MontyPythonFilms>
 
 
-This project is heavily inspired by the work of
-`Kenneth Reitz <http://kennethreitz.com/pages/open-projects.html>`_ such as
-the excellent `Requests HTTP library <http://docs.python-requests.org/>`_.
-
-
 Why?
 ----
 
@@ -143,37 +138,28 @@ especially if you're new to XML processing in Python and haven't already
 used (struggled with) any of them.
 
 In the past your best bet would have been to go with *lxml* for the most
-flexibility, even though it may well be overkill, because at least then
-you wouldn't have to rewrite your code if you later find you need XPath
-support or powerful DOM traversal methods.
+flexibility, even though it might be overkill, because at least then you
+wouldn't have to rewrite your code if you later find you need XPath support or
+powerful DOM traversal methods.
 
 This is where *xml4h* comes in. It provides an abstraction layer over
 the existing XML libraries, taking advantage of their power while offering an
 improved API and tool set.
 
 
+This project is heavily inspired by the work of
+`Kenneth Reitz <http://kennethreitz.com/pages/open-projects.html>`_ such as
+the excellent `Requests HTTP library <http://docs.python-requests.org/>`_.
+
+
 Development Status: αlphα
 -------------------------
 
-Currently the basic features of two base implementations are available:
-*minidom* and *lxml*'s ElementTree. The project is still at the alpha stage,
-where I am playing with ideas and tweaking the APIs to try and get them right
-before I move on to building out the feature set.
+Currently *xml4h* includes two adapter implementations that support key XML
+processing tasks, using either the *minidom* or *lxml*'s ElementTree libraries.
+
+The project is still at the alpha stage, where I am playing with ideas and
+tweaking the APIs to try and get them right before I build out the feature set.
 
 This project is likely to be in flux for a while yet, so be aware that
 individual APIs and even broad approaches may change.
-
-
-TODO
-----
-
-- Add implementation of standard library's (c)ElementTree (if plausible) so
-  XPath is available to all users without installing the extra *lxml* library.
-- Proper support for more esoteric node types: DocumentType, DocumentFragment,
-  Notation, Entity, EntityReference
-- Find a way to make the *lxml* ``nsmap`` namespace map mutable, or to fake it?
-  This is necessary to properly abstract namespace definition behaviour.
-- SAX parsing, done nicely -- Need to figure out what that means...
-- Improve NodeList implementations for children, entities, notations, etc to
-  allow for human-friendly interactions with lists, such as easily
-  add/remove document nodes via the nodelist.

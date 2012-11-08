@@ -3,10 +3,10 @@ DOM Nodes
 =========
 
 *xml4h* provides node objects and convenience methods that make it easier to
-work with an in-memory XML document object model (DOM) produced by parsing an
-existing document, or by building a new one.
+work with an in-memory XML document object model (DOM).
 
-For API-level documentation about *xml4h* nodes see :ref:`api-nodes`.
+This section of the document covers the main features of *xml4h* nodes.
+For the full API-level documentation see :ref:`api-nodes`.
 
 
 Traversing Nodes
@@ -21,7 +21,7 @@ methods for performing common tasks:
 - You can get the ``name`` attribute of nodes that have a name, or look up
   the different name components with ``prefix`` to get the namespace prefix
   (if any) and ``local_name`` to get the name portion without the prefix.
-- Nodes that have a value return it from the ``value`` attribute.
+- Nodes that have a value expose it via the ``value`` attribute.
 - A node's ``parent`` attribute returns its parent, while the ``ancestors``
   attribute returns a list containing its parent, grand-parent,
   great-grand-parent etc.
@@ -29,9 +29,8 @@ methods for performing common tasks:
   while the ``siblings`` attribute returns all other nodes that belong to its
   parent. You can also get the ``siblings_before`` or ``siblings_after`` the
   current node.
-- Look up a node's inherited namespace with ``namespace_uri`` or the alias
-  ``ns_uri``, or look up its explicitly defined namespace with
-  ``current_namespace_uri``.
+- Look up a node's namespace URI with ``namespace_uri`` or the alias
+  ``ns_uri``.
 - Check what type of :class:`~xml4h.nodes.Node` you have with Boolean
   attributes like ``is_element``, ``is_text``, ``is_entity`` etc.
 
@@ -39,8 +38,8 @@ methods for performing common tasks:
 Searching with Find and XPath
 -----------------------------
 
-There are two ways to search for elements within an *xml4h* document: find and
-xpath.
+There are two ways to search for elements within an *xml4h* document: ``find``
+and ``xpath``.
 
 The find methods provided by the library are easy to use but can only perform
 relatively simple searches that return :class:`~xml4h.nodes.Element` results,
@@ -62,7 +61,7 @@ Find Methods
 
 - :meth:`~xml4h.nodes.Node.find` searches descendants of the current node for
   elements matching the given constraints. You can search by element name,
-  by namespace URI, or even with no constraints at all::
+  by namespace URI, or with no constraints at all::
 
       >>> # Find ALL elements in the document
       >>> elems = doc.find()
@@ -125,8 +124,8 @@ XPath Querying
   you perform.
 
   XPath queries are well beyond the scope of this documentation but here are
-  some examples like the find queries we saw above, and some more complex
-  queries::
+  some examples like the find queries we saw above, as well as some more
+  complex queries::
 
       >>> # Query for ALL elements in the document
       >>> elems = doc.xpath('//*')  # doctest:+ELLIPSIS
@@ -156,8 +155,8 @@ XPath Querying
       ['Monty Python Live at the Hollywood Bowl']
 
 .. note::
-   XPath querying is currently only available through the *lxml* implementation
-   library, so you must have that library installed to use
+   XPath querying is currently only available if you use the *lxml*
+   implementation library, so you must have *lxml* installed to use
    :meth:`~xml4h.nodes.XPathMixin.xpath`. You can check whether the XPath
    feature is available with :meth:`~xml4h.nodes.Node.has_feature`::
 
@@ -172,7 +171,7 @@ Many *xml4h* node attributes return a list of nodes as a
 :class:`~xml4h.nodes.NodeList` object which confers some special filtering
 powers.  You get this special node list object from attributes like
 ``children``, ``ancestors``, and ``siblings``, and from the ``find`` search
-method.
+method if it has element results.
 
 Here are some examples of how you can easily filter a
 :class:`~xml4h.nodes.NodeList` to get just the
@@ -254,8 +253,8 @@ to avoid peppering your code with ``find`` and ``xpath`` searches, or with
 filter constraints on ``children`` node attributes.
 
 Depending on how you feel about magical behaviour this feature might feel like
-a great convenience or a behaviour to regard with deep suspicion. The right
-attitude probably lies somewhere in the middle...
+a great convenience, or black magic that makes you wary. The right attitude
+probably lies somewhere in the middle...
 
 Here is an example of retrieving information from our Monty Python films
 document using element names as Python attributes (``MontyPythonFilms``,
@@ -267,9 +266,9 @@ document using element names as Python attributes (``MontyPythonFilms``,
     1974 : Monty Python and the Holy Grail
     ...
 
-To minimise the chances of unexpected behaviour from too much black magic
-there are restrictions on the format of Python attribute names that *xml4h*
-use to look up child Elements. The attribute name:
+To minimise the chances of unexpected behaviour from too much black magic,
+*xml4h* has restrictions on the kind of Python attribute names it will accept
+when looking up child Elements. The attribute name:
 
 - cannot start with any underscore characters
 - must contain at least one uppercase character, or
@@ -428,8 +427,9 @@ Elements also have attributes that can be manipulated in a number of ways.
 
 Look up an element's attributes with:
 
-- the :meth:`~xml4h.nodes.Element.attributes` attribute, which returns an
-  ordered dictionary of attribute names and values::
+- the :meth:`~xml4h.nodes.Element.attributes` attribute (or aliases ``attrib``
+  and ``attrs``) that return an ordered dictionary of attribute names and
+  values::
 
       >>> film_elem = doc.MontyPythonFilms.Film[0]
       >>> film_elem.attributes
@@ -467,7 +467,7 @@ Set attribute values with:
       >>> film_elem.attributes
       <xml4h.nodes.AttributeDict: [('a1', 'v1'), ('a2', 'v2'), ('a3', 'v3'), ('a4', '4'), ('year', '1971')]>
 
-- the setter version of the :meth:`~xml4h.nodes.Element.attributes` attribute,
+- the setter version of the :attr:`~xml4h.nodes.Element.attributes` attribute,
   which replaces any existing attributes with the new set::
 
       >>> film_elem.attributes = {'year': '1971', 'note': 'funny'}
@@ -490,7 +490,7 @@ for programmatically adding child nodes, for cases where you would rather work
 directly with nodes instead of using a :ref:`builder`.
 
 The most complex of these methods is :meth:`~xml4h.nodes.Element.add_element`
-which allows you to add a named child element, and optionally to set the new
+which allows you to add a named child element, and to optionally to set the new
 element's namespace, text content, and attributes all at the same time. Let's
 try an example::
 

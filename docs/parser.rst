@@ -2,14 +2,14 @@
 Parser
 ======
 
-The *xml4h* parser is a trivial wrapper around the parser provided by an
+The *xml4h* parser is a simple wrapper around the parser provided by an
 underlying :ref:`XML library implementation <xml-lib-adapters>`.
 
 Parse function
 --------------
 
-To parse XML documents with *xml4h* you use the :func:`xml4h.parse` function
-and provide it with XML content in one of three forms:
+To parse XML documents with *xml4h* you feed the :func:`xml4h.parse` function
+an XML text document in one of three forms:
 
 - A file-like object::
 
@@ -45,9 +45,9 @@ and provide it with XML content in one of three forms:
 Stripping of Whitespace Nodes
 -----------------------------
 
-By default, the *parse* method ignores whitespace nodes in the XML document
+By default the *parse* method ignores whitespace nodes in the XML document
 -- or more accurately, it does extra work to remove these nodes after the
-document has been parsed.
+document has been parsed by the underlying XML library.
 
 Whitespace nodes are rarely interesting, since they are usually the result of
 XML content that has been serialized with extra whitespace to make it more
@@ -55,7 +55,7 @@ readable to humans.
 
 However if you need to keep these nodes, or if you want to avoid the extra
 processing overhead when parsing large documents, you can disable this
-feature by passing in the ``ignore_whitespace_text_nodes`` flag::
+feature by passing in the ``ignore_whitespace_text_nodes=False`` flag::
 
     >>> # Strip whitespace nodes from document
     >>> doc = xml4h.parse('tests/data/monty_python_films.xml')

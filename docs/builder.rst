@@ -4,17 +4,16 @@
 Builder
 =======
 
-*xml4h* includes a document builder utility that makes it easy to create valid,
-guaranteed well-formed XML documents using relatively sparse python code. It
-is intended to make it so easy to create XML that you will no longer be
-tempted to cobble together documents by concatenating strings, even for
-simple cases.
+*xml4h* includes a document builder tool that makes it easy to create valid,
+well-formed XML documents using relatively sparse python code. It makes it so
+easy to create XML that you will no longer be tempted to cobble together
+documents with error-prone methods like manual string concatenation or a
+templating library.
 
 Internally, the builder uses the DOM-building features of an underlying XML
-library exposed through an adapter (see :ref:`xml-lib-adapters`). This means
-that you can be sure you will generate a valid document.
+library which means it is (almost) impossible to construct an invalid document.
 
-Here is some example code::
+Here is some example code to build a document about Monty Python films::
 
     >>> import xml4h
     >>> xmlb = (xml4h.build('MontyPythonFilms')
@@ -42,7 +41,7 @@ Here is some example code::
     ...             ).up()
     ...     )
 
-That produces the XML document::
+The code above produces the following XML document (abbreviated)::
 
     >>> xmlb.write_doc(indent=True)  # doctest:+ELLIPSIS
     <?xml version="1.0" encoding="utf-8"?>
@@ -61,7 +60,7 @@ That produces the XML document::
 Getting Started
 ---------------
 
-You typically create a new XML document and builder by calling the
+You typically create a new XML document builder by calling the
 :func:`xml4h.build` function with the name of the root element::
 
     >>> root_b = xml4h.build('RootElement')
@@ -70,15 +69,17 @@ The function returns a :class:`~xml4h.builder.Builder` object that represents
 the *RootElement* and allows you to manipulate this element's attributes
 or to add child elements.
 
-Once you have the first builder instance, every action you perform on a
-builder that adds content to the XML document will return an instance of
-this same class representing an underlying element.
+Once you have the first builder instance, every action you perform to add
+content to the XML document will return another instance of the Builder class::
 
-Builder methods that add content to the current element -- such as attributes,
-text, or namespaces -- return the same builder instance representing the
-current element::
-
+    >>> # Add attributes to the root element's Builder
     >>> root_b = root_b.attributes({'a': 1, 'b': 2}, c=3)
+
+    >>> root_b  #doctest:+ELLIPSIS
+    <xml4h.builder.Builder object ...
+
+The Builder class always represents an underlying element in the DOM. The
+:attr:`~xml4h.builder.Builder.dom_element` attribute returns the element node:: 
 
     >>> root_b.dom_element
     <xml4h.nodes.Element: "RootElement">
@@ -86,16 +87,13 @@ current element::
     >>> root_b.dom_element.attributes
     <xml4h.nodes.AttributeDict: [('a', '1'), ('b', '2'), ('c', '3')]>
 
-.. note::
-   As you can see above, the element node represented by a builder instance is
-   available through the :meth:`~xml4h.builder.Builder.dom_element` method.
-
-When you add a new child element the result is a builder instance representing
-the child element, *not the original element*::
+When you add a new child element, the result is a builder instance representing
+that child element, *not the original element*::
 
     >>> child1_b = root_b.element('ChildElement1')
-
     >>> child2_b = root_b.element('ChildElement2')
+
+    >>> # The element method returns a Builder wrapping the new child element
     >>> child2_b.dom_element
     <xml4h.nodes.Element: "ChildElement2">
     >>> child2_b.dom_element.parent
@@ -116,14 +114,14 @@ chain together many method calls to construct your document without any
 need for intermediate variables.
 
 For example, the example code in the previous section used the variables
-``root_b``, ``child1_b`` and ``child2_b`` to store builder instances but
-this is not necessary. Here is the method-chaining approach to accomplish
-the same thing::
+``root_b``, ``child1_b`` and ``child2_b`` to represent builder instances but
+this is not necessary. Here is how you can use method-chaining to build the
+same document with less code::
 
-    >>> b = (xml4h.build('RootElement')
-    ...         .attributes({'a': 1, 'b': 2}, c=3)
-    ...     .element('ChildElement1').up()  # NOTE the up() method
-    ...     .element('ChildElement2')
+    >>> b = (xml4h
+    ...     .build('RootElement').attributes({'a': 1, 'b': 2}, c=3)
+    ...         .element('ChildElement1').up()  # NOTE the up() method
+    ...         .element('ChildElement2')
     ...     )
 
     >>> b.write_doc(indent=4)
@@ -148,9 +146,9 @@ The code above introduces a very important builder method:
 :meth:`~xml4h.builder.Builder.up`. This method returns a builder instance
 representing the current element's parent, or indeed any ancestor.
 
-Without the ``up()`` method every child element a builder created would leave
-you deeper in the document structure with no way to return to prior elements
-and do things like add sibling nodes or hierarchies.
+Without the ``up()`` method, every time you created a child element with the
+builder you would end up deeper in the document structure with no way to return
+to prior elements to add sibling nodes or hierarchies.
 
 To help reduce the number of ``up()`` method calls you need to include in
 your code, this method can also jump up multiple levels or to a named ancestor
@@ -175,10 +173,9 @@ element::
     <xml4h.nodes.Element: "Root">
 
 .. note::
-   We recommend you use :meth:`~xml4h.builder.Builder.up` calls to return
-   back one level for every :meth:`~xml4h.builder.Builder.element` method
-   (or alias) when you chain methods to avoid making subtle errors in
-   your document's structure.
+   To avoid making subtle errors in your document's structure, we recommend you
+   use :meth:`~xml4h.builder.Builder.up` calls to return up one level for every
+   :meth:`~xml4h.builder.Builder.element` method (or alias) you call.
 
 
 Shorthand Methods
@@ -216,32 +213,32 @@ Access the DOM
 The XML builder is merely a layer of convenience methods that sits on the
 :mod:`xml4h.nodes` DOM API. This means you can quickly access the underlying
 nodes from a builder if you need to inspect them or manipulate them in a
-way the builder doesn't allow.
+way the builder doesn't allow:
 
-The :attr:`~xml4h.builder.Builder.dom_element` attribute returns a builder's
-underlying :class:`~xml4h.nodes.Element`, and the
-:attr:`~xml4h.builder.Builder.root` attribute returns the document's
-root element.
+- The :attr:`~xml4h.builder.Builder.dom_element` attribute returns a builder's
+  underlying :class:`~xml4h.nodes.Element`
+- The :attr:`~xml4h.builder.Builder.root` attribute returns the document's
+  root element.
+- The :attr:`~xml4h.builder.Builder.document` attribute returns a builder's
+  underlying :class:`~xml4h.nodes.Document`.
 
-The :attr:`~xml4h.builder.Builder.document` attribute returns a builder's
-underlying :class:`~xml4h.nodes.Document`.
-
-The :mod:`xml4h.nodes` api is described in :ref:`api-nodes`.
+See the :ref:`api-nodes` documentation to find out how to work with DOM
+element nodes once you get them.
 
 
 Building on an Existing DOM
 ---------------------------
 
-When you are building an XML document from scratch you will generally use the
+When you are building an XML document from scratch you will generally use
 the :func:`~xml4h.build` function described in `Getting Started`_. However,
-what if you want ot add content to a parsed XML document DOM you have already?
+what if you want to add content to a parsed XML document DOM you have already?
 
 To wrap an :class:`~xml4h.nodes.Element` DOM node with a builder you simply
 provide the element node to the same ``builder()`` method used previously and
 it will do the right thing.
 
 Here is an example of parsing an existing XML document, locating an element
-of interest, constructing a builder from that element, and adding some
+of interest, constructing a builder from that element, and adding some new
 content. Luckily, the code is simpler than that description...
 
 ::
@@ -258,9 +255,11 @@ content. Luckily, the code is simpler than that description...
     >>> lob_builder = xml4h.build(lob_film_elem)
 
     >>> # Add content
-    >>> (lob_builder.attrs(stars=5)
-    ...     .elem('Review').t('One of my favourite films!').up()
-    ...     ).write(indent=True)  # doctest:+ELLIPSIS
+    >>> b = (lob_builder.attrs(stars=5)
+    ...     .elem('Review').t('One of my favourite films!').up())
+
+    >>> # See the results
+    >>> lob_builder.write(indent=True)  # doctest:+ELLIPSIS
     <Film stars="5" year="1979">
         <Title>Monty Python's Life of Brian</Title>
         <Description>Brian is born on the first Christmas, in the stable...
