@@ -21,10 +21,6 @@ elif sys.argv[-1] == 'test-coverage':
     os.system(r'nosetests --nocapture'
               r' --with-coverage --cover-package=xml4h')
     sys.exit()
-elif sys.argv[-1] == 'test':
-    os.system(r'nosetests --nocapture --cover-package=xml4h')
-    sys.exit()
-
 
 setup(
     name=xml4h.__title__,
@@ -57,4 +53,5 @@ setup(
         # 'Programming Language :: Python :: 3.1',
         # 'Programming Language :: Python :: 3.2',
     ),
+    test_suite='tests',
 )
