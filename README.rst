@@ -41,6 +41,14 @@ Install *xml4h* with pip::
     $ pip install xml4h
 
 
+Links
+-----
+
+- GitHub for source code and issues: http://github.com/jmurty/xml4h
+- ReadTheDocs for documentation: http://xml4h.readthedocs.org
+- Install from the Python Package Index: http://pypi.python.org/pypi/xml4h
+
+
 Introduction
 ------------
 
