@@ -118,14 +118,23 @@ XPath Querying
 *xml4h* provides a single XPath search method which is available on
 :class:`~xml4h.nodes.Document` and :class:`~xml4h.nodes.Element` nodes:
 
-- :meth:`~xml4h.nodes.XPathMixin.xpath` takes an XPath query string and returns
-  the result which may be a list of elements, a list of attributes, a list of
-  values, or a single value. The result depends entirely on the kind of query
-  you perform.
+:meth:`~xml4h.nodes.XPathMixin.xpath` takes an XPath query string and returns
+the result which may be a list of elements, a list of attributes, a list of
+values, or a single value. The result depends entirely on the kind of query you
+perform.
 
-  XPath queries are well beyond the scope of this documentation but here are
-  some examples like the find queries we saw above, as well as some more
-  complex queries::
+.. note::
+   XPath querying is currently only available if you use the *lxml*
+   implementation library, so you must have *lxml* installed to use
+   :meth:`~xml4h.nodes.XPathMixin.xpath`. You can check whether the XPath
+   feature is available with :meth:`~xml4h.nodes.Node.has_feature`::
+
+       >>> doc.has_feature('xpath')
+       True
+
+XPath queries are powerful and complex so we cannot describe them in detail
+here, but we can at least present some useful examples. Here are queries that
+perform the same work as the find queries we saw above::
 
       >>> # Query for ALL elements in the document
       >>> elems = doc.xpath('//*')  # doctest:+ELLIPSIS
@@ -146,6 +155,10 @@ XPath Querying
       >>> film_elem.xpath('Title')
       [<xml4h.nodes.Element: "Title">]
 
+You can also do things with XPath queries that you simply cannot with the
+*find* method, such as find all the attributes of a certain name or apply
+rich constraints to the query::
+
       >>> # Query for all year attributes
       >>> doc.xpath('//@year')
       ['1971', '1974', '1979', '1982', '1983', '2009', '2012']
@@ -154,14 +167,77 @@ XPath Querying
       >>> doc.xpath('//Film[@year="1982"]/Title/text()')
       ['Monty Python Live at the Hollywood Bowl']
 
-.. note::
-   XPath querying is currently only available if you use the *lxml*
-   implementation library, so you must have *lxml* installed to use
-   :meth:`~xml4h.nodes.XPathMixin.xpath`. You can check whether the XPath
-   feature is available with :meth:`~xml4h.nodes.Node.has_feature`::
 
-       >>> doc.has_feature('xpath')
-       True
+Namespaces and XPath
+....................
+
+Finally, let's discuss how you can run XPath queries on documents with
+namespaces, because unfortunately this is not a simple subject.
+
+First, you need to understand that if you are working with a namespaced
+document your XPath queries must refer to those namespaces or they will not
+find anything::
+
+    >>> # Parse a namespaced version of the Monty Python Films doc
+    >>> ns_doc = xml4h.parse('tests/data/monty_python_films.ns.xml')
+    >>> ns_doc.write(indent=True)  #doctest:+ELLIPSIS
+    <?xml version="1.0" encoding="utf-8"?>
+    <MontyPythonFilms source="http://en.wikipedia.org/wiki/Monty_Python" xmlns="uri:monty-python" xmlns:work="uri:artistic-work">
+        <work:Film year="1971">
+            <Title>And Now for Something Completely Different</Title>
+            ...
+
+    >>> # XPath queries without prefixes won't find namespaced elements
+    >>> ns_doc.xpath('//Film')
+    []
+
+To refer to namespaced nodes in your query the namespace must have a prefix
+alias assigned to it. You can specify prefixes when you call the *xpath* method
+by providing a ``namespaces`` keyword argument with a dictionary of
+alias-to-URI mappings::
+
+    >>> # Specify explicit prefix alias mappings
+    >>> films = ns_doc.xpath('//x:Film', namespaces={'x': 'uri:artistic-work'})
+    >>> len(films)
+    7
+
+Or, preferably, if your document node already has prefix mappings you can use
+them directly::
+
+    >>> # Our root node already has a 'work' prefix defined...
+    >>> ns_doc.root['xmlns:work']
+    'uri:artistic-work'
+
+    >>> # ...so we can use this prefix directly
+    >>> films = ns_doc.root.xpath('//work:Film')
+    >>> len(films)
+    7
+
+Another gotcha is when a document has a default namespace. The default
+namespace applies to every descendent node without its own namespace, but XPath
+doesn't have a good way of dealing with this since there is no such thing as
+a "default namespace" prefix alias.
+
+*xml4h* helps out by providing just such an alias: the underscore (``_``)::
+
+    >>> # Our document root has a default namespace
+    >>> ns_doc.root.ns_uri
+    'uri:monty-python'
+
+    >>> # You need a prefix alias that refers to the default namespace
+    >>> ns_doc.xpath('//Title')
+    []
+
+    >>> # You could specify it explicitly...
+    >>> titles = ns_doc.xpath('//x:Title',
+    ...                       namespaces={'x': ns_doc.root.ns_uri})
+    >>> len(titles)
+    7
+
+    >>> # ...or use xml4h's special default namespace prefix: _
+    >>> titles = ns_doc.xpath('//_:Title')
+    >>> len(titles)
+    7
 
 
 Filtering Node Lists

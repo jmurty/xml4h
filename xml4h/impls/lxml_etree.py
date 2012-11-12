@@ -141,11 +141,12 @@ class LXMLAdapter(XmlImplAdapter):
         converted to the prefix name '_' so it can be used despite empty
         namespace prefixes being unsupported by XPath.
         """
-        try:
+        if isinstance(node, etree._ElementTree):
+            # Document node lxml.etree._ElementTree has no nsmap, lookup root
+            root = self.get_impl_root(node)
+            namespaces_dict = root.nsmap.copy()
+        else:
             namespaces_dict = node.nsmap.copy()
-        except AttributeError:
-            # Document node lxml.etree._ElementTree has no nsmap
-            namespaces_dict = {}
         if 'namespaces' in kwargs:
             namespaces_dict.update(kwargs['namespaces'])
         # Empty namespace prefix is not supported, convert to '_' prefix

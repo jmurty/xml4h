@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<MontyPythonFilms source="http://en.wikipedia.org/wiki/Monty_Python"
+                  xmlns="uri:monty-python" xmlns:work="uri:artistic-work">
+    <work:Film year="1971">
+        <Title>And Now for Something Completely Different</Title>
+        <Description>A collection of sketches from the first and second TV series of Monty Python's Flying Circus purposely re-enacted and shot for film.</Description>
+    </work:Film>
+    <work:Film year="1974">
+        <Title>Monty Python and the Holy Grail</Title>
+        <Description>King Arthur and his knights embark on a low-budget search for the Holy Grail, encountering humorous obstacles along the way. Some of these turned into standalone sketches.</Description>
+    </work:Film>
+    <work:Film year="1979">
+        <Title>Monty Python's Life of Brian</Title>
+        <Description>Brian is born on the first Christmas, in the stable next to Jesus'. He spends his life being mistaken for a messiah.</Description>
+    </work:Film>
+    <work:Film year="1982">
+        <Title>Monty Python Live at the Hollywood Bowl</Title>
+        <Description>A videotape recording directed by Ian MacNaughton of a live performance of sketches. Originally intended for a TV/video special. Transferred to 35mm and given a limited theatrical release in the US.</Description>
+    </work:Film>
+    <work:Film year="1983">
+        <Title>Monty Python's The Meaning of Life</Title>
+        <Description>An examination of the meaning of life in a series of sketches from conception to death and beyond.</Description>
+    </work:Film>
+    <work:Film year="2009">
+        <Title>Monty Python: Almost the Truth (The Lawyer's Cut)</Title>
+        <Description>This film features interviews with all the surviving Python members, along with archive representation for the late Graham Chapman.</Description>
+    </work:Film>
+    <work:Film year="2012">
+        <Title>A Liar's Autobiography: Volume IV</Title>
+        <Description>This is an animated film which is based on the memoir of the late Monty Python member, Graham Chapman.</Description>
+    </work:Film>
+</MontyPythonFilms>

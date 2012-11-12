@@ -396,6 +396,9 @@ class BaseTestNodes(object):
         # Find default namespaced element with helper empty/default prefix '_'
         self.assertEqual([self.xml4h_root],
             self.xml4h_root.xpath('/_:DocRoot'))
+        # Start default namespaced query from Document
+        self.assertEqual([self.xml4h_root],
+            self.xml4h_doc.xpath('/_:DocRoot'))
         # Find all element descendants of root
         self.assertEqual(self.xml4h_root.find(),
             self.xml4h_root.xpath('/_:DocRoot//*'))
