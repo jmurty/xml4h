@@ -87,7 +87,7 @@ And when adding nodes with the API::
     >>> elem4 = root.add_element('Elem4', ns_uri='fourth-ns-uri')
 
     >>> # Attributes can be namespaced too
-    >>> elem4.attrs({'my-ns:attr1': 'value'})
+    >>> elem4.set_attributes({'my-ns:attr1': 'value'})
 
     >>> print elem4.xml()
     <Elem4 my-ns:attr1="value" xmlns="fourth-ns-uri"/>

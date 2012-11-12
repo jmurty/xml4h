@@ -870,14 +870,14 @@ class Element(NameValueNodeMixin,
         # Add new attributes
         self._set_element_attributes(self.impl_node, attr_obj=attr_obj)
 
-    attrib = set_attributes  # Alias
+    attrib = attributes  # Alias
     """
-    Alias of :meth:`set_attributes`
+    Alias of :meth:`attributes`
     """
 
-    attrs = set_attributes  # Alias
+    attrs = attributes  # Alias
     """
-    Alias of :meth:`set_attributes`
+    Alias of :meth:`attributes`
     """
 
     @property
