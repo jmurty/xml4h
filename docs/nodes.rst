@@ -35,6 +35,71 @@ methods for performing common tasks:
   attributes like ``is_element``, ``is_text``, ``is_entity`` etc.
 
 
+.. _magical-node-traversal:
+
+"Magical" Node Traversal
+------------------------
+
+To make it easy to traverse XML documents with a known structure *xml4h*
+performs some minor magic when you look up attributes or keys on Document
+and Element nodes.  If you like, you can take advantage of magical traversal
+to avoid peppering your code with ``find`` and ``xpath`` searches, or with
+``child`` and ``children`` node attribute lookups.
+
+The principle is simple:
+
+- Child elements are available as Python attributes of the parent element
+  class.
+- XML element attributes are available as a Python dict in the owning element.
+
+Here is an example of retrieving information from our Monty Python films
+document using element names as Python attributes (``MontyPythonFilms``,
+``Film``, ``Title``) and XML attribute names as Python keys (``year``)::
+
+    >>> # Parse an example XML document about Monty Python films
+    >>> import xml4h
+    >>> doc = xml4h.parse('tests/data/monty_python_films.xml')
+
+    >>> for film in doc.MontyPythonFilms.Film:
+    ...     print film['year'], ':', film.Title.text  # doctest:+ELLIPSIS
+    1971 : And Now for Something Completely Different
+    1974 : Monty Python and the Holy Grail
+    ...
+
+Python class attribute lookups of child elements work very well when your XML
+document contains only camel-case tag names ``LikeThisOne`` or ``LikeThat``.
+However, if your document contains lower-case tag names there is a chance the
+element names will clash with existing Python attribute or method names in the
+*xml4h* classes.
+
+To work around this potential issue you can add an underscore (``_``)
+character at the end of a magical attribute lookup to avoid the naming clash;
+*xml4h* will remove that character before looking for a child element. For
+example, to look up a child of the element ``elem1`` which is named ``child``,
+the code ``elem1.child_`` will return the child element whereas ``elem1.child``
+would access the :meth:`~xml4h.nodes.Node.child` Node method instead.
+
+.. note::
+   Not all XML child element tag names are accessible using magical traversal.
+   Names with leading underscore characters will not work, and nor will names
+   containing hyphens because they are not valid Python attribute names. If you
+   have to deal with XML names like this use the full API methods like
+   :meth:`~xml4h.nodes.Node.child` and :meth:`~xml4h.nodes.Node.children`
+   instead.
+
+All the gory details about how magical traversal works are documented at
+:class:`~xml4h.nodes.NodeAttrAndChildElementLookupsMixin`.  Depending on how
+you feel about magical behaviour this feature might feel like a great
+convenience, or black magic that makes you wary. The right attitude probably
+lies somewhere in the middle...
+
+.. warning::
+   The behaviour of namespaced XML elements and attributes is inconsistent.
+   You can do magical traversal of elements regardless of what namespace the
+   elements are in, but to look up XML attributes with a namespace prefix
+   you must include that prefix in the name e.g. ``prefix:attribute-name``.
+
+
 Searching with Find and XPath
 -----------------------------
 
@@ -46,13 +111,6 @@ relatively simple searches that return :class:`~xml4h.nodes.Element` results,
 whereas you need to be familiar with XPath query syntax to search effectively
 with the ``xpath`` method but you can perform more complex searches and get
 results other than just elements.
-
-Below are some examples of both kinds of search, but first we need to load
-an example document to search::
-
-      >>> # Parse an example XML document about Monty Python films
-      >>> import xml4h
-      >>> doc = xml4h.parse('tests/data/monty_python_films.xml')
 
 Find Methods
 ............
@@ -315,52 +373,6 @@ nodes you need:
       ...         filter_fn=lambda node: node.attributes['year'] == '1979'):
       ...     print n.Title.text
       Monty Python's Life of Brian
-
-
-.. _magical-node-traversal:
-
-"Magical" Node Traversal
-------------------------
-
-To make it easy to traverse XML documents with a known structure *xml4h*
-performs some minor magic when you look up attributes or keys on Document
-and Element nodes.  If you like, you can take advantage of magical traversal
-to avoid peppering your code with ``find`` and ``xpath`` searches, or with
-filter constraints on ``children`` node attributes.
-
-Depending on how you feel about magical behaviour this feature might feel like
-a great convenience, or black magic that makes you wary. The right attitude
-probably lies somewhere in the middle...
-
-Here is an example of retrieving information from our Monty Python films
-document using element names as Python attributes (``MontyPythonFilms``,
-``Film``, ``Title``) and XML attribute names as Python keys (``year``)::
-
-    >>> for film in doc.MontyPythonFilms.Film:
-    ...     print film['year'], ':', film.Title.text  # doctest:+ELLIPSIS
-    1971 : And Now for Something Completely Different
-    1974 : Monty Python and the Holy Grail
-    ...
-
-To minimise the chances of unexpected behaviour from too much black magic,
-*xml4h* has restrictions on the kind of Python attribute names it will accept
-when looking up child Elements. The attribute name:
-
-- cannot start with any underscore characters
-- must contain at least one uppercase character, or
-- if your XML element names are all lowercase (yuck!) you can tell *xml4h* to
-  treat it specially by adding a single underscore character to the end of the
-  name. For example, to traverse a child element named ``myelement`` you
-  would use the Python attribute name ``myelement_``.
-
-There are more gory details in the documentation at
-:class:`~xml4h.nodes.NodeAttrAndChildElementLookupsMixin`.
-
-.. note::
-   The behaviour of namespaced XML elements and attributes is inconsistent.
-   You can do magical traversal of elements regardless of what namespace the
-   elements are in, but to look up XML attributes with a namespace prefix
-   you must include that prefix in the name e.g. ``prefix:attribute-name``.
 
 
 Manipulating Nodes and Elements

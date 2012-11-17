@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import types
 try:
     import unittest2 as unittest
 except ImportError:
@@ -472,18 +473,23 @@ class BaseTestNodes(object):
         # Look up a namespaced element; namespace prefix is not required
         self.assertEqual(self.elem3_second,
             self.xml4h_doc.DocRoot.Element4.Element3.impl_node)
+        # Look up also works with trailing underscores
+        self.assertEqual(self.elem3_second,
+            self.xml4h_doc.DocRoot_.Element4_.Element3_.impl_node)
 
-        # Create and look up a lowercase element name, need trailing underscore
+        # Add and look up a lowercase element name:
         self.xml4h_root.add_element('lowercasename', text='value')
+        # Magical traversal works as normal...
+        self.assertEqual('value', self.xml4h_root.lowercasename.text)
+        # ...and also works with trailing underscores
         self.assertEqual('value', self.xml4h_root.lowercasename_.text)
-        try:
-            self.xml4h_root.lowercasename.text
-            self.fail('Expected AttributeError')
-        except AttributeError, e:
-            self.assertEqual(
-                """<xml4h.nodes.Element: "DocRoot"> object"""
-                """ has no attribute 'lowercasename'""",
-                str(e))
+
+        # Add and look up an element name that clashes with class attribute
+        self.xml4h_root.add_element('child', text='value2')
+        # Normal magical traversal finds class attribute, not child element
+        self.assertEqual(types.MethodType, type(self.xml4h_root.child))
+        # Trailing underscore allows for look up of child element
+        self.assertEqual('value2', self.xml4h_root.child_.text)
 
         # Create and look up an illegal element name
         self.xml4h_root.add_element('_leadingunderscore', text='value2')

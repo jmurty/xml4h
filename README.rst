@@ -53,7 +53,7 @@ Introduction
 ------------
 
 Here is an example of parsing and reading data from an XML document using
-"magic" element and attribute lookups::
+"magical" element and attribute lookups::
 
     >>> import xml4h
     >>> doc = xml4h.parse('tests/data/monty_python_films.xml')

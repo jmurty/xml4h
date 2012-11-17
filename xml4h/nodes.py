@@ -536,17 +536,14 @@ class NodeAttrAndChildElementLookupsMixin(object):
         """
         Retrieve this node's child element by tag name regardless of the
         elements namespace, assuming the name given doesn't match an existing
-        attribute of this class.
+        attribute or method.
 
-        :param string child_name: tag name of the child element. The name must
-            match the following pattern rules for *xml4h* to attempt a child
-            element lookup, otherwise an AttributeError will be raised
-            immediately:
+        :param string child_name: tag name of the child element to look up.
+            To avoid name clashes with class attributes the child name may
+            includes a trailing underscore (``_``) character, which is removed
+            to get the real child tag name.
+            The child name must not begin with underscore characters.
 
-            - name contains one or more uppercase characters, or
-            - name is all lowercase but ends with a single underscore character
-            - **in all cases** the name does not begin with an underscore
-              character.
         :return: the type of the return value depends on how many child
             elements match the name:
 
@@ -559,10 +556,10 @@ class NodeAttrAndChildElementLookupsMixin(object):
         if child_name.startswith('_'):
             # Never match names with underscore leaders, for safety
             pass
-        elif child_name != child_name.lower() or child_name.endswith('_'):
+        else:
+            # If name is munged with trailing underscore, remove it
             if child_name.endswith('_'):
                 child_name = child_name[:-1]
-            # Names with uppercase characters or trailing '_' are fair game
             results = self.children(local_name=child_name, node_type=Element)
             if len(results) == 1:
                 return results[0]
