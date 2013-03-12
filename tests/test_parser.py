@@ -41,6 +41,9 @@ class BaseParserTest(object):
         return os.path.join(
             os.path.dirname(__file__), 'data/example_doc.unicode.xml')
 
+    def parse(self, xml_str):
+        return xml4h.parse(xml_str, adapter=self.adapter)
+
     def test_auto_detect_filename_or_xml_data(self):
         # String with a '<' is parsed as literal XML data
         dom = self.parse('\n\n\t<MyDoc><Elem1>content</Elem1></MyDoc>')
@@ -111,9 +114,6 @@ class TestXmlDomParser(unittest.TestCase, BaseParserTest):
     def adapter(self):
         return xml4h.XmlDomImplAdapter
 
-    def parse(self, xml_str):
-        return xml4h.parse(xml_str, adapter=self.adapter)
-
 
 class TestLXMLEtreeParser(unittest.TestCase, BaseParserTest):
 
@@ -123,5 +123,11 @@ class TestLXMLEtreeParser(unittest.TestCase, BaseParserTest):
             self.skipTest("lxml library is not installed")
         return xml4h.LXMLAdapter
 
-    def parse(self, xml_str):
-        return xml4h.parse(xml_str, adapter=self.adapter)
+
+class TestElementTreeEtreeParser(unittest.TestCase, BaseParserTest):
+
+    @property
+    def adapter(self):
+        if not xml4h.ElementTreeAdapter.is_available():
+            self.skipTest("ElementTree library is not installed")
+        return xml4h.ElementTreeAdapter

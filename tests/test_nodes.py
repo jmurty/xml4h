@@ -608,3 +608,56 @@ class TestLXMLNodes(BaseTestNodes, unittest.TestCase):
         self.xml4h_doc = xml4h.LXMLAdapter.wrap_document(doc)
         self.xml4h_root = self.xml4h_doc.root
         self.xml4h_text = xml4h.LXMLAdapter.wrap_node(self.text_node, self.doc)
+
+
+class TestElementTreeNodes(BaseTestNodes, unittest.TestCase):
+
+    @property
+    def my_adapter(self):
+        return xml4h.ElementTreeAdapter
+
+    def setUp(self):
+        if not xml4h.ElementTreeAdapter.is_available():
+            self.skipTest("ElementTree library is not installed")
+        import xml.etree.ElementTree as ET
+        # Build a DOM using minidom for testing
+        self.root_elem = ET.Element('{urn:test}DocRoot', nsmap={
+            None: 'urn:test'})
+        doc = ET.ElementTree(self.root_elem)
+
+        self.elem1 = ET.Element(u'元素1',
+            nsmap={'ns1': 'urn:ns1'})
+        self.elem1.attrib['a'] = '1'
+        self.elem1.attrib['{urn:ns1}b'] = '2'
+        self.elem2 = ET.Element('Element2')
+        self.elem3 = ET.Element('{urn:ns1}Element3',
+            nsmap={None: 'urn:ns1'})
+        self.elem4 = ET.Element('{urn:ns1}Element4',
+            nsmap={None: 'urn:ns1'})
+        self.elem2_second = ET.Element('Element2')
+        self.elem3_second = ET.Element('{urn:ns2}Element3',
+            nsmap={'ns2': 'urn:ns2'})
+
+        self.text_node = xml4h.impls.xml_etree_elementtree.ElementTreeText(
+            'Some text', self.elem1)
+        self.elem1.text = self.text_node.text
+        self.cdata_node = xml4h.impls.xml_etree_elementtree.ElementTreeText(
+            'Some cdata', self.elem2, is_cdata=True)
+        self.elem2.text = self.cdata_node.text
+        self.comment_node = ET.Comment('A comment')
+        self.instruction_node = ET.ProcessingInstruction(
+           'pi-target', 'pi-data')
+        self.root_elem.append(self.elem1)
+        self.root_elem.append(self.elem2)
+        self.root_elem.append(self.elem3)
+        self.root_elem.append(self.elem4)
+        self.elem3.append(self.elem2_second)
+        self.elem2_second.append(self.comment_node)
+        self.elem4.append(self.elem3_second)
+        self.elem3_second.append(self.instruction_node)
+
+        self.doc = doc
+        self.xml4h_doc = xml4h.ElementTreeAdapter.wrap_document(doc)
+        self.xml4h_root = self.xml4h_doc.root
+        self.xml4h_text = xml4h.ElementTreeAdapter.wrap_node(
+            self.text_node, self.doc)

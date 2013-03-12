@@ -12,6 +12,10 @@ import xml4h
 
 class BaseWriterTest(object):
 
+    @property
+    def my_builder(self):
+        return functools.partial(xml4h.build, adapter=self.adapter)
+
     def setUp(self):
         # Create test document
         self.builder = (
@@ -141,10 +145,6 @@ class TestXmlDomBuilder(BaseWriterTest, unittest.TestCase):
     def adapter(self):
         return xml4h.XmlDomImplAdapter
 
-    @property
-    def my_builder(self):
-        return functools.partial(xml4h.build, adapter=self.adapter)
-
 
 class TestLXMLEtreeBuilder(BaseWriterTest, unittest.TestCase):
     """
@@ -157,6 +157,14 @@ class TestLXMLEtreeBuilder(BaseWriterTest, unittest.TestCase):
             self.skipTest("lxml library is not installed")
         return xml4h.LXMLAdapter
 
+
+class TestElementTreeBuilder(BaseWriterTest, unittest.TestCase):
+    """
+    Tests building with the xml.etree.ElementTree library.
+    """
+
     @property
-    def my_builder(self):
-        return functools.partial(xml4h.build, adapter=self.adapter)
+    def adapter(self):
+        if not xml4h.ElementTreeAdapter.is_available():
+            self.skipTest("ElementTree library is not installed")
+        return xml4h.ElementTreeAdapter

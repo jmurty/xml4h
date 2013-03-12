@@ -39,7 +39,7 @@ class BaseBuilderNodesTest(object):
 
     @property
     def my_builder(self):
-        raise NotImplementedError()
+        return functools.partial(xml4h.build, adapter=self.adapter)
 
     def test_element(self):
         xmlb = self.my_builder('DocRoot')
@@ -743,10 +743,6 @@ class TestXmlDomBuilder(BaseBuilderNodesTest, unittest.TestCase):
     def adapter(self):
         return xml4h.XmlDomImplAdapter
 
-    @property
-    def my_builder(self):
-        return functools.partial(xml4h.build, adapter=self.adapter)
-
 
 class TestLXMLEtreeBuilder(BaseBuilderNodesTest, unittest.TestCase):
     """
@@ -759,6 +755,14 @@ class TestLXMLEtreeBuilder(BaseBuilderNodesTest, unittest.TestCase):
             self.skipTest("lxml library is not installed")
         return xml4h.LXMLAdapter
 
+
+class TestElementTreeBuilder(BaseBuilderNodesTest, unittest.TestCase):
+    """
+    Test building with the (c)ElementTree library.
+    """
+
     @property
-    def my_builder(self):
-        return functools.partial(xml4h.build, adapter=self.adapter)
+    def adapter(self):
+        if not xml4h.ElementTreeAdapter.is_available():
+            self.skipTest("ElementTree library is not installed")
+        return xml4h.ElementTreeAdapter
