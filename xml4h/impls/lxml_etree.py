@@ -402,7 +402,7 @@ class LXMLAdapter(XmlImplAdapter):
                 for n, v in curr_node.attrib.items():
                     if v == uri and ('{%s}' % nodes.Node.XMLNS_URI) in n:
                         result = n.split('}')[1]
-                        break
+                        return result
                 curr_node = self.get_node_parent(curr_node)
         return result
 
