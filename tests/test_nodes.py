@@ -64,8 +64,8 @@ class BaseTestNodes(object):
         self.assertEqual(self.elem3,
             self.my_adapter.wrap_node(
                 self.elem2_second, self.doc).parent.impl_node)
-        # Parent of text node (Text not stored as node in lxml)
-        if not isinstance(self, TestLXMLNodes):
+        # Parent of text node (Text not stored as node in lxml/ElementTree)
+        if not isinstance(self, (TestLXMLNodes, TestElementTreeNodes)):
             self.assertEqual(self.elem1,
                 self.my_adapter.wrap_node(
                     self.text_node, self.doc).parent.impl_node)
@@ -621,22 +621,21 @@ class TestElementTreeNodes(BaseTestNodes, unittest.TestCase):
             self.skipTest("ElementTree library is not installed")
         import xml.etree.ElementTree as ET
         # Build a DOM using minidom for testing
-        self.root_elem = ET.Element('{urn:test}DocRoot', nsmap={
-            None: 'urn:test'})
+        self.root_elem = ET.Element('{urn:test}DocRoot')
+        ET.register_namespace('', 'urn:test')
         doc = ET.ElementTree(self.root_elem)
 
-        self.elem1 = ET.Element(u'元素1',
-            nsmap={'ns1': 'urn:ns1'})
+        self.elem1 = ET.Element(u'元素1', attrib={'xmlns:ns1': 'urn:ns1'})
         self.elem1.attrib['a'] = '1'
         self.elem1.attrib['{urn:ns1}b'] = '2'
         self.elem2 = ET.Element('Element2')
         self.elem3 = ET.Element('{urn:ns1}Element3',
-            nsmap={None: 'urn:ns1'})
+            attrib={'xmlns': 'urn:ns1'})
         self.elem4 = ET.Element('{urn:ns1}Element4',
-            nsmap={None: 'urn:ns1'})
+            attrib={'xmlns': 'urn:ns1'})
         self.elem2_second = ET.Element('Element2')
         self.elem3_second = ET.Element('{urn:ns2}Element3',
-            nsmap={'ns2': 'urn:ns2'})
+            attrib={'xmlns:ns2': 'urn:ns2'})
 
         self.text_node = xml4h.impls.xml_etree_elementtree.ElementTreeText(
             'Some text', self.elem1)

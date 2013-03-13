@@ -31,9 +31,10 @@ class Builder(object):
         """
         if not isinstance(element, xml4h.nodes.Element):
             raise ValueError(
-                "Builder can only be created with an %s.%s instance"
+                "Builder can only be created with an %s.%s instance, not %s"
                 % (xml4h.nodes.Element.__module__,
-                   xml4h.nodes.Element.__name__))
+                   xml4h.nodes.Element.__name__,
+                   element))
         self._element = element
 
     @property

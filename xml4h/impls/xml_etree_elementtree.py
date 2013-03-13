@@ -63,20 +63,36 @@ class ElementTreeAdapter(XmlImplAdapter):
         else:
             ns_uri = nodes.Node.XMLNS_URI
             root_nsmap[None] = ns_uri
-        root_elem = ET.Element('{%s}%s' % (ns_uri, root_tagname),
-            nsmap=root_nsmap)
+        root_elem = ET.Element('{%s}%s' % (ns_uri, root_tagname))
         doc = ET.ElementTree(root_elem)
+        # Godawful global registration of namespace prefixes is the only option
+        # supported by ET, so we'll handle this more sanely ourselves.
+        doc._xml4h_nsmap = root_nsmap
         return doc
 
+    @property
+    def _ancestry_dict(self):
+        """
+        Return a dictionary mapping of child nodes to the child's parent,
+        if any.
+
+        We're forced to use this awful hack since ElementTree doesn't let us
+        get to a child node's parent node, even in version 1.3.0 which
+        should support this with XPath lookups but actually doesn't.
+        """
+        # TODO Cache (and live-update) this dict for better performance
+        ancestry_dict = dict(
+            (c, p) for p in self._impl_document.getiterator() for c in p)
+        return ancestry_dict
+
     def map_node_to_class(self, node):
-# TODO Fix this awful node type disambiguation hack
-#        if isinstance(node, ET.ProcessingInstruction):
-#            return nodes.ProcessingInstruction
-#        elif isinstance(node, ET.Comment):
-#            return nodes.Comment
         if isinstance(node, BaseET.ElementTree):
             return nodes.Document
-        elif node.tag:
+        elif node.tag == BaseET.ProcessingInstruction:
+            return nodes.ProcessingInstruction
+        elif node.tag == BaseET.Comment:
+            return nodes.Comment
+        elif node.__class__ == BaseET.Element:
             return nodes.Element
         elif isinstance(node, LXMLAttribute):
             return nodes.Attribute
@@ -98,7 +114,9 @@ class ElementTreeAdapter(XmlImplAdapter):
             if ':' in tagname:
                 tagname = tagname.split(':')[1]
             my_nsmap = {None: ns_uri}
-            return ET.Element('{%s}%s' % (ns_uri, tagname), nsmap=my_nsmap)
+            element = ET.Element('{%s}%s' % (ns_uri, tagname))
+            element._xml4h_nsmap = my_nsmap
+            return element
         else:
             return ET.Element(tagname)
 
@@ -124,7 +142,7 @@ class ElementTreeAdapter(XmlImplAdapter):
             if n == node:
                 continue
             # Ignore non-Elements
-            if not n.__class__ == ET.Element:
+            if not isinstance(n.tag, basestring):
                 continue
             if ns_uri != '*' and self.get_node_namespace_uri(n) != ns_uri:
                 continue
@@ -161,7 +179,15 @@ class ElementTreeAdapter(XmlImplAdapter):
         # Include XMLNS namespace if it's not already defined
         if not 'xmlns' in namespaces_dict:
             namespaces_dict['xmlns'] = nodes.Node.XMLNS_URI
-        return node.findall(xpath, namespaces=namespaces_dict)
+        if xpath.startswith('/'):
+            # ElementTree does not support absolute XPath queries on nodes
+            return self._impl_document.findall(
+                # Hack to work around 1.3-and-earlier bug on '/' xpaths
+                # TODO Avoid using hack on post-1.3 versions?
+                '.' + xpath,
+                namespaces=namespaces_dict)
+        else:
+            return node.findall(xpath, namespaces=namespaces_dict)
 
     # Node implementation methods
 
@@ -172,25 +198,31 @@ class ElementTreeAdapter(XmlImplAdapter):
             return node.namespace_uri
         elif isinstance(node, BaseET.ElementTree):
             return None
-        elif isinstance(node, ET.Element):
+        elif isinstance(node, BaseET.Element):
             qname, ns_uri = self._unpack_name(node.tag, node)[:2]
             return ns_uri
         else:
             return None
 
     def set_node_namespace_uri(self, node, ns_uri):
-        node.nsmap[None] = ns_uri
+        if not hasattr(node, '_xml4h_nsmap'):
+            node._xml4h_nsmap = {}
+        node._xml4h_nsmap[None] = ns_uri
 
     def get_node_parent(self, node):
+        parent = None
+        # Root document has no parent
         if isinstance(node, BaseET.ElementTree):
-            return None
+            pass
+        # Return ElementTree as root element's parent
+        elif node == self.get_impl_root(node):
+            parent = self._impl_document
         else:
-            # TODO Better/faster way to get parent?
-            parent = node.find('..')
-            # Return ElementTree as root element's parent
-            if parent is None:
-                return self.impl_document
-            return parent
+            try:
+                parent = self._ancestry_dict[node]
+            except KeyError:
+                pass
+        return parent
 
     def get_node_children(self, node):
         if isinstance(node, BaseET.ElementTree):
@@ -198,20 +230,21 @@ class ElementTreeAdapter(XmlImplAdapter):
         else:
             if not hasattr(node, 'getchildren'):
                 return []
-            children = node.getchildren()
+            children = list(node.getchildren())
             # Hack to treat text attribute as child text nodes
             if node.text is not None:
                 children.insert(0, ElementTreeText(node.text, parent=node))
         return children
 
     def get_node_name(self, node):
-# TODO
-#        if isinstance(node, ET.Comment):
-#            return '#comment'
-#        elif isinstance(node, ET.ProcessingInstruction):
-#            return node.target
-        if self.get_node_name_prefix(node) is not None:
-            return '%s:%s' % (node.prefix, self.get_node_local_name(node))
+        if node.tag == BaseET.Comment:
+            return '#comment'
+        elif node.tag == BaseET.ProcessingInstruction:
+            name, target = node.text.split(' ')
+            return target
+        prefix = self.get_node_name_prefix(node)
+        if prefix is not None:
+            return '%s:%s' % (prefix, self.get_node_local_name(node))
         else:
             return self.get_node_local_name(node)
 
@@ -222,10 +255,18 @@ class ElementTreeAdapter(XmlImplAdapter):
         return re.sub('{.*}', '', node.tag)
 
     def get_node_name_prefix(self, node):
-        return node.prefix
+        # Ignore non-elements
+        if not isinstance(node.tag, basestring):
+            return None
+        match = re.match(r'{(.*)}', node.tag)
+        if match is None:
+            return None
+        else:
+            ns_uri = match.group(1)
+            return self.lookup_ns_prefix_for_uri(node, ns_uri)
 
     def get_node_value(self, node):
-        if isinstance(node, (ET.ProcessingInstruction, ET.Comment)):
+        if node.tag in (BaseET.ProcessingInstruction, BaseET.Comment):
             return node.text
         else:
             return node.value
@@ -393,23 +434,28 @@ class ElementTreeAdapter(XmlImplAdapter):
         if uri == nodes.Node.XMLNS_URI:
             return 'xmlns'
         result = None
-        if hasattr(node, 'nsmap') and uri in node.nsmap.values():
-            for n, v in node.nsmap.items():
+        # Lookup namespace URI in ET's awful global namespace/prefix registry
+        if hasattr(BaseET, '_namespace_map') and uri in BaseET._namespace_map:
+            result = BaseET._namespace_map[uri]
+            if result == '':
+                result = None
+        elif hasattr(node, '_xml4h_nsmap') and uri in node._xml4h_nsmap.values():
+            for n, v in node._xml4h_nsmap.items():
                 if v == uri:
                     result = n
                     break
-        # TODO This is a slow hack necessary due to lxml's immutable nsmap
         if result is None or re.match('ns\d', result):
-            # We either have no namespace prefix in the nsmap, in which case we
-            # will try looking for a matching xmlns attribute, or we have
-            # a namespace prefix that was probably assigned automatically by
-            # lxml and we'd rather use a human-assigned prefix if available.
-            curr_node = node  # self.get_node_parent(node)
-            while curr_node.__class__ == ET.Element:
+            # We either have no namespace prefix in the global mapping, in
+            # which case we will try looking for a matching xmlns attribute,
+            # or we have a namespace prefix that was probably assigned
+            # automatically by ElementTree and we'd rather use a
+            # human-assigned prefix if available.
+            curr_node = node
+            while curr_node.__class__ == BaseET.Element:
                 for n, v in curr_node.attrib.items():
-                    if v == uri and ('{%s}' % nodes.Node.XMLNS_URI) in n:
-                        result = n.split('}')[1]
-                        break
+                    if v == uri and n.startswith('xmlns:'):
+                        result = n.split(':')[1]
+                        return result
                 curr_node = self.get_node_parent(curr_node)
         return result
 
@@ -449,8 +495,8 @@ class ElementTreeAdapter(XmlImplAdapter):
         """
         curr_node = self.get_node_parent(node)
         while curr_node.__class__ == ET.Element:
-            if (hasattr(curr_node, 'nsmap')
-                    and curr_node.nsmap.get(name) == value):
+            if (hasattr(curr_node, '_xml4h_nsmap')
+                    and curr_node._xml4h_nsmap.get(name) == value):
                 return True
             for n, v in curr_node.attrib.items():
                 if v == value and '{%s}' % nodes.Node.XMLNS_URI in n:
