@@ -56,7 +56,7 @@ class Node(object):
 
     def __str__(self):
         # TODO Degrade non-ASCII characters gracefully
-        return str(self.__unicode__())
+        return self.__unicode__().encode(encoding='ascii', errors='replace')
 
     def __repr__(self):
         return self.__str__()
@@ -1103,7 +1103,7 @@ class AttributeDict(object):
 
     def __str__(self):
         # TODO Degrade non-ASCII characters gracefully
-        return str(self.__unicode__())
+        return self.__unicode__().encode(encoding='ascii', errors='replace')
 
     def __repr__(self):
         return self.__str__()
