@@ -305,8 +305,9 @@ class LXMLAdapter(XmlImplAdapter):
         elif ':' in name:
             prefix, name = name.split(':')
             if prefix == 'xmlns':
-                prefix = None
-            name = '{%s}%s' % (element.nsmap[prefix], name)
+                name = '{%s}%s' % (nodes.Node.XMLNS_URI, name)
+            else:
+                name = '{%s}%s' % (element.nsmap[prefix], name)
         if name in element.attrib:
             del(element.attrib[name])
 

@@ -92,15 +92,18 @@ class ElementTreeAdapter(XmlImplAdapter):
             return nodes.ProcessingInstruction
         elif node.tag == BaseET.Comment:
             return nodes.Comment
-        elif node.__class__ == BaseET.Element:
-            return nodes.Element
-        elif isinstance(node, LXMLAttribute):
+        elif isinstance(node, ETAttribute):
             return nodes.Attribute
         elif isinstance(node, ElementTreeText):
             if node.is_cdata:
                 return nodes.CDATA
             else:
                 return nodes.Text
+        elif isinstance(node, BaseET.Element):
+            return nodes.Element
+        # TODO: More reliable & explicit way of detecting cElementTree Element?
+        elif isinstance(node.tag, basestring):
+            return nodes.Element
         raise Exception(
             'Unrecognized type for implementation node: %s' % node)
 
@@ -113,9 +116,9 @@ class ElementTreeAdapter(XmlImplAdapter):
         if ns_uri is not None:
             if ':' in tagname:
                 tagname = tagname.split(':')[1]
-            my_nsmap = {None: ns_uri}
             element = ET.Element('{%s}%s' % (ns_uri, tagname))
-            element._xml4h_nsmap = my_nsmap
+#            my_nsmap = {None: ns_uri}
+#            element._xml4h_nsmap = my_nsmap
             return element
         else:
             return ET.Element(tagname)
@@ -176,25 +179,43 @@ class ElementTreeAdapter(XmlImplAdapter):
         if None in namespaces_dict:
             default_ns_uri = namespaces_dict.pop(None)
             namespaces_dict['_'] = default_ns_uri
+        # TODO: Fix/improve this awful hack!
+        elif '}' in self._impl_document._root.tag:
+            default_ns_uri = self._impl_document._root.tag.split('}')[0][1:]
+            namespaces_dict['_'] = default_ns_uri
         # Include XMLNS namespace if it's not already defined
         if not 'xmlns' in namespaces_dict:
             namespaces_dict['xmlns'] = nodes.Node.XMLNS_URI
+        # WARNING: Awful hacks ahead...
+        munged_xpath = xpath
+        munged_node = node
+        force_include_root = False
         if xpath.startswith('/'):
             # ElementTree does not support absolute XPath queries on nodes
-            return self._impl_document.findall(
+            munged_node = self._impl_document
+            if xpath in ('/', '/*'):
+                # Hack to lookup document root
+                munged_xpath = '.'
+            else:
                 # Hack to work around 1.3-and-earlier bug on '/' xpaths
                 # TODO Avoid using hack on post-1.3 versions?
-                '.' + xpath,
-                namespaces=namespaces_dict)
-        else:
-            return node.findall(xpath, namespaces=namespaces_dict)
+                munged_xpath = '.' + xpath
+                force_include_root = True
+        result_nodes = munged_node.findall(
+            munged_xpath, namespaces=namespaces_dict)
+        # Need to manually remove non-Elements from result nodes
+        result_nodes = [
+            n for n in result_nodes if isinstance(n.tag, basestring)]
+        if force_include_root:
+            result_nodes = [self._impl_document.getroot()] + result_nodes
+        return result_nodes
 
     # Node implementation methods
 
     def get_node_namespace_uri(self, node):
         if '}' in node.tag:
             return node.tag.split('}')[0][1:]
-        elif isinstance(node, LXMLAttribute):
+        elif isinstance(node, ETAttribute):
             return node.namespace_uri
         elif isinstance(node, BaseET.ElementTree):
             return None
@@ -258,6 +279,11 @@ class ElementTreeAdapter(XmlImplAdapter):
         # Ignore non-elements
         if not isinstance(node.tag, basestring):
             return None
+        # Believe nodes that know their own prefix (likely only ETAttribute)
+        if hasattr(node, 'prefix'):
+            return node.prefix
+        # TODO Centralise namespace/prefix recognition/extraction
+        # Parse
         match = re.match(r'{(.*)}', node.tag)
         if match is None:
             return None
@@ -285,7 +311,7 @@ class ElementTreeAdapter(XmlImplAdapter):
         attribs_by_qname = {}
         for n, v in element.attrib.items():
             qname, ns_uri, prefix, local_name = self._unpack_name(n, element)
-            attribs_by_qname[qname] = LXMLAttribute(
+            attribs_by_qname[qname] = ETAttribute(
                 qname, ns_uri, prefix, local_name, v, element)
         # Include namespace declarations, which we also treat as attributes
 #        if element.nsmap:
@@ -301,7 +327,7 @@ class ElementTreeAdapter(XmlImplAdapter):
 #                    ns_attr_name = 'xmlns:%s' % n
 #                qname, ns_uri, prefix, local_name = self._unpack_name(
 #                    ns_attr_name, element)
-#                attribs_by_qname[qname] = LXMLAttribute(
+#                attribs_by_qname[qname] = ETAttribute(
 #                    qname, ns_uri, prefix, local_name, v, element)
         return attribs_by_qname.values()
 
@@ -351,10 +377,11 @@ class ElementTreeAdapter(XmlImplAdapter):
         if ns_uri is not None:
             name = '{%s}%s' % (ns_uri, name)
         elif ':' in name:
-            prefix, name = name.split(':')
-            if prefix == 'xmlns':
-                prefix = None
-            name = '{%s}%s' % (element.nsmap[prefix], name)
+            prefix, local_name = name.split(':')
+            if prefix != 'xmlns':
+                ns_attr_name = 'xmlns:%s' % prefix
+                ns_uri = self.lookup_ns_uri_by_attr_name(element, ns_attr_name)
+                name = '{%s}%s' % (ns_uri, local_name)
         if name in element.attrib:
             del(element.attrib[name])
 
@@ -453,9 +480,13 @@ class ElementTreeAdapter(XmlImplAdapter):
             curr_node = node
             while curr_node.__class__ == BaseET.Element:
                 for n, v in curr_node.attrib.items():
-                    if v == uri and n.startswith('xmlns:'):
-                        result = n.split(':')[1]
-                        return result
+                    if v == uri:
+                        if n.startswith('xmlns:'):
+                            result = n.split(':')[1]
+                            return result
+                        elif n.startswith('{%s}' % nodes.Node.XMLNS_URI):
+                            result = n.split('}')[1]
+                            return result
                 curr_node = self.get_node_parent(curr_node)
         return result
 
@@ -537,7 +568,7 @@ class ElementTreeText(object):
             return "#text"
 
 
-class LXMLAttribute(object):
+class ETAttribute(object):
 
     def __init__(self, qname, ns_uri, prefix, local_name, value, element):
         self._qname, self._ns_uri, self._prefix, self._local_name = (

@@ -247,34 +247,44 @@ class BaseTestNodes(object):
         # Set attributes via dict assignment (pre-existing attrs are deleted)
         wrapped_elem.attributes = {
             'a': 100,  # effectively replaces prior 'a' attribute
-            'xmlns:ns1': 'urn:ns1',  # namespace definition
-            'ns1:d': -3,  # attribute with namespace prefix
-            '{urn:ns1}x': -5  # attribute with etree-style namespace URI
+            'xmlns:ns2': 'urn:ns2',  # namespace definition
+            'ns2:d': -3,  # attribute with namespace prefix
+            '{urn:ns2}x': -5  # attribute with etree-style namespace URI
             }
-        self.assertEqual(['a', 'ns1:d', 'ns1:x', 'xmlns:ns1'],
-            [a.name for a in wrapped_elem.attribute_nodes])
+        if self.my_adapter == xml4h.LXMLAdapter:
+            # Cannot delete pre-existing namespaces in lxml. For similar
+            # subsequent tests we use subset comparisons
+            self.assertEqual(['a', 'ns2:d', 'ns2:x',
+                'xmlns:ns1',  # <= Cannot delete/clear this ns attr
+                'xmlns:ns2'],
+                [a.name for a in wrapped_elem.attribute_nodes])
+        else:
+            self.assertEqual(['a', 'ns2:d', 'ns2:x', 'xmlns:ns2'],
+                [a.name for a in wrapped_elem.attribute_nodes])
         self.assertEqual('100', wrapped_elem.attributes['a'])
-        self.assertEqual('-3', wrapped_elem.attributes['ns1:d'])
-        self.assertEqual('urn:ns1', wrapped_elem.attributes['xmlns:ns1'])
-        self.assertEqual('-5', wrapped_elem.attributes['ns1:x'])
-        self.assertEqual('-5', wrapped_elem.attributes['{urn:ns1}x'])
+        self.assertEqual('-3', wrapped_elem.attributes['ns2:d'])
+        self.assertEqual('urn:ns2', wrapped_elem.attributes['xmlns:ns2'])
+        self.assertEqual('-5', wrapped_elem.attributes['ns2:x'])
+        self.assertEqual('-5', wrapped_elem.attributes['{urn:ns2}x'])
         # Set/replace attributes via dict modification
         wrapped_elem.attributes['a'] = 200
         wrapped_elem.attributes['e'] = 'E'
-        self.assertEqual(['a', 'e', 'ns1:d', 'ns1:x', 'xmlns:ns1'],
-            [a.name for a in wrapped_elem.attribute_nodes])
+        self.assertTrue(
+            set(['a', 'e', 'ns2:d', 'ns2:x', 'xmlns:ns2']).issubset(
+            set([a.name for a in wrapped_elem.attribute_nodes])))
         self.assertEqual('200', wrapped_elem.attributes['a'])
-        self.assertEqual('-3', wrapped_elem.attributes['ns1:d'])
+        self.assertEqual('-3', wrapped_elem.attributes['ns2:d'])
         self.assertEqual('E', wrapped_elem.attributes['e'])
         # In-place modifications to attribute reflected in element
         attr_dict = wrapped_elem.attributes
         attr_dict['a'] = 'A'  # Modify
         attr_dict['b'] = 'B'  # Add
         del(attr_dict['e'])  # Delete
-        self.assertEqual(['a', 'b', 'ns1:d', 'ns1:x', 'xmlns:ns1'],
-            [a.name for a in wrapped_elem.attribute_nodes])
+        self.assertTrue(
+            set(['a', 'b', 'ns2:d', 'ns2:x', 'xmlns:ns2']).issubset(
+            set([a.name for a in wrapped_elem.attribute_nodes])))
         self.assertEqual('A', wrapped_elem.attributes['a'])
-        self.assertEqual('-3', wrapped_elem.attributes['ns1:d'])
+        self.assertEqual('-3', wrapped_elem.attributes['ns2:d'])
         self.assertEqual(None, wrapped_elem.attributes['e'])
         # Contains works on attribute dict
         self.assertTrue('a' in wrapped_elem.attributes)
@@ -375,10 +385,13 @@ class BaseTestNodes(object):
             self.my_adapter.has_feature('xpath'),
             self.xml4h_root.has_feature('xpath'))
         # XPath is available in lxml adapter
-        if isinstance(self.my_adapter, xml4h.LXMLAdapter):
+        if self.my_adapter == xml4h.LXMLAdapter:
+            self.assertTrue(self.my_adapter.has_feature('xpath'))
+        # XPath is available in ElementTree adapter
+        if self.my_adapter == xml4h.ElementTreeAdapter:
             self.assertTrue(self.my_adapter.has_feature('xpath'))
         # XPath is not available in minidom adapter
-        if isinstance(self.my_adapter, xml4h.XmlDomImplAdapter):
+        if self.my_adapter == xml4h.XmlDomImplAdapter:
             self.assertFalse(self.my_adapter.has_feature('xpath'))
 
     def test_xpath(self):
@@ -392,8 +405,8 @@ class BaseTestNodes(object):
         self.assertEqual([self.xml4h_root], self.xml4h_root.xpath('/*'))
         # Find all elements in document
         elems = self.xml4h_root.xpath('//*')
-        self.assertEqual(7, len(elems))
         self.assertEqual(self.xml4h_root.document.find(), elems)
+        self.assertEqual(7, len(elems))
         # Find default namespaced element with helper empty/default prefix '_'
         self.assertEqual([self.xml4h_root],
             self.xml4h_root.xpath('/_:DocRoot'))
@@ -620,6 +633,11 @@ class TestElementTreeNodes(BaseTestNodes, unittest.TestCase):
         if not xml4h.ElementTreeAdapter.is_available():
             self.skipTest("ElementTree library is not installed")
         import xml.etree.ElementTree as ET
+# TODO cElementTree support
+#        try:
+#            import xml.etree.ElementTree as ET
+#        except ImportError:
+#            import xml.etree.ElementTree as ET
         # Build a DOM using minidom for testing
         self.root_elem = ET.Element('{urn:test}DocRoot')
         ET.register_namespace('', 'urn:test')
