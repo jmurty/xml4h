@@ -328,7 +328,12 @@ class ElementTreeAdapter(XmlImplAdapter):
             # with a local default namespace declaration
             if node.attrib.get('xmlns') == ns_uri:
                 return None
-            return self.lookup_ns_prefix_for_uri(node, ns_uri)
+            ns_prefix = self.lookup_ns_prefix_for_uri(node, ns_uri)
+            # Don't add unnecessary excess namespace prefixes for default ns
+            if ns_prefix == 'xmlns':
+                return None
+            else:
+                return ns_prefix
 
     def get_node_value(self, node):
         if node.tag in (BaseET.ProcessingInstruction, BaseET.Comment):
