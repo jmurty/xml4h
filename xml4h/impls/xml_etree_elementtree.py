@@ -1,10 +1,12 @@
 import re
 import copy
 
+from StringIO import StringIO
+
 from xml4h.impls.interface import XmlImplAdapter
 from xml4h import nodes
 
-# Use faster C-basedcElementTree implementation if available
+# Use faster C-based ElementTree implementation if available
 try:
     import xml.etree.cElementTree as ET
 except ImportError:
@@ -41,15 +43,38 @@ class ElementTreeAdapter(XmlImplAdapter):
 
     @classmethod
     def parse_string(cls, xml_str, ignore_whitespace_text_nodes=True):
-        impl_root_elem = ET.fromstring(xml_str)
-        wrapped_doc = ElementTreeAdapter.wrap_document(impl_root_elem.getroottree())
-        if ignore_whitespace_text_nodes:
-            cls.ignore_whitespace_text_nodes(wrapped_doc)
-        return wrapped_doc
+        return cls.parse_file(
+            StringIO(xml_str),
+            ignore_whitespace_text_nodes=ignore_whitespace_text_nodes)
 
     @classmethod
     def parse_file(cls, xml_file_path, ignore_whitespace_text_nodes=True):
-        impl_doc = ET.parse(xml_file_path)
+        # To retain explicit xmlns namespace definition attributes, we need to
+        # manually add these elements to the parsed DOM as we go using
+        # iterative parsing per:
+        # effbot.org/zone/element-namespaces.htm#preserving-existing-namespace-attributes
+        events = ('start', 'start-ns')
+        impl_root = None
+        ns_list = []
+        for event, node in ET.iterparse(xml_file_path, events):
+            if event == 'start-ns':
+                # Track namespaces as nodes declared
+                ns_list.append(node)
+            elif event == 'start':
+                # Recognise and retain root node
+                if impl_root is None:
+                    impl_root = node
+                # Add xmlns attributes for each namespace declared
+                for ns_prefix, ns_uri in ns_list:
+                    if ns_prefix:
+                        attr_name = 'xmlns:%s' % ns_prefix
+                    else:
+                        attr_name = 'xmlns'
+                    node.set(attr_name, ns_uri)
+                # Reset namespace list now the corresponding attributes exist
+                ns_list = []
+
+        impl_doc = ET.ElementTree(impl_root)
         wrapped_doc = ElementTreeAdapter.wrap_document(impl_doc)
         if ignore_whitespace_text_nodes:
             cls.ignore_whitespace_text_nodes(wrapped_doc)
@@ -85,6 +110,19 @@ class ElementTreeAdapter(XmlImplAdapter):
             (c, p) for p in self._impl_document.getiterator() for c in p)
         return ancestry_dict
 
+    def _is_node_an_element(self, node):
+        """
+        Return True if the given node is an ElementTree Element, a fact that
+        can be tricky to determine if the cElementTree implementation is
+        used.
+        """
+        # Try the simplest approach first, works for plain old ElementTree
+        if isinstance(node, BaseET.Element):
+            return True
+        # For cElementTree we need to be more cunning (or find a better way)
+        if hasattr(node, 'makeelement') and isinstance(node.tag, basestring):
+            return True
+
     def map_node_to_class(self, node):
         if isinstance(node, BaseET.ElementTree):
             return nodes.Document
@@ -99,10 +137,7 @@ class ElementTreeAdapter(XmlImplAdapter):
                 return nodes.CDATA
             else:
                 return nodes.Text
-        elif isinstance(node, BaseET.Element):
-            return nodes.Element
-        # TODO: More reliable & explicit way of detecting cElementTree Element?
-        elif isinstance(node.tag, basestring):
+        elif self._is_node_an_element(node):
             return nodes.Element
         raise Exception(
             'Unrecognized type for implementation node: %s' % node)
@@ -289,6 +324,10 @@ class ElementTreeAdapter(XmlImplAdapter):
             return None
         else:
             ns_uri = match.group(1)
+            # Don't add unnecessary excess namespace prefixes for elements
+            # with a local default namespace declaration
+            if node.attrib.get('xmlns') == ns_uri:
+                return None
             return self.lookup_ns_prefix_for_uri(node, ns_uri)
 
     def get_node_value(self, node):
@@ -430,7 +469,7 @@ class ElementTreeAdapter(XmlImplAdapter):
 
     def remove_node_child(self, parent, child, destroy_node=True):
         if isinstance(child, ElementTreeText):
-            parent.text = None
+            child._parent.text = None
             return
         parent.remove(child)
         if destroy_node:
@@ -440,13 +479,6 @@ class ElementTreeAdapter(XmlImplAdapter):
             return child
 
     def lookup_ns_uri_by_attr_name(self, node, name):
-        if name == 'xmlns':
-            ns_name = None
-        elif name.startswith('xmlns:'):
-            _, ns_name = name.split(':')
-#        if ns_name in node.nsmap:
-#            return node.nsmap[ns_name]
-#        # If namespace is not in `nsmap` it may be in an XML DOM attribute
 #        # TODO Generalize this block
         curr_node = node
         while (curr_node is not None
@@ -478,7 +510,7 @@ class ElementTreeAdapter(XmlImplAdapter):
             # automatically by ElementTree and we'd rather use a
             # human-assigned prefix if available.
             curr_node = node
-            while curr_node.__class__ == BaseET.Element:
+            while self._is_node_an_element(curr_node):
                 for n, v in curr_node.attrib.items():
                     if v == uri:
                         if n.startswith('xmlns:'):

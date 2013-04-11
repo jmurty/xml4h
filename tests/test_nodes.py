@@ -632,28 +632,27 @@ class TestElementTreeNodes(BaseTestNodes, unittest.TestCase):
     def setUp(self):
         if not xml4h.ElementTreeAdapter.is_available():
             self.skipTest("ElementTree library is not installed")
-        import xml.etree.ElementTree as ET
-# TODO cElementTree support
-#        try:
-#            import xml.etree.ElementTree as ET
-#        except ImportError:
-#            import xml.etree.ElementTree as ET
+        try:
+            import xml.etree.cElementTree as ET
+        except ImportError:
+            import xml.etree.ElementTree as ET
         # Build a DOM using minidom for testing
         self.root_elem = ET.Element('{urn:test}DocRoot')
         ET.register_namespace('', 'urn:test')
         doc = ET.ElementTree(self.root_elem)
 
-        self.elem1 = ET.Element(u'元素1', attrib={'xmlns:ns1': 'urn:ns1'})
+        self.elem1 = ET.Element(u'元素1')
+        self.elem1.attrib['xmlns:ns1'] = 'urn:ns1'
         self.elem1.attrib['a'] = '1'
         self.elem1.attrib['{urn:ns1}b'] = '2'
         self.elem2 = ET.Element('Element2')
-        self.elem3 = ET.Element('{urn:ns1}Element3',
-            attrib={'xmlns': 'urn:ns1'})
-        self.elem4 = ET.Element('{urn:ns1}Element4',
-            attrib={'xmlns': 'urn:ns1'})
+        self.elem3 = ET.Element('{urn:ns1}Element3')
+        self.elem3.attrib['xmlns'] = 'urn:ns1'
+        self.elem4 = ET.Element('{urn:ns1}Element4')
+        self.elem3.attrib['xmlns'] = 'urn:ns1'
         self.elem2_second = ET.Element('Element2')
-        self.elem3_second = ET.Element('{urn:ns2}Element3',
-            attrib={'xmlns:ns2': 'urn:ns2'})
+        self.elem3_second = ET.Element('{urn:ns2}Element3')
+        self.elem3_second.attrib['xmlns:ns2'] = 'urn:ns2'
 
         self.text_node = xml4h.impls.xml_etree_elementtree.ElementTreeText(
             'Some text', self.elem1)
