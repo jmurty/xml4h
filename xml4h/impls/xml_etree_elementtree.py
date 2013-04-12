@@ -35,11 +35,20 @@ class ElementTreeAdapter(XmlImplAdapter):
 
     @classmethod
     def is_available(cls):
+        # Is vital piece of ElementTree module available at all?
         try:
             ET.Element
-            return True
         except:
             return False
+        # We only support ElementTree version 1.3+
+        from distutils.version import StrictVersion
+        if StrictVersion(BaseET.VERSION) < StrictVersion('1.3'):
+            return False
+        # If we are using cElementTree, we only support version 1.0.6+
+        if ET != BaseET:
+            if StrictVersion(ET.VERSION) < StrictVersion('1.0.6'):
+                return False
+        return True
 
     @classmethod
     def parse_string(cls, xml_str, ignore_whitespace_text_nodes=True):

@@ -672,7 +672,9 @@ class TestElementTreeNodes(BaseTestNodes, unittest.TestCase):
 
     def setUp(self):
         if not xml4h.ElementTreeAdapter.is_available():
-            self.skipTest("ElementTree library is not installed")
+            self.skipTest(
+                "ElementTree library is not installed"
+                " or is not sufficiently recent")
         try:
             import xml.etree.cElementTree as ET
         except ImportError:
