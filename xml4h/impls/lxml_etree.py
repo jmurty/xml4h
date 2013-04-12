@@ -331,7 +331,7 @@ class LXMLAdapter(XmlImplAdapter):
                 parent.append(child)
             return child
 
-    def import_node(self, parent, node, clone=False):
+    def import_node(self, parent, node, original_parent=None, clone=False):
         original_node = node
         if clone:
             node = self.clone_node(node)

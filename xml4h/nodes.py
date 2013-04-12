@@ -60,7 +60,8 @@ class Node(object):
 
     def __str__(self):
         # TODO Degrade non-ASCII characters gracefully
-        return self.__unicode__().encode(encoding='ascii', errors='replace')
+        # Avoid keyword args in encode call for compatibility with python 2.6
+        return self.__unicode__().encode('ascii', 'replace')
 
     def __repr__(self):
         return self.__str__()
@@ -372,7 +373,7 @@ class Node(object):
             child_impl_node = node  # Assume it's a valid impl node
         self.adapter.import_node(self.impl_node, child_impl_node, clone=True)
 
-    def transplant_node(self, node, copy=False):
+    def transplant_node(self, node):
         """
         Transplant a node from another document to become a child of this node,
         removing it from the source document.  The node to be transplanted can
@@ -384,9 +385,12 @@ class Node(object):
         """
         if isinstance(node, xml4h.nodes.Node):
             child_impl_node = node.impl_node
+            original_parent_impl_node = node.parent.impl_node
         else:
             child_impl_node = node  # Assume it's a valid impl node
-        self.adapter.import_node(self.impl_node, child_impl_node, clone=False)
+            original_parent_impl_node = self.adapter.get_node_parent(node)
+        self.adapter.import_node(self.impl_node, child_impl_node,
+            original_parent_impl_node, clone=False)
 
     def find(self, name=None, ns_uri=None, first_only=False):
         """

@@ -251,6 +251,8 @@ class ElementTreeAdapter(XmlImplAdapter):
         # Root document has no parent
         if isinstance(node, BaseET.ElementTree):
             pass
+        elif hasattr(node, 'getparent'):
+            parent = node.getparent()
         # Return ElementTree as root element's parent
         elif node == self.get_impl_root(node):
             parent = self._impl_document
@@ -258,7 +260,8 @@ class ElementTreeAdapter(XmlImplAdapter):
             try:
                 parent = self._ancestry_dict[node]
             except KeyError:
-                pass
+                raise exceptions.Xml4hImplementationBug(
+                    'Unable to get parent of node: %s' % node)
         return parent
 
     def get_node_children(self, node):
@@ -433,22 +436,26 @@ class ElementTreeAdapter(XmlImplAdapter):
                 parent.append(child)
             return child
 
-    def import_node(self, parent, node, clone=False):
+    def import_node(self, parent, node, original_parent=None, clone=False):
         original_node = node
-        if clone:
-            node = self.clone_node(node)
+        # We always clone for (c)ElementTree adapter so we can remove original
+        # if necessary
+        node = self.clone_node(node)
         self.add_node_child(parent, node)
         # Hack to remove text node content from original parent by manually
         # deleting matching text content
-        if not clone and isinstance(original_node, ElementTreeText):
-            original_parent = self.get_node_parent(original_node)
-            if original_parent.text == original_node.text:
-                # Must set to None if there would be no remaining text,
-                # otherwise parent element won't realise it's empty
-                original_parent.text = None
+        if not clone:
+            if isinstance(original_node, ElementTreeText):
+                original_parent = self.get_node_parent(original_node)
+                if original_parent.text == original_node.text:
+                    # Must set to None if there would be no remaining text,
+                    # otherwise parent element won't realise it's empty
+                    original_parent.text = None
+                else:
+                    original_parent.text = \
+                        original_parent.text.replace(original_node.text, '', 1)
             else:
-                original_parent.text = \
-                    original_parent.text.replace(original_node.text, '', 1)
+                original_parent.remove(original_node)
 
     def clone_node(self, node, deep=True):
         if deep:

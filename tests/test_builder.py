@@ -37,6 +37,11 @@ class TestBuilderMethods(unittest.TestCase):
 
 class BaseBuilderNodesTest(object):
 
+    def setUp(self):
+        if not self.adapter.is_available():
+            self.skipTest('Library for adapter %s is not available'
+            % self.adapter)
+
     @property
     def my_builder(self):
         return functools.partial(xml4h.build, adapter=self.adapter)
@@ -538,17 +543,17 @@ class BaseBuilderNodesTest(object):
         to another using methods on the xml4h Node.
         """
         cat_b = (
-            xml4h.build('Animal')
+            self.my_builder('Animal')
                 .element('Cat')
                     .element('Feature').text('Independent')
             )
         dog_b = (
-            xml4h.build('Animal')
+            self.my_builder('Animal')
                 .element('Dog')
                     .element('Feature').text('Loyal')
             )
         horse_b = (
-            xml4h.build('Animal')
+            self.my_builder('Animal')
                 .element('Horse')
                     .element('Feature').text('Transport')
             )
@@ -588,17 +593,17 @@ class BaseBuilderNodesTest(object):
         document to another using builder methods.
         """
         cat_b = (
-            xml4h.build('Animal')
+            self.my_builder('Animal')
                 .element('Cat')
                     .element('Feature').text('Independent')
             )
         dog_b = (
-            xml4h.build('Animal')
+            self.my_builder('Animal')
                 .element('Dog')
                     .element('Feature').text('Loyal')
             )
         horse_b = (
-            xml4h.build('Animal')
+            self.my_builder('Animal')
                 .element('Horse')
                     .element('Feature').text('Transport')
             )
@@ -638,7 +643,7 @@ class BaseBuilderNodesTest(object):
         documentation.
         """
         # Create builder with the name of the root element
-        b = (xml4h.build('MontyPythonFilms')
+        b = (self.my_builder('MontyPythonFilms')
             # Assign attributes to the new root element
             .attributes(
                 {'source': 'http://en.wikipedia.org/wiki/Monty_Python'})
@@ -747,8 +752,6 @@ class TestLXMLEtreeBuilder(BaseBuilderNodesTest, unittest.TestCase):
 
     @property
     def adapter(self):
-        if not xml4h.LXMLAdapter.is_available():
-            self.skipTest("lxml library is not installed")
         return xml4h.LXMLAdapter
 
 
@@ -759,6 +762,4 @@ class TestElementTreeBuilder(BaseBuilderNodesTest, unittest.TestCase):
 
     @property
     def adapter(self):
-        if not xml4h.ElementTreeAdapter.is_available():
-            self.skipTest("ElementTree library is not installed")
         return xml4h.ElementTreeAdapter

@@ -249,7 +249,7 @@ class XmlImplAdapter(object):
     def add_node_child(self, parent, child, before_sibling=None):
         raise NotImplementedError("Implementation missing for %s" % self)
 
-    def import_node(self, parent, node, clone=False):
+    def import_node(self, parent, node, original_parent=None, clone=False):
         raise NotImplementedError("Implementation missing for %s" % self)
 
     def clone_node(self, node, deep=True):

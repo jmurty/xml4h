@@ -186,7 +186,7 @@ class XmlDomImplAdapter(XmlImplAdapter):
         else:
             parent.appendChild(child)
 
-    def import_node(self, parent, node, clone=False):
+    def import_node(self, parent, node, original_parent=None, clone=False):
         if clone:
             node = self.clone_node(node)
         self.add_node_child(parent, node)
