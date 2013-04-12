@@ -318,31 +318,27 @@ class BaseBuilderNodesTest(object):
             '    <NSDefaultExplicit xmlns="urn:default"/>\n'
             '    <%sNSCustomExplicit xmlns="urn:custom"/>\n'
             '    <myns:NSCustomWithPrefixImplicit/>\n'
-            '    <myns:NSCustomWithPrefixExplicit xmlns="urn:custom"/>\n'
+            '    <%sNSCustomWithPrefixExplicit xmlns="urn:custom"/>\n'
             '    <Attrs1 default-ns-explicit="1"'
                        ' default-ns-implicit="1"/>\n'
             '    <Attrs2'
                        ' myns:custom-ns-prefix-explicit="1"'
                        ' myns:custom-ns-prefix-implicit="1"/>\n'
             '</DocRoot>\n'
-            % (self.adapter == xml4h.LXMLAdapter and 'myns:' or ''))
-            # TODO: lxml outputs prefix in more situations than minidom
+            % (self.adapter == xml4h.LXMLAdapter and 'myns:' or '',
+               self.adapter != xml4h.ElementTreeAdapter and 'myns:' or ''))
+            # TODO: Any way to make lxml/ElementTree output more consistent?
         self.assertEqual(xml, xmlb.dom_element.xml_doc())
         # Test namespaces work as expected when searching/traversing DOM
         self.assertEqual(
             ['DocRoot', 'NSDefaultImplicit', 'NSDefaultExplicit',
              'Attrs1', 'Attrs2'],
             [n.name for n in xmlb.find_doc(ns_uri='urn:default')])
-        if self.adapter == xml4h.LXMLAdapter:  # TODO: Differing prefix output
-            self.assertEqual(
-                ['myns:NSCustomExplicit', 'myns:NSCustomWithPrefixImplicit',
-                 'myns:NSCustomWithPrefixExplicit'],
-                [n.name for n in xmlb.find_doc(ns_uri='urn:custom')])
-        else:
-            self.assertEqual(
-                ['NSCustomExplicit', 'myns:NSCustomWithPrefixImplicit',
-                 'myns:NSCustomWithPrefixExplicit'],
-                [n.name for n in xmlb.find_doc(ns_uri='urn:custom')])
+        self.assertEqual(
+            ['NSCustomExplicit',
+             'NSCustomWithPrefixImplicit',
+             'NSCustomWithPrefixExplicit'],
+            [n.local_name for n in xmlb.find_doc(ns_uri='urn:custom')])
         self.assertEqual(
             ['NSCustomExplicit', 'NSCustomWithPrefixImplicit',
              'NSCustomWithPrefixExplicit'],
@@ -447,8 +443,8 @@ class BaseBuilderNodesTest(object):
                 .e('Elem1').t('<content/> as text').up()
                 .e('Elem2').d('<content/> as cdata').up()
             )
-        if self.adapter == xml4h.LXMLAdapter:
-            # TODO: lxml library does not support real cdata?
+        if self.adapter in (xml4h.LXMLAdapter, xml4h.ElementTreeAdapter):
+            # TODO: Make lxml & ElementTree libs support real cdata
             self.assertEqual(
                 '<?xml version="1.0" encoding="utf-8"?>\n'
                 '<DocRoot>\n'

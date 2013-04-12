@@ -297,7 +297,7 @@ class ElementTreeAdapter(XmlImplAdapter):
             return '#comment'
         elif node.tag == BaseET.ProcessingInstruction:
             name, target = node.text.split(' ')
-            return target
+            return name
         prefix = self.get_node_name_prefix(node)
         if prefix is not None:
             return '%s:%s' % (prefix, self.get_node_local_name(node))
@@ -336,7 +336,10 @@ class ElementTreeAdapter(XmlImplAdapter):
                 return ns_prefix
 
     def get_node_value(self, node):
-        if node.tag in (BaseET.ProcessingInstruction, BaseET.Comment):
+        if node.tag == BaseET.ProcessingInstruction:
+            name, target = node.text.split(' ')
+            return target
+        elif node.tag == BaseET.Comment:
             return node.text
         else:
             return node.value
