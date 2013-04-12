@@ -394,13 +394,54 @@ class BaseTestNodes(object):
         if self.my_adapter == xml4h.XmlDomImplAdapter:
             self.assertFalse(self.my_adapter.has_feature('xpath'))
 
-    def test_xpath(self):
+    def test_xpath_feature_check(self):
         # Ensure appropriate exception thrown if XPath is not supported
         if not self.my_adapter.has_feature('xpath'):
             self.assertRaises(xml4h.exceptions.FeatureUnavailableException,
                 self.xml4h_root.xpath, '/')
+
+    def test_xpath_limited_support_queries(self):
+        """
+        Basic XPath queries as supported by (c)ElementTree version 1.3+
+        """
+        if not self.my_adapter.has_feature('xpath'):
             self.skipTest("XPath feature is not supported by %s"
                           % self.my_adapter)
+        # Find current element
+        self.assertEqual([self.xml4h_root], self.xml4h_root.xpath('.'))
+        # Find child elements of root
+        self.assertEqual(self.xml4h_root.children, self.xml4h_root.xpath('*'))
+        # Find all elements in document
+        elems = self.xml4h_doc.xpath('.//*')
+        if self.my_adapter == xml4h.ElementTreeAdapter:
+            # TODO: (c)ElementTree incorrectly includes non-Element nodes
+            self.assertEqual(8, len(elems))
+        else:
+            self.assertEqual(6, len(elems))
+            self.assertEqual(self.xml4h_root.find(), elems)
+        # Find when no element names match
+        elems = self.xml4h_root.xpath('NoMatchingName')
+        self.assertEqual([], elems)
+        # Lookup parent of descendent node (fairly pointless...)
+        self.assertEqual([self.xml4h_root],
+            self.xml4h_root.xpath('Element2/..'))
+        self.assertEqual([self.xml4h_root.Element4],
+            self.xml4h_root.xpath('.//x:Element3/..', namespaces={'x': 'urn:ns2'}))
+        # Lookup elements with a given attribute
+        self.assertEqual(1, len(self.xml4h_root.xpath('.//*[@a]')))
+        self.assertEqual(0, len(self.xml4h_root.xpath('.//*[@not-an-attr]')))
+        # Lookup elements with a given attribute value
+        self.assertEqual(1, len(self.xml4h_root.xpath(".//*[@a='1']")))
+        self.assertEqual(0, len(self.xml4h_root.xpath(".//*[@a='wrong']")))
+
+    def test_xpath(self):
+        if not self.my_adapter.has_feature('xpath'):
+            self.skipTest("XPath feature is not supported by %s"
+                          % self.my_adapter)
+        if self.my_adapter == xml4h.ElementTreeAdapter:
+            self.skipTest(
+                "Only limited XPath support is available in (c)ElementTree"
+                ", so most of these tests would fail for that implementation")
         # Find elements at root
         self.assertEqual([self.xml4h_root], self.xml4h_root.xpath('/*'))
         # Find all elements in document

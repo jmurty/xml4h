@@ -201,12 +201,6 @@ class ElementTreeAdapter(XmlImplAdapter):
         converted to the prefix name '_' so it can be used despite empty
         namespace prefixes being unsupported by XPath.
         """
-#        if isinstance(node, ET.ElementTree):
-#            # Document node lxml.ET.ElementTree has no nsmap, lookup root
-#            root = self.get_impl_root(node)
-#            namespaces_dict = root.nsmap.copy()
-#        else:
-#            namespaces_dict = node.nsmap.copy()
         namespaces_dict = {}
         if 'namespaces' in kwargs:
             namespaces_dict.update(kwargs['namespaces'])
@@ -221,29 +215,7 @@ class ElementTreeAdapter(XmlImplAdapter):
         # Include XMLNS namespace if it's not already defined
         if not 'xmlns' in namespaces_dict:
             namespaces_dict['xmlns'] = nodes.Node.XMLNS_URI
-        # WARNING: Awful hacks ahead...
-        munged_xpath = xpath
-        munged_node = node
-        force_include_root = False
-        if xpath.startswith('/'):
-            # ElementTree does not support absolute XPath queries on nodes
-            munged_node = self._impl_document
-            if xpath in ('/', '/*'):
-                # Hack to lookup document root
-                munged_xpath = '.'
-            else:
-                # Hack to work around 1.3-and-earlier bug on '/' xpaths
-                # TODO Avoid using hack on post-1.3 versions?
-                munged_xpath = '.' + xpath
-                force_include_root = True
-        result_nodes = munged_node.findall(
-            munged_xpath, namespaces=namespaces_dict)
-        # Need to manually remove non-Elements from result nodes
-        result_nodes = [
-            n for n in result_nodes if isinstance(n.tag, basestring)]
-        if force_include_root:
-            result_nodes = [self._impl_document.getroot()] + result_nodes
-        return result_nodes
+        return node.findall(xpath, namespaces_dict)
 
     # Node implementation methods
 
