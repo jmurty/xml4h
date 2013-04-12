@@ -2,7 +2,7 @@ import re
 import copy
 
 from xml4h.impls.interface import XmlImplAdapter
-from xml4h import nodes
+from xml4h import nodes, exceptions
 
 try:
     from lxml import etree
@@ -72,7 +72,7 @@ class LXMLAdapter(XmlImplAdapter):
                 return nodes.CDATA
             else:
                 return nodes.Text
-        raise Exception(
+        raise exceptions.Xml4hImplementationBug(
             'Unrecognized type for implementation node: %s' % node)
 
     def get_impl_root(self, node):

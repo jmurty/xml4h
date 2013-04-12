@@ -1,7 +1,7 @@
 from StringIO import StringIO
 
 from xml4h.impls.interface import XmlImplAdapter
-from xml4h import nodes
+from xml4h import nodes, exceptions
 
 import xml.dom
 import xml.dom.minidom
@@ -65,7 +65,7 @@ class XmlDomImplAdapter(XmlImplAdapter):
                 xml.dom.Node.NOTATION_NODE: nodes.Notation,
                 }[impl_node.nodeType]
         except KeyError:
-            raise Exception(
+            raise exceptions.Xml4hImplementationBug(
                 'Unrecognized type for implementation node: %s' % impl_node)
 
     def get_impl_root(self, node):

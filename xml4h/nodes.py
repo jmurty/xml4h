@@ -37,8 +37,12 @@ class Node(object):
             subclass implementation to mediate operations on the node in
             the underlying XML implementation.
         """
-        if node is None or adapter is None:
-            raise Exception('Cannot instantiate without node and adapter')
+        if node is None:
+            raise xml4h.exceptions.IncorrectArgumentTypeException(
+                node, [object])
+        if adapter is None:
+            raise xml4h.exceptions.IncorrectArgumentTypeException(
+                adapter, [object])
         self._impl_node = node
         self._adapter = adapter
 
@@ -787,7 +791,8 @@ class Element(NameValueNodeMixin,
                 for n, v in attr_obj:
                     attr_dict[n] = v
             else:
-                raise Exception('Attribute data must be a dictionary or list')
+                raise xml4h.exceptions.IncorrectArgumentTypeException(
+                    attr_obj, [dict, list, tuple])
 
         # Always process 'xmlns' namespace definitions first, in case other
         # attributes belong to a newly-defined namespace
@@ -807,7 +812,7 @@ class Element(NameValueNodeMixin,
             prefix, name, my_ns_uri = self.adapter.get_ns_info_from_node_name(
                 attr_name, element)
             if ' ' in name:
-                raise Exception("Invalid attribute name value contains space")
+                raise ValueError("Invalid attribute name value contains space")
             # If necessary, add an xmlns defn for new prefix-defined namespace
             if not prefix and '}' in attr_name:
                 prefix = self.adapter.get_ns_prefix_for_uri(

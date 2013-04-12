@@ -399,10 +399,10 @@ class BaseBuilderNodesTest(object):
             xmlb.dom_element.xml_doc())
         # Attempts to use undefined namespace prefixes will fail
         xmlb = self.my_builder('DocRoot', ns_uri='urn:default')
-        self.assertRaises(Exception,
-            xmlb.e, ['missingns:Elem1'])
-        self.assertRaises(Exception,
-            xmlb.attrs, [{'missingns:attrib1': 'value1'}])
+        self.assertRaises(xml4h.exceptions.UnknownNamespaceException,
+            xmlb.e, 'missingns:Elem1')
+        self.assertRaises(xml4h.exceptions.UnknownNamespaceException,
+            xmlb.attrs, {'missingns:attrib1': 'value1'})
         # Element with literal namespace defn will use the ns as its default
         xmlb = self.my_builder('DocRoot', ns_uri='urn:default')
         xmlb.e('{urn:missing}Elem1')

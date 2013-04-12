@@ -4,7 +4,7 @@ import copy
 from StringIO import StringIO
 
 from xml4h.impls.interface import XmlImplAdapter
-from xml4h import nodes
+from xml4h import nodes, exceptions
 
 # Use faster C-based ElementTree implementation if available
 try:
@@ -139,7 +139,7 @@ class ElementTreeAdapter(XmlImplAdapter):
                 return nodes.Text
         elif self._is_node_an_element(node):
             return nodes.Element
-        raise Exception(
+        raise exceptions.Xml4hImplementationBug(
             'Unrecognized type for implementation node: %s' % node)
 
     def get_impl_root(self, node):

@@ -6,6 +6,8 @@ Writer to serialize XML DOM documents or sections to text.
 import sys
 import codecs
 
+from xml4h import exceptions
+
 
 def write_node(node, writer=None, encoding='utf-8', indent=0, newline='',
         omit_declaration=False, node_depth=0, quote_char='"'):
@@ -92,7 +94,7 @@ def write_node(node, writer=None, encoding='utf-8', indent=0, newline='',
             writer.write(_sanitize_write_value(node.value))
         elif node.is_cdata:
             if ']]>' in node.value:
-                raise Exception("']]>' is not allowed in CDATA node value")
+                raise ValueError("']]>' is not allowed in CDATA node value")
             writer.write("<![CDATA[%s]]>" % node.value)
         #elif node.is_entity_reference:  # TODO
         elif node.is_entity:
@@ -107,7 +109,7 @@ def write_node(node, writer=None, encoding='utf-8', indent=0, newline='',
             writer.write("<?%s %s?>" % (node.target, node.data))
         elif node.is_comment:
             if '--' in node.value:
-                raise Exception("'--' is not allowed in COMMENT node value")
+                raise ValueError("'--' is not allowed in COMMENT node value")
             writer.write("<!--%s-->" % node.value)
         elif node.is_notation:
             writer.write(newline + indent * node_depth)
@@ -147,7 +149,7 @@ def write_node(node, writer=None, encoding='utf-8', indent=0, newline='',
             else:
                 writer.write('/>')
         else:
-            raise Exception(
+            raise exceptions.Xml4hImplementationBug(
                 'Cannot write node with class: %s' % node.__class__)
 
     # Sanitize whitespace parameters

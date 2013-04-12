@@ -83,9 +83,8 @@ class XmlImplAdapter(object):
 
     def __init__(self, document):
         if not isinstance(document, object):
-            raise Exception(
-                'Cannot instantiate adapter with invalid document: %s'
-                % document)
+            raise exceptions.IncorrectArgumentTypeException(
+                document, [object])
         self._impl_document = document
         self._auto_ns_prefix_count = 0
 
@@ -109,7 +108,7 @@ class XmlImplAdapter(object):
             if attr_name == 'xmlns':
                 # Default namespace URI
                 return nodes.Node.XMLNS_URI
-            raise Exception(
+            raise exceptions.UnknownNamespaceException(
                 "Unknown namespace URI for attribute name '%s'" % attr_name)
         return uri
 
@@ -137,7 +136,7 @@ class XmlImplAdapter(object):
             prefix, name = name.split(':')
             ns_uri = self.get_ns_uri_for_prefix(impl_node, prefix)
             if ns_uri is None:
-                raise Exception(
+                raise exceptions.UnknownNamespaceException(
                     "Prefix '%s' does not have a defined namespace URI"
                     % prefix)
         else:
