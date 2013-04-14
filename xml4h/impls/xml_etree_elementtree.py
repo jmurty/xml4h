@@ -33,6 +33,8 @@ class ElementTreeAdapter(XmlImplAdapter):
         'xpath': True,
         }
 
+    CACHED_ANCESTRY_DICT = {}
+
     @classmethod
     def is_available(cls):
         # Is vital piece of ElementTree module available at all?
@@ -108,20 +110,20 @@ class ElementTreeAdapter(XmlImplAdapter):
         doc._xml4h_nsmap = root_nsmap
         return doc
 
-    @property
-    def _ancestry_dict(self):
+    def _lookup_node_parent(self, node):
         """
-        Return a dictionary mapping of child nodes to the child's parent,
-        if any.
-
-        We're forced to use this awful hack since ElementTree doesn't let us
-        get to a child node's parent node, even in version 1.3.0 which
-        should support this with XPath lookups but actually doesn't.
+        Return the parent of the given node, based on an internal dictionary
+        mapping of child nodes to the child's parent required since
+        ElementTree doesn't make info about node ancestry/parentage available.
         """
-        # TODO Cache (and live-update) this dict for better performance
-        ancestry_dict = dict(
-            (c, p) for p in self._impl_document.getiterator() for c in p)
-        return ancestry_dict
+        # Basic caching of our internal ancestry dict to help performance
+        # TODO More sophisticated caching, and live update of ancestry data
+        if not node in self.CACHED_ANCESTRY_DICT:
+            # Given node isn't in cached ancestry dictionary, rebuild this now
+            ancestry_dict = dict(
+                (c, p) for p in self._impl_document.getiterator() for c in p)
+            self.CACHED_ANCESTRY_DICT = ancestry_dict
+        return self.CACHED_ANCESTRY_DICT[node]
 
     def _is_node_an_element(self, node):
         """
@@ -263,7 +265,7 @@ class ElementTreeAdapter(XmlImplAdapter):
             parent = self._impl_document
         else:
             try:
-                parent = self._ancestry_dict[node]
+                parent = self._lookup_node_parent(node)
             except KeyError:
                 raise exceptions.Xml4hImplementationBug(
                     'Unable to get parent of node: %s' % node)
