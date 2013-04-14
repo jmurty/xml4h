@@ -126,7 +126,8 @@ class Node(object):
         if self.is_root:
             return self
         return self.adapter.wrap_node(
-            self.adapter.impl_root_element, self.adapter.impl_document)
+            self.adapter.impl_root_element, self.adapter.impl_document,
+            self.adapter)
 
     @property
     def is_root(self):
@@ -236,8 +237,9 @@ class Node(object):
         Convert a list of underlying implementation nodes into a list of
         *xml4h* wrapper nodes.
         """
-        nodelist = [self.adapter.wrap_node(n, self.adapter.impl_document)
-                    for n in impl_nodelist]
+        nodelist = [
+            self.adapter.wrap_node(n, self.adapter.impl_document, self.adapter)
+            for n in impl_nodelist]
         return NodeList(nodelist)
 
     @property
@@ -247,7 +249,7 @@ class Node(object):
         """
         parent_impl_node = self.adapter.get_node_parent(self.impl_node)
         return self.adapter.wrap_node(
-            parent_impl_node, self.adapter.impl_document)
+            parent_impl_node, self.adapter.impl_document, self.adapter)
 
     @property
     def ancestors(self):
@@ -352,7 +354,7 @@ class Node(object):
             self.adapter.get_node_parent(self.impl_node), self.impl_node,
             destroy_node=destroy)
         if removed_child is not None:
-            return self.adapter.wrap_node(removed_child, None)
+            return self.adapter.wrap_node(removed_child, None, self.adapter)
         else:
             return None
 
@@ -418,7 +420,7 @@ class Node(object):
         if first_only:
             if impl_nodelist:
                 return self.adapter.wrap_node(
-                    impl_nodelist[0], self.adapter.impl_document)
+                    impl_nodelist[0], self.adapter.impl_document, self.adapter)
             else:
                 return None
         return self._convert_nodelist(impl_nodelist)
@@ -587,7 +589,8 @@ class XPathMixin(object):
         if isinstance(node, (basestring, int, long, float)):
             return node
         else:
-            return self.adapter.wrap_node(node, self.adapter.impl_document)
+            return self.adapter.wrap_node(
+                node, self.adapter.impl_document, self.adapter)
 
     def xpath(self, xpath, **kwargs):
         """
@@ -894,7 +897,7 @@ class Element(NameValueNodeMixin,
         """
         impl_attr_nodes = self.adapter.get_node_attributes(self.impl_node)
         wrapped_attr_nodes = [
-            self.adapter.wrap_node(a, self.adapter.impl_document)
+            self.adapter.wrap_node(a, self.adapter.impl_document, self.adapter)
             for a in impl_attr_nodes]
         return sorted(wrapped_attr_nodes, key=lambda x: x.name)
 
@@ -910,7 +913,7 @@ class Element(NameValueNodeMixin,
         attr_impl_node = self.adapter.get_node_attribute_node(
             self.impl_node, name, ns_uri)
         return self.adapter.wrap_node(
-            attr_impl_node, self.adapter.impl_document)
+            attr_impl_node, self.adapter.impl_document, self.adapter)
 
     def _add_ns_prefix_attr(self, element, prefix, ns_uri):
         if prefix is None:
@@ -1003,7 +1006,8 @@ class Element(NameValueNodeMixin,
         # ...or in the default position, appended after existing nodes
         else:
             self.adapter.add_node_child(self.impl_node, child_elem)
-        return self.adapter.wrap_node(child_elem, self.adapter.impl_document)
+        return self.adapter.wrap_node(
+            child_elem, self.adapter.impl_document, self.adapter)
 
     def _add_text(self, element, text):
         text_node = self.adapter.new_impl_text(text)
@@ -1175,7 +1179,7 @@ class AttributeDict(object):
         :return: the :class:`Element` that contains these attributes.
         """
         return self.adapter.wrap_node(
-            self.impl_element, self.adapter.impl_document)
+            self.impl_element, self.adapter.impl_document, self.adapter)
 
     @property
     def impl_attributes(self):

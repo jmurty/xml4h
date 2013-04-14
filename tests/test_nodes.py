@@ -11,40 +11,40 @@ import xml4h
 class BaseTestNodes(object):
 
     def test_wrap_document(self):
-        wrapped_elem = self.my_adapter.wrap_node(self.root_elem, self.doc)
+        wrapped_elem = self.adapter_class.wrap_node(self.root_elem, self.doc)
         self.assertEqual(self.root_elem, wrapped_elem.impl_node)
         self.assertEqual('DocRoot', wrapped_elem.name)
         self.assertEqual(self.doc, wrapped_elem.impl_document)
 
     def test_wrap_node_and_is_type_methods(self):
         # Wrap root element
-        wrapped_node = self.my_adapter.wrap_node(self.root_elem, self.doc)
+        wrapped_node = self.adapter_class.wrap_node(self.root_elem, self.doc)
         self.assertEqual(self.root_elem, wrapped_node.impl_node)
         self.assertEqual('DocRoot', wrapped_node.name)
         self.assertEqual(self.doc, wrapped_node.impl_document)
         self.assertTrue(wrapped_node.is_type(xml4h.nodes.ELEMENT_NODE))
         self.assertTrue(wrapped_node.is_element)
         # Wrap a non-root element
-        wrapped_node = self.my_adapter.wrap_node(self.elem3_second, self.doc)
+        wrapped_node = self.adapter_class.wrap_node(self.elem3_second, self.doc)
         self.assertEqual(self.elem3_second, wrapped_node.impl_node)
         self.assertEqual('ns2:Element3', wrapped_node.name)
         self.assertEqual('Element4', wrapped_node.parent.name)
         self.assertTrue(wrapped_node.is_type(xml4h.nodes.ELEMENT_NODE))
         self.assertTrue(wrapped_node.is_element)
         # Test node types
-        wrapped_node = self.my_adapter.wrap_node(self.text_node, self.doc)
+        wrapped_node = self.adapter_class.wrap_node(self.text_node, self.doc)
         self.assertIsInstance(wrapped_node, xml4h.nodes.Text)
         self.assertTrue(wrapped_node.is_type(xml4h.nodes.TEXT_NODE))
         self.assertTrue(wrapped_node.is_text)
-        wrapped_node = self.my_adapter.wrap_node(self.cdata_node, self.doc)
+        wrapped_node = self.adapter_class.wrap_node(self.cdata_node, self.doc)
         self.assertIsInstance(wrapped_node, xml4h.nodes.CDATA)
         self.assertTrue(wrapped_node.is_type(xml4h.nodes.CDATA_NODE))
         self.assertTrue(wrapped_node.is_cdata)
-        wrapped_node = self.my_adapter.wrap_node(self.comment_node, self.doc)
+        wrapped_node = self.adapter_class.wrap_node(self.comment_node, self.doc)
         self.assertIsInstance(wrapped_node, xml4h.nodes.Comment)
         self.assertTrue(wrapped_node.is_type(xml4h.nodes.COMMENT_NODE))
         self.assertTrue(wrapped_node.is_comment)
-        wrapped_node = self.my_adapter.wrap_node(
+        wrapped_node = self.adapter_class.wrap_node(
             self.instruction_node, self.doc)
         self.assertIsInstance(
             wrapped_node, xml4h.nodes.ProcessingInstruction)
@@ -52,43 +52,53 @@ class BaseTestNodes(object):
             wrapped_node.is_type(xml4h.nodes.PROCESSING_INSTRUCTION_NODE))
         self.assertTrue(wrapped_node.is_processing_instruction)
 
+    def test_wrap_node_reuses_adapter_when_provided(self):
+        # Wrap root element, creates a new adapter instance if none provided
+        wrapped_root = self.adapter_class.wrap_node(self.root_elem, self.doc)
+        wrapped_node = self.adapter_class.wrap_node(self.elem3_second, self.doc)
+        self.assertNotEqual(wrapped_root.adapter, wrapped_node.adapter)
+        # Wrap root element, reuses adapter instance if provided
+        wrapped_node = self.adapter_class.wrap_node(
+            self.elem3_second, self.doc, wrapped_root.adapter)
+        self.assertEqual(wrapped_root.adapter, wrapped_node.adapter)
+
     def test_parent(self):
         # Document node has no parent
-        xml4h_doc = self.my_adapter.wrap_node(self.doc, self.doc)
+        xml4h_doc = self.adapter_class.wrap_node(self.doc, self.doc)
         self.assertEqual(None, xml4h_doc.parent)
         # Root element has document as parent
         self.assertIsInstance(self.xml4h_root.parent, xml4h.nodes.Document)
         # Find parents of elements
         self.assertEqual(self.root_elem,
-            self.my_adapter.wrap_node(self.elem1, self.doc).parent.impl_node)
+            self.adapter_class.wrap_node(self.elem1, self.doc).parent.impl_node)
         self.assertEqual(self.elem3,
-            self.my_adapter.wrap_node(
+            self.adapter_class.wrap_node(
                 self.elem2_second, self.doc).parent.impl_node)
         # Parent of text node (Text not stored as node in lxml/ElementTree)
         if not isinstance(self, (TestLXMLNodes, TestElementTreeNodes)):
             self.assertEqual(self.elem1,
-                self.my_adapter.wrap_node(
+                self.adapter_class.wrap_node(
                     self.text_node, self.doc).parent.impl_node)
         # Chain parent calls
-        wrapped_elem = self.my_adapter.wrap_node(self.elem3_second, self.doc)
+        wrapped_elem = self.adapter_class.wrap_node(self.elem3_second, self.doc)
         self.assertEqual(self.root_elem, wrapped_elem.parent.parent.impl_node)
 
     def test_ancestors(self):
         # Document node has no ancestors
-        xml4h_doc = self.my_adapter.wrap_node(self.doc, self.doc)
+        xml4h_doc = self.adapter_class.wrap_node(self.doc, self.doc)
         self.assertEqual([], xml4h_doc.ancestors)
         # Find ancestors of elements
         self.assertEqual(['DocRoot'],
             [a.name for a in
-             self.my_adapter.wrap_node(self.elem1, self.doc).ancestors
+             self.adapter_class.wrap_node(self.elem1, self.doc).ancestors
              if a.is_element])
         self.assertEqual(['Element4', 'DocRoot'],
             [a.name for a in
-             self.my_adapter.wrap_node(self.elem3_second, self.doc).ancestors
+             self.adapter_class.wrap_node(self.elem3_second, self.doc).ancestors
              if a.is_element])
         # Document root node (not Element) is included in ancestors list
         self.assertTrue(
-            self.my_adapter.wrap_node(
+            self.adapter_class.wrap_node(
                 self.elem3_second, self.doc).ancestors[-1].is_document)
 
     def test_children_attribute(self):
@@ -159,25 +169,25 @@ class BaseTestNodes(object):
 
     def test_namespace_data(self):
         # Namespace data for element without namespace
-        wrapped_elem = self.my_adapter.wrap_node(self.elem1, self.doc)
+        wrapped_elem = self.adapter_class.wrap_node(self.elem1, self.doc)
         self.assertEqual(None, wrapped_elem.namespace_uri)
         self.assertEqual(u'元素1', wrapped_elem.name)
         self.assertEqual(None, wrapped_elem.prefix)
         self.assertEqual(u'元素1', wrapped_elem.local_name)
         # Namespace data for ns element without prefix
-        wrapped_elem = self.my_adapter.wrap_node(self.elem3, self.doc)
+        wrapped_elem = self.adapter_class.wrap_node(self.elem3, self.doc)
         self.assertEqual('urn:ns1', wrapped_elem.namespace_uri)
         self.assertEqual('Element3', wrapped_elem.name)
         self.assertEqual(None, wrapped_elem.prefix)
         self.assertEqual('Element3', wrapped_elem.local_name)
         # Namespace data for ns element with prefix
-        wrapped_elem = self.my_adapter.wrap_node(self.elem3_second, self.doc)
+        wrapped_elem = self.adapter_class.wrap_node(self.elem3_second, self.doc)
         self.assertEqual('urn:ns2', wrapped_elem.namespace_uri)
         self.assertEqual('ns2:Element3', wrapped_elem.name)
         self.assertEqual('ns2', wrapped_elem.prefix)
         self.assertEqual('Element3', wrapped_elem.local_name)
         # Namespace data for attribute node without namespace
-        wrapped_elem = self.my_adapter.wrap_node(self.elem1, self.doc)
+        wrapped_elem = self.adapter_class.wrap_node(self.elem1, self.doc)
         self.assertEqual(None, wrapped_elem.attribute_nodes[0].namespace_uri)
         self.assertEqual('a', wrapped_elem.attribute_nodes[0].name)
         self.assertEqual(None, wrapped_elem.attribute_nodes[0].prefix)
@@ -189,25 +199,25 @@ class BaseTestNodes(object):
         self.assertEqual('ns1', wrapped_elem.attribute_nodes[1].prefix)
         self.assertEqual('b', wrapped_elem.attribute_nodes[1].local_name)
         # Namespace data for attribute dict without namespace
-        wrapped_elem = self.my_adapter.wrap_node(self.elem1, self.doc)
+        wrapped_elem = self.adapter_class.wrap_node(self.elem1, self.doc)
         self.assertEqual(None, wrapped_elem.attributes.namespace_uri('a'))
         # Namespace data for attribute dict with namespace
-        wrapped_elem = self.my_adapter.wrap_node(self.elem1, self.doc)
+        wrapped_elem = self.adapter_class.wrap_node(self.elem1, self.doc)
         self.assertEqual('urn:ns1',
             wrapped_elem.attributes.namespace_uri('ns1:b'))
 
     def test_name(self):
-        wrapped_node = self.my_adapter.wrap_node(self.elem1, self.doc)
+        wrapped_node = self.adapter_class.wrap_node(self.elem1, self.doc)
         self.assertEqual(u'元素1', wrapped_node.name)
         attribute_node = wrapped_node.attribute_nodes[0]
         self.assertEqual('a', attribute_node.name)
-        wrapped_node = self.my_adapter.wrap_node(self.text_node, self.doc)
+        wrapped_node = self.adapter_class.wrap_node(self.text_node, self.doc)
         self.assertEqual('#text', wrapped_node.name)
-        wrapped_node = self.my_adapter.wrap_node(self.cdata_node, self.doc)
+        wrapped_node = self.adapter_class.wrap_node(self.cdata_node, self.doc)
         self.assertEqual('#cdata-section', wrapped_node.name)
-        wrapped_node = self.my_adapter.wrap_node(self.comment_node, self.doc)
+        wrapped_node = self.adapter_class.wrap_node(self.comment_node, self.doc)
         self.assertEqual('#comment', wrapped_node.name)
-        wrapped_node = self.my_adapter.wrap_node(
+        wrapped_node = self.adapter_class.wrap_node(
             self.instruction_node, self.doc)
         self.assertEqual(wrapped_node.target, wrapped_node.name)
 
@@ -218,7 +228,7 @@ class BaseTestNodes(object):
         self.assertEqual(None, self.xml4h_text.attributes)
         self.assertEqual(None, self.xml4h_text.attribute_nodes)
         # Get element's attribute nodes
-        wrapped_elem = self.my_adapter.wrap_node(self.elem1, self.doc)
+        wrapped_elem = self.adapter_class.wrap_node(self.elem1, self.doc)
         attr_nodes = wrapped_elem.attribute_nodes
         self.assertEqual(
             ['a', 'ns1:b', 'xmlns:ns1'],
@@ -236,7 +246,7 @@ class BaseTestNodes(object):
             [None, 'urn:ns1', 'http://www.w3.org/2000/xmlns/'],
             [a.ns_uri for a in attr_nodes])
         # Get element's attributes dict
-        wrapped_elem = self.my_adapter.wrap_node(self.elem1, self.doc)
+        wrapped_elem = self.adapter_class.wrap_node(self.elem1, self.doc)
         attrs_dict = wrapped_elem.attributes
         self.assertEqual(['a', 'ns1:b', 'xmlns:ns1'], attrs_dict.keys())
         self.assertEqual(['1', '2', 'urn:ns1'], attrs_dict.values())
@@ -251,7 +261,7 @@ class BaseTestNodes(object):
             'ns2:d': -3,  # attribute with namespace prefix
             '{urn:ns2}x': -5  # attribute with etree-style namespace URI
             }
-        if self.my_adapter == xml4h.LXMLAdapter:
+        if self.adapter_class == xml4h.LXMLAdapter:
             # Cannot delete pre-existing namespaces in lxml. For similar
             # subsequent tests we use subset comparisons
             self.assertEqual(['a', 'ns2:d', 'ns2:x',
@@ -292,14 +302,14 @@ class BaseTestNodes(object):
 
     def test_element_text(self):
         # Get text on element
-        wrapped_node = self.my_adapter.wrap_node(self.elem1, self.doc)
+        wrapped_node = self.adapter_class.wrap_node(self.elem1, self.doc)
         self.assertEqual('Some text', wrapped_node.text)
         # Set text on element
         wrapped_node.text = 'Different text'
         self.assertEqual('Different text', wrapped_node.text)
         self.assertEqual(
             wrapped_node.children[0].value,
-            self.my_adapter(self.doc).get_node_value(
+            self.adapter_class(self.doc).get_node_value(
                 wrapped_node.children[0].impl_node))
         # Unset text on element (removes any text children)
         wrapped_node.text = None
@@ -382,21 +392,21 @@ class BaseTestNodes(object):
     def test_has_feature(self):
         # Adapter and node has_feature tests must agree
         self.assertEqual(
-            self.my_adapter.has_feature('xpath'),
+            self.adapter_class.has_feature('xpath'),
             self.xml4h_root.has_feature('xpath'))
         # XPath is available in lxml adapter
-        if self.my_adapter == xml4h.LXMLAdapter:
-            self.assertTrue(self.my_adapter.has_feature('xpath'))
+        if self.adapter_class == xml4h.LXMLAdapter:
+            self.assertTrue(self.adapter_class.has_feature('xpath'))
         # XPath is available in ElementTree adapter
-        if self.my_adapter == xml4h.ElementTreeAdapter:
-            self.assertTrue(self.my_adapter.has_feature('xpath'))
+        if self.adapter_class == xml4h.ElementTreeAdapter:
+            self.assertTrue(self.adapter_class.has_feature('xpath'))
         # XPath is not available in minidom adapter
-        if self.my_adapter == xml4h.XmlDomImplAdapter:
-            self.assertFalse(self.my_adapter.has_feature('xpath'))
+        if self.adapter_class == xml4h.XmlDomImplAdapter:
+            self.assertFalse(self.adapter_class.has_feature('xpath'))
 
     def test_xpath_feature_check(self):
         # Ensure appropriate exception thrown if XPath is not supported
-        if not self.my_adapter.has_feature('xpath'):
+        if not self.adapter_class.has_feature('xpath'):
             self.assertRaises(xml4h.exceptions.FeatureUnavailableException,
                 self.xml4h_root.xpath, '/')
 
@@ -404,16 +414,16 @@ class BaseTestNodes(object):
         """
         Basic XPath queries as supported by (c)ElementTree version 1.3+
         """
-        if not self.my_adapter.has_feature('xpath'):
+        if not self.adapter_class.has_feature('xpath'):
             self.skipTest("XPath feature is not supported by %s"
-                          % self.my_adapter)
+                          % self.adapter_class)
         # Find current element
         self.assertEqual([self.xml4h_root], self.xml4h_root.xpath('.'))
         # Find child elements of root
         self.assertEqual(self.xml4h_root.children, self.xml4h_root.xpath('*'))
         # Find all elements in document
         elems = self.xml4h_doc.xpath('.//*')
-        if self.my_adapter == xml4h.ElementTreeAdapter:
+        if self.adapter_class == xml4h.ElementTreeAdapter:
             # TODO: (c)ElementTree incorrectly includes non-Element nodes
             self.assertEqual(8, len(elems))
         else:
@@ -435,10 +445,10 @@ class BaseTestNodes(object):
         self.assertEqual(0, len(self.xml4h_root.xpath(".//*[@a='wrong']")))
 
     def test_xpath(self):
-        if not self.my_adapter.has_feature('xpath'):
+        if not self.adapter_class.has_feature('xpath'):
             self.skipTest("XPath feature is not supported by %s"
-                          % self.my_adapter)
-        if self.my_adapter == xml4h.ElementTreeAdapter:
+                          % self.adapter_class)
+        if self.adapter_class == xml4h.ElementTreeAdapter:
             self.skipTest(
                 "Only limited XPath support is available in (c)ElementTree"
                 ", so most of these tests would fail for that implementation")
@@ -569,7 +579,7 @@ class BaseTestNodes(object):
 class TestMinidomNodes(BaseTestNodes, unittest.TestCase):
 
     @property
-    def my_adapter(self):
+    def adapter_class(self):
         return xml4h.XmlDomImplAdapter
 
     def setUp(self):
@@ -615,7 +625,7 @@ class TestMinidomNodes(BaseTestNodes, unittest.TestCase):
 class TestLXMLNodes(BaseTestNodes, unittest.TestCase):
 
     @property
-    def my_adapter(self):
+    def adapter_class(self):
         return xml4h.LXMLAdapter
 
     def setUp(self):
@@ -667,7 +677,7 @@ class TestLXMLNodes(BaseTestNodes, unittest.TestCase):
 class TestElementTreeNodes(BaseTestNodes, unittest.TestCase):
 
     @property
-    def my_adapter(self):
+    def adapter_class(self):
         return xml4h.ElementTreeAdapter
 
     def setUp(self):

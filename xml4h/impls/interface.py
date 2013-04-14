@@ -58,10 +58,11 @@ class XmlImplAdapter(object):
         return nodes.Document(document_node, adapter)
 
     @classmethod
-    def wrap_node(cls, node, document):
+    def wrap_node(cls, node, document, adapter=None):
         if node is None:
             return None
-        adapter = cls(document)
+        if adapter is None:
+            adapter = cls(document)
         impl_class = adapter.map_node_to_class(node)
         return impl_class(node, adapter)
 
