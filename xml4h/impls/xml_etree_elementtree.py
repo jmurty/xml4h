@@ -51,6 +51,10 @@ class ElementTreeAdapter(XmlImplAdapter):
         return True
 
     @classmethod
+    def clear_caches(cls):
+        cls.CACHED_ANCESTRY_DICT = {}
+
+    @classmethod
     def parse_string(cls, xml_str, ignore_whitespace_text_nodes=True):
         return cls.parse_file(
             StringIO(xml_str),

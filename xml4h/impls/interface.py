@@ -67,6 +67,16 @@ class XmlImplAdapter(object):
         return impl_class(node, adapter)
 
     @classmethod
+    def clear_caches(cls):
+        """
+        Clear any in-adapter cached data, for cases where cached data could
+        become outdated e.g. by making DOM changes directly outside of *xml4h*.
+
+        This is a no-op if the implementing adapter has no cached data.
+        """
+        pass
+
+    @classmethod
     def is_available(cls):
         """
         :return: *True* if this adapter's underlying XML library is available \
