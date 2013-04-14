@@ -161,8 +161,6 @@ class ElementTreeAdapter(XmlImplAdapter):
             if ':' in tagname:
                 tagname = tagname.split(':')[1]
             element = ET.Element('{%s}%s' % (ns_uri, tagname))
-#            my_nsmap = {None: ns_uri}
-#            element._xml4h_nsmap = my_nsmap
             return element
         else:
             return ET.Element(tagname)
@@ -217,10 +215,13 @@ class ElementTreeAdapter(XmlImplAdapter):
         if None in namespaces_dict:
             default_ns_uri = namespaces_dict.pop(None)
             namespaces_dict['_'] = default_ns_uri
-        # TODO: Fix/improve this awful hack!
-        elif '}' in self._impl_document._root.tag:
-            default_ns_uri = self._impl_document._root.tag.split('}')[0][1:]
-            namespaces_dict['_'] = default_ns_uri
+        # If no default namespace URI defined, use root's namespace (if any)
+        if not '_' in namespaces_dict:
+            root = self.get_impl_root(node)
+            qname, ns_uri, prefix, local_name = self._unpack_name(
+                root.tag, root)
+            if ns_uri:
+                namespaces_dict['_'] = ns_uri
         # Include XMLNS namespace if it's not already defined
         if not 'xmlns' in namespaces_dict:
             namespaces_dict['xmlns'] = nodes.Node.XMLNS_URI
@@ -235,16 +236,16 @@ class ElementTreeAdapter(XmlImplAdapter):
             return node.namespace_uri
         elif isinstance(node, BaseET.ElementTree):
             return None
-        elif isinstance(node, BaseET.Element):
+        elif self._is_node_an_element(node):
             qname, ns_uri = self._unpack_name(node.tag, node)[:2]
             return ns_uri
         else:
             return None
 
     def set_node_namespace_uri(self, node, ns_uri):
-        if not hasattr(node, '_xml4h_nsmap'):
-            node._xml4h_nsmap = {}
-        node._xml4h_nsmap[None] = ns_uri
+        qname, orig_ns_uri, prefix, local_name = self._unpack_name(
+            node.tag, node)
+        node.tag = '{%s}%s' % (ns_uri, local_name)
 
     def get_node_parent(self, node):
         parent = None
@@ -301,23 +302,19 @@ class ElementTreeAdapter(XmlImplAdapter):
         # Believe nodes that know their own prefix (likely only ETAttribute)
         if hasattr(node, 'prefix'):
             return node.prefix
-        # TODO Centralise namespace/prefix recognition/extraction
-        # Parse
-        match = re.match(r'{(.*)}', node.tag)
-        if match is None:
-            return None
-        else:
-            ns_uri = match.group(1)
+        qname, ns_uri, prefix, local_name = self._unpack_name(node.tag, node)
+        if prefix:
             # Don't add unnecessary excess namespace prefixes for elements
             # with a local default namespace declaration
             if node.attrib.get('xmlns') == ns_uri:
                 return None
-            ns_prefix = self.lookup_ns_prefix_for_uri(node, ns_uri)
             # Don't add unnecessary excess namespace prefixes for default ns
-            if ns_prefix == 'xmlns':
+            elif prefix == 'xmlns':
                 return None
             else:
-                return ns_prefix
+                return prefix
+        else:
+            return None
 
     def get_node_value(self, node):
         if node.tag == BaseET.ProcessingInstruction:
@@ -344,22 +341,6 @@ class ElementTreeAdapter(XmlImplAdapter):
             qname, ns_uri, prefix, local_name = self._unpack_name(n, element)
             attribs_by_qname[qname] = ETAttribute(
                 qname, ns_uri, prefix, local_name, v, element)
-        # Include namespace declarations, which we also treat as attributes
-#        if element.nsmap:
-#            for n, v in element.nsmap.items():
-#                # Only add namespace as attribute if not defined in ancestors
-#                # and not the global xmlns namespace
-#                if (self._is_ns_in_ancestor(element, n, v)
-#                        or v == nodes.Node.XMLNS_URI):
-#                    continue
-#                if n is None:
-#                    ns_attr_name = 'xmlns'
-#                else:
-#                    ns_attr_name = 'xmlns:%s' % n
-#                qname, ns_uri, prefix, local_name = self._unpack_name(
-#                    ns_attr_name, element)
-#                attribs_by_qname[qname] = ETAttribute(
-#                    qname, ns_uri, prefix, local_name, v, element)
         return attribs_by_qname.values()
 
     def has_node_attribute(self, element, name, ns_uri=None):
@@ -390,12 +371,6 @@ class ElementTreeAdapter(XmlImplAdapter):
         if ns_uri is not None:
             name = '{%s}%s' % (ns_uri, name)
         if name.startswith('{%s}' % nodes.Node.XMLNS_URI):
-#            if element.nsmap.get(name) != value:
-#                # Ideally we would apply namespace (xmlns) attributes to the
-#                # element's `nsmap` only, but the lxml/etree nsmap attribute
-#                # is immutable and there's no non-hacky way around this.
-#                # TODO Is there a better way?
-#                pass
             if name.split('}')[1] == 'xmlns':
                 # Hack to remove namespace URI from 'xmlns' attributes so
                 # the name is just a simple string
@@ -475,7 +450,6 @@ class ElementTreeAdapter(XmlImplAdapter):
             return child
 
     def lookup_ns_uri_by_attr_name(self, node, name):
-#        # TODO Generalize this block
         curr_node = node
         while (curr_node is not None
                 and not isinstance(curr_node, BaseET.ElementTree)):

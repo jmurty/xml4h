@@ -681,7 +681,6 @@ class TestElementTreeNodes(BaseTestNodes, unittest.TestCase):
             import xml.etree.ElementTree as ET
         # Build a DOM using minidom for testing
         self.root_elem = ET.Element('{urn:test}DocRoot')
-        ET.register_namespace('', 'urn:test')
         doc = ET.ElementTree(self.root_elem)
 
         self.elem1 = ET.Element(u'元素1')
