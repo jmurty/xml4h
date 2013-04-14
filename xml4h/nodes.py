@@ -1112,7 +1112,8 @@ class AttributeDict(object):
 
     def __str__(self):
         # TODO Degrade non-ASCII characters gracefully
-        return self.__unicode__().encode(encoding='ascii', errors='replace')
+        # Avoid keyword args in encode call for compatibility with python 2.6
+        return self.__unicode__().encode('ascii', 'replace')
 
     def __repr__(self):
         return self.__str__()
