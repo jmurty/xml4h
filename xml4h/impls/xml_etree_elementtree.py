@@ -117,7 +117,6 @@ class ElementTreeAdapter(XmlImplAdapter):
         ElementTree doesn't make info about node ancestry/parentage available.
         """
         # Basic caching of our internal ancestry dict to help performance
-        # TODO More sophisticated caching, and live update of ancestry data
         if not node in self.CACHED_ANCESTRY_DICT:
             # Given node isn't in cached ancestry dictionary, rebuild this now
             ancestry_dict = dict(
@@ -404,6 +403,7 @@ class ElementTreeAdapter(XmlImplAdapter):
                 parent.text = parent.text + child.text
             else:
                 parent.text = child.text
+            self.CACHED_ANCESTRY_DICT[child] = parent
             return None
         else:
             if before_sibling is not None:
@@ -415,6 +415,7 @@ class ElementTreeAdapter(XmlImplAdapter):
                 parent.insert(offset, child)
             else:
                 parent.append(child)
+            self.CACHED_ANCESTRY_DICT[child] = parent
             return child
 
     def import_node(self, parent, node, original_parent=None, clone=False):
