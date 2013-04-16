@@ -166,5 +166,19 @@ class TestElementTreeBuilder(BaseWriterTest, unittest.TestCase):
     @property
     def adapter(self):
         if not xml4h.ElementTreeAdapter.is_available():
-            self.skipTest("ElementTree library is not installed")
+            self.skipTest(
+                "ElementTree library is not installed or is outdated")
+        return xml4h.ElementTreeAdapter
+
+
+class TestElementTreeBuilder(BaseWriterTest, unittest.TestCase):
+    """
+    Tests building with the xml.etree.ElementTree library.
+    """
+
+    @property
+    def adapter(self):
+        if not xml4h.ElementTreeAdapter.is_available():
+            self.skipTest(
+                "cElementTree library is not installed or is outdated")
         return xml4h.ElementTreeAdapter

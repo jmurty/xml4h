@@ -398,7 +398,8 @@ class BaseTestNodes(object):
         if self.adapter_class == xml4h.LXMLAdapter:
             self.assertTrue(self.adapter_class.has_feature('xpath'))
         # XPath is available in ElementTree adapter
-        if self.adapter_class == xml4h.ElementTreeAdapter:
+        if self.adapter_class in (
+                xml4h.ElementTreeAdapter, xml4h.cElementTreeAdapter):
             self.assertTrue(self.adapter_class.has_feature('xpath'))
         # XPath is not available in minidom adapter
         if self.adapter_class == xml4h.XmlDomImplAdapter:
@@ -423,7 +424,8 @@ class BaseTestNodes(object):
         self.assertEqual(self.xml4h_root.children, self.xml4h_root.xpath('*'))
         # Find all elements in document
         elems = self.xml4h_doc.xpath('.//*')
-        if self.adapter_class == xml4h.ElementTreeAdapter:
+        if self.adapter_class in (
+                xml4h.ElementTreeAdapter, xml4h.cElementTreeAdapter):
             # TODO: (c)ElementTree incorrectly includes non-Element nodes
             self.assertEqual(8, len(elems))
         else:
@@ -448,7 +450,8 @@ class BaseTestNodes(object):
         if not self.adapter_class.has_feature('xpath'):
             self.skipTest("XPath feature is not supported by %s"
                           % self.adapter_class)
-        if self.adapter_class == xml4h.ElementTreeAdapter:
+        if self.adapter_class in (
+                xml4h.ElementTreeAdapter, xml4h.cElementTreeAdapter):
             self.skipTest(
                 "Only limited XPath support is available in (c)ElementTree"
                 ", so most of these tests would fail for that implementation")
@@ -681,14 +684,20 @@ class TestElementTreeNodes(BaseTestNodes, unittest.TestCase):
         return xml4h.ElementTreeAdapter
 
     def setUp(self):
-        if not xml4h.ElementTreeAdapter.is_available():
-            self.skipTest(
-                "ElementTree library is not installed"
-                " or is not sufficiently recent")
-        try:
+        # Use c-based or pure python ElementTree impl based on test class
+        if self.__class__ == TestcElementTreeNodes:
+            if not self.adapter_class.is_available():
+                self.skipTest(
+                    "C-based ElementTree library is not installed"
+                    " or is too outdated to be supported by xml4h")
             import xml.etree.cElementTree as ET
-        except ImportError:
+        else:
+            if not self.adapter_class.is_available():
+                self.skipTest(
+                    "Pure Python ElementTree library is not installed"
+                    " or is not too outdated to be supported by xml4h")
             import xml.etree.ElementTree as ET
+
         # Build a DOM using minidom for testing
         self.root_elem = ET.Element('{urn:test}DocRoot')
         doc = ET.ElementTree(self.root_elem)
@@ -725,7 +734,16 @@ class TestElementTreeNodes(BaseTestNodes, unittest.TestCase):
         self.elem3_second.append(self.instruction_node)
 
         self.doc = doc
-        self.xml4h_doc = xml4h.ElementTreeAdapter.wrap_document(doc)
+        self.xml4h_doc = self.adapter_class.wrap_document(doc)
         self.xml4h_root = self.xml4h_doc.root
-        self.xml4h_text = xml4h.ElementTreeAdapter.wrap_node(
+        self.xml4h_text = self.adapter_class.wrap_node(
             self.text_node, self.doc)
+
+
+# Note this class extends TestElementTreeNodes class, which performs tests
+# against ElementTree/cElementTree implementations depending on name of class.
+class TestcElementTreeNodes(TestElementTreeNodes, unittest.TestCase):
+
+    @property
+    def adapter_class(self):
+        return xml4h.cElementTreeAdapter

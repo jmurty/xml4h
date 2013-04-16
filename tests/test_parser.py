@@ -139,5 +139,16 @@ class TestElementTreeEtreeParser(unittest.TestCase, BaseParserTest):
     @property
     def adapter(self):
         if not xml4h.ElementTreeAdapter.is_available():
-            self.skipTest("ElementTree library is not installed")
+            self.skipTest(
+                "ElementTree library is not installed or is outdated")
         return xml4h.ElementTreeAdapter
+
+
+class TestcElementTreeEtreeParser(unittest.TestCase, BaseParserTest):
+
+    @property
+    def adapter(self):
+        if not xml4h.cElementTreeAdapter.is_available():
+            self.skipTest(
+                "cElementTree library is not installed or is outdated")
+        return xml4h.cElementTreeAdapter

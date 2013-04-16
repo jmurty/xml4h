@@ -6,18 +6,18 @@ from StringIO import StringIO
 from xml4h.impls.interface import XmlImplAdapter
 from xml4h import nodes, exceptions
 
-# Use faster C-based ElementTree implementation if available
+# Import the pure-Python ElementTree implementation, if possible
 try:
-    import xml.etree.cElementTree as ET
-except ImportError:
-    try:
-        import xml.etree.ElementTree as ET
-    except ImportError:
-        pass
-
-# Re-import non-C ElementTree with a definitive name
-try:
+    import xml.etree.ElementTree as PythonET
+    # Re-import non-C ElementTree with a definitive name, for cases where we
+    # must explicilty use non-C-based elements of ElementTree.
     import xml.etree.ElementTree as BaseET
+except ImportError:
+    pass
+
+# Import the C-based ElementTree implementation, if possible
+try:
+    import xml.etree.cElementTree as cET
 except ImportError:
     pass
 
@@ -26,8 +26,14 @@ class ElementTreeAdapter(XmlImplAdapter):
     """
     Adapter to the
     `ElementTree <http://docs.python.org/2/library/xml.etree.elementtree.html>`_
-    XML library implementation.
+    XML library.
+
+    This code *must* work with either the base ElementTree pure python
+    implementation or the C-based cElementTree implementation, since it is
+    reused in the `cElementTree` class defined below.
     """
+
+    ET = PythonET  # Use the pure-Python implementation
 
     SUPPORTED_FEATURES = {
         'xpath': True,
@@ -39,18 +45,12 @@ class ElementTreeAdapter(XmlImplAdapter):
     def is_available(cls):
         # Is vital piece of ElementTree module available at all?
         try:
-            ET.Element
+            cls.ET.Element
         except:
             return False
         # We only support ElementTree version 1.3+
         from distutils.version import StrictVersion
-        if StrictVersion(BaseET.VERSION) < StrictVersion('1.3'):
-            return False
-        # If we are using cElementTree, we only support version 1.0.6+
-        if ET != BaseET:
-            if StrictVersion(ET.VERSION) < StrictVersion('1.0.6'):
-                return False
-        return True
+        return StrictVersion(BaseET.VERSION) >= StrictVersion('1.3')
 
     @classmethod
     def clear_caches(cls):
@@ -71,7 +71,7 @@ class ElementTreeAdapter(XmlImplAdapter):
         events = ('start', 'start-ns')
         impl_root = None
         ns_list = []
-        for event, node in ET.iterparse(xml_file_path, events):
+        for event, node in cls.ET.iterparse(xml_file_path, events):
             if event == 'start-ns':
                 # Track namespaces as nodes declared
                 ns_list.append(node)
@@ -89,8 +89,8 @@ class ElementTreeAdapter(XmlImplAdapter):
                 # Reset namespace list now the corresponding attributes exist
                 ns_list = []
 
-        impl_doc = ET.ElementTree(impl_root)
-        wrapped_doc = ElementTreeAdapter.wrap_document(impl_doc)
+        impl_doc = cls.ET.ElementTree(impl_root)
+        wrapped_doc = cls.wrap_document(impl_doc)
         if ignore_whitespace_text_nodes:
             cls.ignore_whitespace_text_nodes(wrapped_doc)
         return wrapped_doc
@@ -103,11 +103,8 @@ class ElementTreeAdapter(XmlImplAdapter):
         else:
             ns_uri = nodes.Node.XMLNS_URI
             root_nsmap[None] = ns_uri
-        root_elem = ET.Element('{%s}%s' % (ns_uri, root_tagname))
-        doc = ET.ElementTree(root_elem)
-        # Godawful global registration of namespace prefixes is the only option
-        # supported by ET, so we'll handle this more sanely ourselves.
-        doc._xml4h_nsmap = root_nsmap
+        root_elem = cls.ET.Element('{%s}%s' % (ns_uri, root_tagname))
+        doc = cls.ET.ElementTree(root_elem)
         return doc
 
     def _lookup_node_parent(self, node):
@@ -165,19 +162,19 @@ class ElementTreeAdapter(XmlImplAdapter):
         if ns_uri is not None:
             if ':' in tagname:
                 tagname = tagname.split(':')[1]
-            element = ET.Element('{%s}%s' % (ns_uri, tagname))
+            element = self.ET.Element('{%s}%s' % (ns_uri, tagname))
             return element
         else:
-            return ET.Element(tagname)
+            return self.ET.Element(tagname)
 
     def new_impl_text(self, text):
         return ElementTreeText(text)
 
     def new_impl_comment(self, text):
-        return ET.Comment(text)
+        return self.ET.Comment(text)
 
     def new_impl_instruction(self, target, data):
-        return ET.ProcessingInstruction(target, data)
+        return self.ET.ProcessingInstruction(target, data)
 
     def new_impl_cdata(self, text):
         return ElementTreeText(text, is_cdata=True)
@@ -475,11 +472,6 @@ class ElementTreeAdapter(XmlImplAdapter):
             result = BaseET._namespace_map[uri]
             if result == '':
                 result = None
-        elif hasattr(node, '_xml4h_nsmap') and uri in node._xml4h_nsmap.values():
-            for n, v in node._xml4h_nsmap.items():
-                if v == uri:
-                    result = n
-                    break
         if result is None or re.match('ns\d', result):
             # We either have no namespace prefix in the global mapping, in
             # which case we will try looking for a matching xmlns attribute,
@@ -535,9 +527,6 @@ class ElementTreeAdapter(XmlImplAdapter):
         """
         curr_node = self.get_node_parent(node)
         while curr_node.__class__ == ET.Element:
-            if (hasattr(curr_node, '_xml4h_nsmap')
-                    and curr_node._xml4h_nsmap.get(name) == value):
-                return True
             for n, v in curr_node.attrib.items():
                 if v == value and '{%s}' % nodes.Node.XMLNS_URI in n:
                     return True
@@ -608,3 +597,21 @@ class ETAttribute(object):
         return self._value
 
     name = tag = local_name  # Alias
+
+
+class cElementTreeAdapter(ElementTreeAdapter):
+    """
+    Adapter to the C-based implementation of the
+    `ElementTree <http://docs.python.org/2/library/xml.etree.elementtree.html>`_
+    XML library.
+    """
+
+    ET = cET  # Use the C-based implementation
+
+    @classmethod
+    def is_available(cls):
+        if not super(cElementTreeAdapter, cls).is_available():
+            return False
+        # We only support cElementTree version 1.0.6+
+        from distutils.version import StrictVersion
+        return StrictVersion(cls.ET.VERSION) >= StrictVersion('1.0.6')

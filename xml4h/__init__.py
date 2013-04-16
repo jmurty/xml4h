@@ -2,7 +2,8 @@ import xml4h
 
 # Make commonly-used classes and functions available in xml4h module
 from xml4h.impls.xml_dom_minidom import XmlDomImplAdapter
-from xml4h.impls.xml_etree_elementtree import ElementTreeAdapter
+from xml4h.impls.xml_etree_elementtree import (
+    ElementTreeAdapter, cElementTreeAdapter)
 from xml4h.impls.lxml_etree import LXMLAdapter
 from xml4h.builder import Builder
 from xml4h.writer import write_node
@@ -13,7 +14,11 @@ __version__ = '0.2.0'
 
 
 # List of xml4h adapter classes, in order of preference
-_ADAPTER_CLASSES = [LXMLAdapter, ElementTreeAdapter, XmlDomImplAdapter]
+_ADAPTER_CLASSES = [
+    LXMLAdapter,
+    cElementTreeAdapter,
+    ElementTreeAdapter,
+    XmlDomImplAdapter]
 
 _ADAPTERS_AVAILABLE = []
 _ADAPTERS_UNAVAILABLE = []

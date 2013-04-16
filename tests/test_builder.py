@@ -331,7 +331,9 @@ class BaseBuilderNodesTest(object):
                        ' myns:custom-ns-prefix-implicit="1"/>\n'
             '</DocRoot>\n'
             % (self.adapter == xml4h.LXMLAdapter and 'myns:' or '',
-               self.adapter != xml4h.ElementTreeAdapter and 'myns:' or ''))
+               self.adapter not in (
+                   xml4h.ElementTreeAdapter, xml4h.cElementTreeAdapter)
+                   and 'myns:' or ''))
             # TODO: Any way to make lxml/ElementTree output more consistent?
         self.assertEqual(xml, xmlb.dom_element.xml_doc())
         # Test namespaces work as expected when searching/traversing DOM
@@ -448,7 +450,8 @@ class BaseBuilderNodesTest(object):
                 .e('Elem1').t('<content/> as text').up()
                 .e('Elem2').d('<content/> as cdata').up()
             )
-        if self.adapter in (xml4h.LXMLAdapter, xml4h.ElementTreeAdapter):
+        if self.adapter in (xml4h.LXMLAdapter, xml4h.ElementTreeAdapter,
+                            xml4h.cElementTreeAdapter):
             # TODO: Make lxml & ElementTree libs support real cdata
             self.assertEqual(
                 '<?xml version="1.0" encoding="utf-8"?>\n'
@@ -763,3 +766,13 @@ class TestElementTreeBuilder(BaseBuilderNodesTest, unittest.TestCase):
     @property
     def adapter(self):
         return xml4h.ElementTreeAdapter
+
+
+class TestcElementTreeBuilder(BaseBuilderNodesTest, unittest.TestCase):
+    """
+    Test building with the (c)ElementTree library.
+    """
+
+    @property
+    def adapter(self):
+        return xml4h.cElementTreeAdapter
