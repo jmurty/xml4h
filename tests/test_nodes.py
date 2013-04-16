@@ -438,13 +438,22 @@ class BaseTestNodes(object):
         self.assertEqual([self.xml4h_root],
             self.xml4h_root.xpath('Element2/..'))
         self.assertEqual([self.xml4h_root.Element4],
-            self.xml4h_root.xpath('.//x:Element3/..', namespaces={'x': 'urn:ns2'}))
+            self.xml4h_root.xpath('.//x:Element3/..',
+                                  namespaces={'x': 'urn:ns2'}))
         # Lookup elements with a given attribute
         self.assertEqual(1, len(self.xml4h_root.xpath('.//*[@a]')))
         self.assertEqual(0, len(self.xml4h_root.xpath('.//*[@not-an-attr]')))
         # Lookup elements with a given attribute value
         self.assertEqual(1, len(self.xml4h_root.xpath(".//*[@a='1']")))
         self.assertEqual(0, len(self.xml4h_root.xpath(".//*[@a='wrong']")))
+        # Find namespaced element with explicit namespaces definition
+        self.assertEqual(self.elem3, self.xml4h_root.xpath(
+            './/explicit:Element3', namespaces={'explicit': 'urn:ns1'})
+                [0].impl_node)
+        # Find namespaced element with helper empty/default prefix '_'
+        self.assertEqual(self.elem3, self.xml4h_root.xpath(
+            './/_:Element3', namespaces={None: 'urn:ns1'})
+                [0].impl_node)
 
     def test_xpath(self):
         if not self.adapter_class.has_feature('xpath'):
@@ -738,6 +747,19 @@ class TestElementTreeNodes(BaseTestNodes, unittest.TestCase):
         self.xml4h_root = self.xml4h_doc.root
         self.xml4h_text = self.adapter_class.wrap_node(
             self.text_node, self.doc)
+
+    def test_ancestry_dict_cache(self):
+        # Trigger creation and caching of ancestry dict
+        xml4h_elem3_second = self.adapter_class.wrap_node(
+            self.elem3_second, self.doc)
+        self.assertEqual(self.elem4, xml4h_elem3_second.parent.impl_node)
+        # Ancestry dict should now be primed
+        self.assertEqual(self.elem4,
+            xml4h_elem3_second.adapter.CACHED_ANCESTRY_DICT[self.elem3_second])
+        # Confirm we can clear the cached ancestry dict
+        xml4h_elem3_second.adapter.clear_caches()
+        self.assertFalse(self.elem3_second in
+            xml4h_elem3_second.adapter.CACHED_ANCESTRY_DICT)
 
 
 # Note this class extends TestElementTreeNodes class, which performs tests

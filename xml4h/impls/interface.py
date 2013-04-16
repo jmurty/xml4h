@@ -67,16 +67,6 @@ class XmlImplAdapter(object):
         return impl_class(node, adapter)
 
     @classmethod
-    def clear_caches(cls):
-        """
-        Clear any in-adapter cached data, for cases where cached data could
-        become outdated e.g. by making DOM changes directly outside of *xml4h*.
-
-        This is a no-op if the implementing adapter has no cached data.
-        """
-        pass
-
-    @classmethod
     def is_available(cls):
         """
         :return: *True* if this adapter's underlying XML library is available \
@@ -98,6 +88,16 @@ class XmlImplAdapter(object):
                 document, [object])
         self._impl_document = document
         self._auto_ns_prefix_count = 0
+        self.clear_caches()
+
+    def clear_caches(cls):
+        """
+        Clear any in-adapter cached data, for cases where cached data could
+        become outdated e.g. by making DOM changes directly outside of *xml4h*.
+
+        This is a no-op if the implementing adapter has no cached data.
+        """
+        pass
 
     @property
     def impl_document(self):
@@ -216,9 +216,6 @@ class XmlImplAdapter(object):
         raise NotImplementedError("Implementation missing for %s" % self)
 
     def get_node_name(self, node):
-        raise NotImplementedError("Implementation missing for %s" % self)
-
-    def set_node_name(self, node, name):
         raise NotImplementedError("Implementation missing for %s" % self)
 
     def get_node_local_name(self, node):

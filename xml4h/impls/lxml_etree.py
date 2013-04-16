@@ -208,9 +208,6 @@ class LXMLAdapter(XmlImplAdapter):
         else:
             return self.get_node_local_name(node)
 
-    def set_node_name(self, node, name):
-        raise NotImplementedError()
-
     def get_node_local_name(self, node):
         return re.sub('{.*}', '', node.tag)
 

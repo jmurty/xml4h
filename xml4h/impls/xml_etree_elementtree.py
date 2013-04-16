@@ -39,8 +39,6 @@ class ElementTreeAdapter(XmlImplAdapter):
         'xpath': True,
         }
 
-    CACHED_ANCESTRY_DICT = {}
-
     @classmethod
     def is_available(cls):
         # Is vital piece of ElementTree module available at all?
@@ -51,10 +49,6 @@ class ElementTreeAdapter(XmlImplAdapter):
         # We only support ElementTree version 1.3+
         from distutils.version import StrictVersion
         return StrictVersion(BaseET.VERSION) >= StrictVersion('1.3')
-
-    @classmethod
-    def clear_caches(cls):
-        cls.CACHED_ANCESTRY_DICT = {}
 
     @classmethod
     def parse_string(cls, xml_str, ignore_whitespace_text_nodes=True):
@@ -106,6 +100,10 @@ class ElementTreeAdapter(XmlImplAdapter):
         root_elem = cls.ET.Element('{%s}%s' % (ns_uri, root_tagname))
         doc = cls.ET.ElementTree(root_elem)
         return doc
+
+    # This method is called by interface super-class's __init__
+    def clear_caches(self):
+        self.CACHED_ANCESTRY_DICT = {}
 
     def _lookup_node_parent(self, node):
         """
@@ -236,8 +234,6 @@ class ElementTreeAdapter(XmlImplAdapter):
             return node.tag.split('}')[0][1:]
         elif isinstance(node, ETAttribute):
             return node.namespace_uri
-        elif isinstance(node, BaseET.ElementTree):
-            return None
         elif self._is_node_an_element(node):
             qname, ns_uri = self._unpack_name(node.tag, node)[:2]
             return ns_uri
@@ -260,11 +256,7 @@ class ElementTreeAdapter(XmlImplAdapter):
         elif node == self.get_impl_root(node):
             parent = self._impl_document
         else:
-            try:
-                parent = self._lookup_node_parent(node)
-            except KeyError:
-                raise exceptions.Xml4hImplementationBug(
-                    'Unable to get parent of node: %s' % node)
+            parent = self._lookup_node_parent(node)
         return parent
 
     def get_node_children(self, node):
@@ -290,9 +282,6 @@ class ElementTreeAdapter(XmlImplAdapter):
             return '%s:%s' % (prefix, self.get_node_local_name(node))
         else:
             return self.get_node_local_name(node)
-
-    def set_node_name(self, node, name):
-        raise NotImplementedError()
 
     def get_node_local_name(self, node):
         return re.sub('{.*}', '', node.tag)
@@ -518,20 +507,6 @@ class ElementTreeAdapter(XmlImplAdapter):
         else:
             qname = local_name = name
         return (qname, ns_uri, prefix, local_name)
-
-    def _is_ns_in_ancestor(self, node, name, value):
-        """
-        Return True if the given namespace name/value is defined in an
-        ancestor of the given node, meaning that the given node need not
-        have its own attributes to apply that namespacing.
-        """
-        curr_node = self.get_node_parent(node)
-        while curr_node.__class__ == ET.Element:
-            for n, v in curr_node.attrib.items():
-                if v == value and '{%s}' % nodes.Node.XMLNS_URI in n:
-                    return True
-            curr_node = self.get_node_parent(curr_node)
-        return False
 
 
 class ElementTreeText(object):
