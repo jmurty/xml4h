@@ -41,7 +41,7 @@ setup(
     license=open('LICENSE').read(),
     # http://pypi.python.org/pypi?%3Aaction=list_classifiers
     classifiers=(
-        'Development Status :: 3 - Alpha',
+        'Development Status :: 4 - Beta',
         'Intended Audience :: Developers',
         'Topic :: Text Processing :: Markup :: XML',
         'Natural Language :: English',

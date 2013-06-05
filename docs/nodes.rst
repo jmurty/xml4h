@@ -182,13 +182,15 @@ values, or a single value. The result depends entirely on the kind of query you
 perform.
 
 .. note::
-   XPath querying is currently only available if you use the *lxml*
-   implementation library, so you must have *lxml* installed to use
-   :meth:`~xml4h.nodes.XPathMixin.xpath`. You can check whether the XPath
-   feature is available with :meth:`~xml4h.nodes.Node.has_feature`::
+   XPath querying is currently only available if you use the *lxml* or
+   *ElementTree* implementation libraries. You can check whether the XPath
+   feature is available with :meth:`~xml4h.nodes.Node.has_feature`.
 
-       >>> doc.has_feature('xpath')
-       True
+.. note::
+   Although *ElementTree* supports XPath queries, this support is
+   `very limited <http://effbot.org/zone/element-xpath.htm>`_ and most of the
+   example XPath queries below **will not work**. If you want to use XPath, you
+   should install *lxml* for better support.
 
 XPath queries are powerful and complex so we cannot describe them in detail
 here, but we can at least present some useful examples. Here are queries that

@@ -44,6 +44,9 @@ XML Libarary Adapters
 .. automodule:: xml4h.impls.lxml_etree
    :members:
 
+.. automodule:: xml4h.impls.xml_etree_elementtree
+   :members:
+
 .. automodule:: xml4h.impls.xml_dom_minidom
    :members:
 

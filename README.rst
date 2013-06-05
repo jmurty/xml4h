@@ -13,7 +13,7 @@ Features
 --------
 
 *xml4h* is a simplification layer over existing Python XML processing libraries
-such as *lxml* and the *minidom*. It provides:
+such as *lxml*, *ElementTree* and the *minidom*. It provides:
 
 - a rich pythonic API to traverse and manipulate the XML DOM.
 - a document builder to simply and safely construct complex documents with
@@ -39,6 +39,10 @@ Installation
 Install *xml4h* with pip::
 
     $ pip install xml4h
+
+Or install the tarball manually with::
+
+    $ python setup.py install
 
 
 Links
@@ -132,9 +136,10 @@ particularly easy to use:
 - `xml.etree.ElementTree <http://docs.python.org/library/xml.etree.elementtree.html>`_
   is a fast hierarchical data container that is included in the standard
   library and can be used to represent XML, mostly. The API is fairly pythonic
-  and supports XPath, but it lacks some DOM traversal niceties you might
-  expect (e.g. to get an element's parent) and when using it you often feel
-  like your working with something subtly different from XML, because you are.
+  and supports some basic XPath features, but it lacks some DOM traversal
+  niceties you might expect (e.g. to get an element's parent) and when using it
+  you often feel like your working with something subtly different from XML,
+  because you are.
 - `lxml <http://lxml.de/>`_ is a fast, full-featured XML library with an API
   based on ElementTree but extended. It is your best choice for doing serious
   work with XML in Python but it is not included in the standard library, it
@@ -160,14 +165,31 @@ This project is heavily inspired by the work of
 the excellent `Requests HTTP library <http://docs.python-requests.org/>`_.
 
 
-Development Status: αlphα
--------------------------
+Development Status: beta
+------------------------
 
-Currently *xml4h* includes two adapter implementations that support key XML
-processing tasks, using either the *minidom* or *lxml*'s ElementTree libraries.
+Currently *xml4h* includes adapter implementations for all three of the main
+XML processing Python libraries.
 
-The project is still at the alpha stage, where I am playing with ideas and
-tweaking the APIs to try and get them right before I build out the feature set.
+If you have *lxml* available (highly recommended) it will use that, otherwise
+it will fall back to use the *(c)ElementTree* then the *minidom* libraries.
 
-This project is likely to be in flux for a while yet, so be aware that
-individual APIs and even broad approaches may change.
+
+History
+-------
+
+0.2.0
+.....
+
+- Add adapter for the *(c)ElementTree* library versions included as standard
+  with Python 2.7+.
+- Improved "magical" node traversal to work with lowercase tag names without
+  always needing a trailing underscore. See also improved docs.
+- Fixes for: potential errors ASCII-encoding nodes as strings; default XPath
+  namespace from document node; lookup precedence of xmlns attributes.
+
+
+0.1.0
+.....
+
+- Initial alpha release with support for *lxml* and *minidom* libraries.

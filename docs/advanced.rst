@@ -229,21 +229,23 @@ extends the :class:`~xml4h.impls.interface.XmlImplAdapter` class. This base
 class includes some standard behaviour, and defines the interface for adapter
 implementations (to the extent you can define such interfaces in Python).
 
-The current version of *xml4h* includes two adapter implementations:
+The current version of *xml4h* includes adapter implementations for the three
+main XML processing libraries for Python:
 
 - :class:`~xml4h.impls.lxml_etree.LXMLAdapter` works with the excellent
   `lxml <http://lxml.de>`_ library which is very full-featured and fast, but
   which is not included in the standard library.
+- :class:`~xml4h.impls.xml_etree_elementtree.cElementTreeAdapter` and
+  :class:`~xml4h.impls.xml_etree_elementtree.ElementTreeAdapter` work with the
+  *ElementTree* libraries included with the standard library of Python versions
+  2.7 and later. *ElementTree* is fast and includes support for some basic
+  XPath expressions. If the C-based version of ElementTree is available, the
+  former adapter is made available and should be used for best performance.
 - :class:`~xml4h.impls.xml_dom_minidom.XmlDomImplAdapter` works with the
   `minidom <http://docs.python.org/2/library/xml.dom.minidom.html>`_ W3C-style
   XML library included with the standard library. This library is always
   available but is slower and has fewer features than alternative libraries
   (e.g. no support for XPath)
-
-.. note:
-   Over time, we expect that *xml4h* will gain more adapter implementations and
-   that the implementations themselves will improve to work faster and expose
-   more features.
 
 The adapter layer allows the rest of the *xml4h* library code to remain almost
 entirely oblivious to the underlying XML library that happens to be available
@@ -263,22 +265,22 @@ smart to use the best of the libraries available.
 
 *xml4h* does exactly that: unless you explicitly choose an adapter (see below)
 *xml4h* will find the supported libraries in the Python environment and choose
-the "best" adapter for you.
+the "best" adapter for you in the circumstances.
 
-With only two adapter implementations in *xml4h* right now the algorithm for
-making this choice isn't exactly complex, so let's spell it out explicitly:
+Here is the list of libraries *xml4h* will choose from, best to least-best:
 
-- use *lxml* if it is available.
-- use the *minidom* if nothing else is available.
+- *lxml*
+- *(c)ElementTree*
+- *ElementTree*
+- *minidom*
 
 The :attr:`xml4h.best_adapter` attribute stores the adapter class that *xml4h*
 considers to be the best.
 
 .. note:
-   *xml4h* is not always able to choose which underlying XML library
-   implementation to use. If you are working with pre-parsed documents for
-   example you will need to use an adapter that works with the existing DOM,
-   see `wrap-unwrap-nodes`_.
+   You cannot always rely on *xml4h* to choose the right underlying XML library
+   for your needs. For cases where you need to use a specific library, such as
+   when you have a pre-parsed document object, see `wrap-unwrap-nodes`_.
 
 
 Choose Your Own Adapter
@@ -312,6 +314,17 @@ creating a new document using the builder, simply provide the optional
     >>> lxml_b = xml4h.build('MyDoc', adapter=xml4h.LXMLAdapter)
     >>> lxml_b.root.impl_node  #doctest:+ELLIPSIS
     <Element {http://www.w3.org/2000/xmlns/}MyDoc at ...
+
+- Manipulating::
+
+    >>> # Use xml4h with a cElementTree document object
+    >>> import xml.etree.ElementTree as ET
+    >>> et_doc = ET.parse('tests/data/monty_python_films.xml')
+    >>> et_doc  #doctest:+ELLIPSIS
+    <xml.etree.ElementTree.ElementTree object ...
+    >>> doc = xml4h.cElementTreeAdapter.wrap_document(et_doc)
+    >>> doc.root
+    <xml4h.nodes.Element: "MontyPythonFilms">
 
 
 Check Feature Support
@@ -373,6 +386,26 @@ LXMLAdapter - *lxml*
   when creating nodes by setting the ``ns_uri`` keyword attribute.
 - When *xml4h* writes *lxml*-based documents with namespaces, some node tag
   names may have unnecessary namespace prefix aliases.
+
+(c)ElementTreeAdapter - *ElementTree*
+.....................................
+
+- Only the versions of (c)ElementTree included with Python version 2.7 and
+  later are supported.
+- *ElementTree* supports only a very limited subset of XPath for querying, so
+  although the ``has_feature('xpath')`` check returns ``True`` don't expect to
+  get the full power of XPath when you use this adapter.
+- *ElementTree* does not have full support for CDATA nodes, which devolve into
+  plain text node values when written (by *xml4h* or by *ElementTree*'s writer).
+- Because *ElementTree* doesn't retain information about a node's parent,
+  *xml4h* needs to build and maintain its own records of which nodes are
+  parents of which children. This extra overhead might harm performance or
+  memory usage.
+- *ElementTree* doesn't normally remember explicit namespace definition
+  directives when parsing a document. *xml4h* works around this when it is
+  asked to parse XML data, but if you parse data outside of *xml4h* then use
+  the library on the resultant document the namespace definitions will get
+  messed up.
 
 XmlImplAdapter - *minidom*
 ..........................
