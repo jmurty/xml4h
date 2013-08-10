@@ -1,3 +1,5 @@
+import abc
+
 from xml4h import nodes, exceptions
 
 
@@ -12,6 +14,7 @@ class XmlImplAdapter(object):
     but mostly it sketches out the methods the real implementaiton subclasses
     must provide.
     """
+    __metaclass__ = abc.ABCMeta
 
     # List of extra features supported (or not) by an adapter implementation
     SUPPORTED_FEATURES = {
@@ -67,6 +70,7 @@ class XmlImplAdapter(object):
         return impl_class(node, adapter)
 
     @classmethod
+    @abc.abstractmethod
     def is_available(cls):
         """
         :return: *True* if this adapter's underlying XML library is available \
@@ -75,10 +79,12 @@ class XmlImplAdapter(object):
         raise NotImplementedError("Implementation missing for %s" % cls)
 
     @classmethod
+    @abc.abstractmethod
     def parse_string(cls, xml_str, ignore_whitespace_text_nodes=True):
         raise NotImplementedError("Implementation missing for %s" % cls)
 
     @classmethod
+    @abc.abstractmethod
     def parse_file(cls, xml_file, ignore_whitespace_text_nodes=True):
         raise NotImplementedError("Implementation missing for %s" % cls)
 
@@ -157,32 +163,41 @@ class XmlImplAdapter(object):
     # Utility implementation methods
 
     @classmethod
+    @abc.abstractmethod
     def new_impl_document(cls, root_tagname, ns_uri=None, **kwargs):
         raise NotImplementedError("Implementation missing for %s" % cls)
 
+    @abc.abstractmethod
     def map_node_to_class(self, node):
         raise NotImplementedError("Implementation missing for %s" % self)
 
+    @abc.abstractmethod
     def get_impl_root(self, node):
         raise NotImplementedError("Implementation missing for %s" % self)
 
     # Document implementation methods
 
+    @abc.abstractmethod
     def new_impl_element(self, tagname, ns_uri=None, parent=None):
         raise NotImplementedError("Implementation missing for %s" % self)
 
+    @abc.abstractmethod
     def new_impl_text(self, text):
         raise NotImplementedError("Implementation missing for %s" % self)
 
+    @abc.abstractmethod
     def new_impl_comment(self, text):
         raise NotImplementedError("Implementation missing for %s" % self)
 
+    @abc.abstractmethod
     def new_impl_instruction(self, target, data):
         raise NotImplementedError("Implementation missing for %s" % self)
 
+    @abc.abstractmethod
     def new_impl_cdata(self, text):
         raise NotImplementedError("Implementation missing for %s" % self)
 
+    @abc.abstractmethod
     def find_node_elements(self, node, name='*', ns_uri='*'):
         """
         :return: element node descendents of the given node that match the \
@@ -199,75 +214,97 @@ class XmlImplAdapter(object):
     def xpath_on_node(self, node, xpath, **kwargs):
         if not self.has_feature('xpath'):
             raise exceptions.FeatureUnavailableException('xpath')
-        raise NotImplementedError("Implementation missing for %s" % self)
 
     # Node implementation methods
 
+    @abc.abstractmethod
     def get_node_namespace_uri(self, node):
         raise NotImplementedError("Implementation missing for %s" % self)
 
+    @abc.abstractmethod
     def set_node_namespace_uri(self, node, ns_uri):
         raise NotImplementedError("Implementation missing for %s" % self)
 
+    @abc.abstractmethod
     def get_node_parent(self, node):
         raise NotImplementedError("Implementation missing for %s" % self)
 
+    @abc.abstractmethod
     def get_node_children(self, node):
         raise NotImplementedError("Implementation missing for %s" % self)
 
+    @abc.abstractmethod
     def get_node_name(self, node):
         raise NotImplementedError("Implementation missing for %s" % self)
 
+    @abc.abstractmethod
     def get_node_local_name(self, node):
         raise NotImplementedError("Implementation missing for %s" % self)
 
+    @abc.abstractmethod
     def get_node_name_prefix(self, node):
         raise NotImplementedError("Implementation missing for %s" % self)
 
+    @abc.abstractmethod
     def get_node_value(self, node):
         raise NotImplementedError("Implementation missing for %s" % self)
 
+    @abc.abstractmethod
     def set_node_value(self, node, value):
         raise NotImplementedError("Implementation missing for %s" % self)
 
+    @abc.abstractmethod
     def get_node_text(self, node):
         raise NotImplementedError("Implementation missing for %s" % self)
 
+    @abc.abstractmethod
     def set_node_text(self, node, text):
         raise NotImplementedError("Implementation missing for %s" % self)
 
+    @abc.abstractmethod
     def get_node_attributes(self, element, ns_uri=None):
         raise NotImplementedError("Implementation missing for %s" % self)
 
+    @abc.abstractmethod
     def has_node_attribute(self, element, name, ns_uri=None):
         raise NotImplementedError("Implementation missing for %s" % self)
 
+    @abc.abstractmethod
     def get_node_attribute_node(self, element, name, ns_uri=None):
         raise NotImplementedError("Implementation missing for %s" % self)
 
+    @abc.abstractmethod
     def get_node_attribute_value(self, element, name, ns_uri=None):
         raise NotImplementedError("Implementation missing for %s" % self)
 
+    @abc.abstractmethod
     def set_node_attribute_value(self, element, name, value, ns_uri=None):
         raise NotImplementedError("Implementation missing for %s" % self)
 
+    @abc.abstractmethod
     def remove_node_attribute(self, element, name, ns_uri=None):
         raise NotImplementedError("Implementation missing for %s" % self)
 
+    @abc.abstractmethod
     def add_node_child(self, parent, child, before_sibling=None):
         raise NotImplementedError("Implementation missing for %s" % self)
 
+    @abc.abstractmethod
     def import_node(self, parent, node, original_parent=None, clone=False):
         raise NotImplementedError("Implementation missing for %s" % self)
 
+    @abc.abstractmethod
     def clone_node(self, node, deep=True):
         raise NotImplementedError("Implementation missing for %s" % self)
 
+    @abc.abstractmethod
     def remove_node_child(self, parent, child, destroy_node=True):
         raise NotImplementedError("Implementation missing for %s" % self)
 
+    @abc.abstractmethod
     def lookup_ns_uri_by_attr_name(self, node, name):
         raise NotImplementedError("Implementation missing for %s" % self)
 
+    @abc.abstractmethod
     def lookup_ns_prefix_for_uri(self, node, uri):
         raise NotImplementedError("Implementation missing for %s" % self)
