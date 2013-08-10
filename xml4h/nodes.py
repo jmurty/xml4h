@@ -699,15 +699,10 @@ class NameValueNodeMixin(Node):
     @property
     def name(self):
         """
-        Get or set the name of a node, possibly including prefix and local
-            components.
+        Get the name of a node, possibly including prefix and local components.
         """
         return self._tounicode(
             self.adapter.get_node_name(self.impl_node))
-
-    @name.setter
-    def name(self, name):
-        self.set_name(self.impl_node, name)
 
     @property
     def value(self):
