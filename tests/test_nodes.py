@@ -307,14 +307,26 @@ class BaseTestNodes(object):
         # Set text on element
         wrapped_node.text = 'Different text'
         self.assertEqual('Different text', wrapped_node.text)
-        self.assertEqual(
-            wrapped_node.children[0].value,
-            self.adapter_class(self.doc).get_node_value(
-                wrapped_node.children[0].impl_node))
         # Unset text on element (removes any text children)
         wrapped_node.text = None
         self.assertEqual(None, wrapped_node.text)
         self.assertEqual([], wrapped_node.children)
+
+    def test_element_value(self):
+        # Get value on element
+        wrapped_node = self.adapter_class.wrap_node(self.elem1, self.doc)
+        self.assertEqual('Some text', wrapped_node.text)
+        # Only Minidom library distinguishes between node's text & value
+        if isinstance(self, TestMinidomNodes):
+            self.assertIsNone(wrapped_node.value)
+        else:
+            self.assertEqual('Some text', wrapped_node.value)
+        # Set value on element
+        wrapped_node.value = 'Different text'
+        self.assertEqual('Different text', wrapped_node.value)
+        # Unset value on element
+        wrapped_node.value = None
+        self.assertEqual(None, wrapped_node.value)
 
     def test_delete(self):
         # Remove single Element using delete() method without destroying it
