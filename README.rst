@@ -56,31 +56,39 @@ Links
 Introduction
 ------------
 
-Here is an example of parsing and reading data from an XML document using
-"magical" element and attribute lookups::
+With *xml4h* you can easily parse XML files and access their data.
+
+Let's start with an example XML document::
 
     $ cat tests/data/monty_python_films.xml
     <MontyPythonFilms source="http://en.wikipedia.org/wiki/Monty_Python">
         <Film year="1971">
             <Title>And Now for Something Completely Different</Title>
-            <Description>A collection of sketches from the first and second TV series of Monty Python's Flying Circus purposely re-enacted and shot for film.</Description>
-        </Film>
-        <Film year="1971">
-            <Title>And Now for Something Completely Different</Title>
-            <Description>A collection of sketches from the first and second TV series of Monty Python's Flying Circus purposely re-enacted and shot for film.</Description>
+            <Description>
+                A collection of sketches from the first and second TV series of
+                Monty Python's Flying Circus purposely re-enacted and shot for film.
+            </Description>
         </Film>
         <Film year="1974">
             <Title>Monty Python and the Holy Grail</Title>
-            <Description>King Arthur and his knights embark on a low-budget search for the Holy Grail, encountering humorous obstacles along the way. Some of these turned into standalone sketches.</Description>
+            <Description>
+                King Arthur and his knights embark on a low-budget search for
+                the Holy Grail, encountering humorous obstacles along the way.
+                Some of these turned into standalone sketches.
+            </Description>
         </Film>
         <Film year="1979">
             <Title>Monty Python's Life of Brian</Title>
-            <Description>Brian is born on the first Christmas, in the stable next to Jesus'. He spends his life being mistaken for a messiah.</Description>
+            <Description>
+                Brian is born on the first Christmas, in the stable next to
+                Jesus'. He spends his life being mistaken for a messiah.
+            </Description>
         </Film>
         <... more Film elements here ...>
     </MontyPythonFilms>
 
-And parsing the above file using *xml4h*::
+With *xml4h* you can parse the XML file and use "magical" element and attribute
+lookups to read data::
 
     >>> import xml4h
     >>> doc = xml4h.parse('tests/data/monty_python_films.xml')
@@ -91,7 +99,7 @@ And parsing the above file using *xml4h*::
     1974 : Monty Python and the Holy Grail
     1979 : Monty Python's Life of Brian
 
-You can also use a more traditional approach to traverse the DOM::
+You can also use a more traditional (non-magical) approach to traverse the DOM::
 
     >>> for film in doc.child('MontyPythonFilms').children('Film')[:3]:
     ...     print film.attributes['year'], ':', film.children.first.text
@@ -101,7 +109,8 @@ You can also use a more traditional approach to traverse the DOM::
 
 The *xml4h* builder makes programmatic document creation simple, with
 a method-chaining feature that allows for expressive but sparse code that
-mirrors the document itself::
+mirrors the document itself. Here is the code to build part of the above XML
+document::
 
     >>> b = (xml4h.build('MontyPythonFilms')
     ...     .attributes({'source': 'http://en.wikipedia.org/wiki/Monty_Python'})
@@ -117,7 +126,7 @@ mirrors the document itself::
     ...         .up()
     ...     )
 
-    >>> # A builder object can be re-used
+    >>> # A builder object can be re-used, and has short method aliases
     >>> b = (b.e('Film')
     ...     .attrs(year=1974)
     ...     .e('Title').t('Monty Python and the Holy Grail').up()
