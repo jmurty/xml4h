@@ -248,11 +248,19 @@ class BaseTestNodes(object):
         # Get element's attributes dict
         wrapped_elem = self.adapter_class.wrap_node(self.elem1, self.doc)
         attrs_dict = wrapped_elem.attributes
-        self.assertEqual(['a', 'ns1:b', 'xmlns:ns1'], attrs_dict.keys())
-        self.assertEqual(['1', '2', 'urn:ns1'], attrs_dict.values())
+        self.assertEqual(
+            sorted(['a', 'ns1:b', 'xmlns:ns1']),
+            sorted(attrs_dict.keys()))
+        self.assertEqual(
+            ['1', '2', 'urn:ns1'],
+            [attrs_dict['a'], attrs_dict['ns1:b'], attrs_dict['xmlns:ns1']])
         # Set/change attributes via element methods
         wrapped_elem.set_attributes({'a': 10, 'c': 3})
-        self.assertEqual(['10', '3', '2', 'urn:ns1'],
+        self.assertEqual(
+            sorted(['a', 'c', 'ns1:b', 'xmlns:ns1']),
+            sorted(attrs_dict.keys()))
+        self.assertEqual(
+            ['10', '3', '2', 'urn:ns1'],
             [a.value for a in wrapped_elem.attribute_nodes])
         # Set attributes via dict assignment (pre-existing attrs are deleted)
         wrapped_elem.attributes = {
@@ -269,8 +277,9 @@ class BaseTestNodes(object):
                 'xmlns:ns2'],
                 [a.name for a in wrapped_elem.attribute_nodes])
         else:
-            self.assertEqual(['a', 'ns2:d', 'ns2:x', 'xmlns:ns2'],
-                [a.name for a in wrapped_elem.attribute_nodes])
+            self.assertEqual(
+                sorted(['a', 'ns2:d', 'ns2:x', 'xmlns:ns2']),
+                sorted([a.name for a in wrapped_elem.attribute_nodes]))
         self.assertEqual('100', wrapped_elem.attributes['a'])
         self.assertEqual('-3', wrapped_elem.attributes['ns2:d'])
         self.assertEqual('urn:ns2', wrapped_elem.attributes['xmlns:ns2'])

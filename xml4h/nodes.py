@@ -868,7 +868,10 @@ class Element(NameValueNodeMixin,
 
     @attributes.setter
     def attributes(self, attr_obj):
-        # Remove existing attributes
+        # Remove existing attributes, leaving namespace definitions until last
+        # to avoid clobbering the namespace of other attributes
+        for attr_name in filter(lambda a: 'xmlns' not in a, self.attributes):
+            self.adapter.remove_node_attribute(self.impl_node, attr_name)
         for attr_name in self.attributes:
             self.adapter.remove_node_attribute(self.impl_node, attr_name)
         # Add new attributes
