@@ -313,11 +313,16 @@ class ElementTreeAdapter(XmlImplAdapter):
             return target
         elif node.tag == BaseET.Comment:
             return node.text
-        else:
+        elif hasattr(node, 'value'):
             return node.value
+        else:
+            return node.text
 
     def set_node_value(self, node, value):
-        node.value = value
+        if hasattr(node, 'value'):
+            node.value = value
+        else:
+            self.set_node_text(node, value)
 
     def get_node_text(self, node):
         return node.text

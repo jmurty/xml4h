@@ -2,8 +2,8 @@
 xml4h: XML for Humans in Python
 ===============================
 
-*xml4h* is an ISC licensed library for Python to make working with XML
-a human-friendly activity.
+*xml4h* is an MIT licensed library for Python to make working with XML a
+human-friendly activity.
 
 This library exists because Python is awesome, XML is everywhere, and combining
 the two should be a pleasure. With *xml4h*, it can be.

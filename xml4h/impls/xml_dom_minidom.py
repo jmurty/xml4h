@@ -113,6 +113,9 @@ class XmlDomImplAdapter(XmlImplAdapter):
     def get_node_value(self, node):
         return node.nodeValue
 
+    def set_node_value(self, node, value):
+        node.nodeValue = value
+
     def get_node_text(self, node):
         """
         Return contatenated value of all text node children of this element
