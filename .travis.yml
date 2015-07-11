@@ -1,0 +1,22 @@
+sudo: false
+language: python
+cache:
+    directories:
+        - $HOME/.pip-cache/
+python:
+ - "2.6"
+ - "2.7"
+env:
+    matrix:
+        -TOX-ENV=py26
+        -TOX-ENV=py26-withlxml
+        -TOX-ENV=py27
+        -TOX-ENV=py27-withlxml
+        -TOX-ENV=docs
+install:
+    - pip install --upgrade pip
+    - pip install tox
+script:
+    - tox -e $TOX_ENV
+after_script:
+    - cat .tox/$TOX_ENV/log/*.log
