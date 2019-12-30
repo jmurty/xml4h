@@ -1,5 +1,5 @@
 import collections
-from StringIO import StringIO
+from io import StringIO
 
 import xml4h
 
@@ -55,7 +55,7 @@ class Node(object):
             and self.impl_node == other.impl_node)
 
     def __unicode__(self):
-        return u'<%s.%s>' % (
+        return '<%s.%s>' % (
             self.__class__.__module__, self.__class__.__name__)
 
     def __str__(self):
@@ -586,7 +586,7 @@ class XPathMixin(object):
 
     def _maybe_wrap_node(self, node):
         # Don't try and wrap base types (e.g. attribute values or node text)
-        if isinstance(node, (basestring, int, long, float)):
+        if isinstance(node, (str, int, float)):
             return node
         else:
             return self.adapter.wrap_node(
@@ -670,15 +670,15 @@ class NameValueNodeMixin(Node):
     """
 
     def __unicode__(self):
-        return u'<%s.%s: "%s">' % (
+        return '<%s.%s: "%s">' % (
             self.__class__.__module__, self.__class__.__name__,
             self.name)
 
     def _tounicode(self, value):
-        if value is None or isinstance(value, unicode):
+        if value is None or isinstance(value, str):
             return value
         else:
-            return unicode(value)
+            return str(value)
 
     @property
     def prefix(self):
@@ -808,7 +808,7 @@ class Element(NameValueNodeMixin,
                 return 1
             else:
                 return cmp(nx, ny)
-        attr_list = sorted(attr_dict.items(), cmp=_xmlns_first)
+        attr_list = sorted(list(attr_dict.items()), cmp=_xmlns_first)
         # Add attributes
         for attr_name, v in attr_list:
             prefix, name, my_ns_uri = self.adapter.get_ns_info_from_node_name(
@@ -829,8 +829,8 @@ class Element(NameValueNodeMixin,
                 if ns_uri == self.adapter.get_node_namespace_uri(element):
                     my_ns_uri = None
             # Forcibly convert all data to unicode text
-            if not isinstance(v, basestring):
-                v = unicode(v)
+            if not isinstance(v, str):
+                v = str(v)
             if prefix:
                 qname = '%s:%s' % (prefix, name)
             else:
@@ -870,7 +870,7 @@ class Element(NameValueNodeMixin,
     def attributes(self, attr_obj):
         # Remove existing attributes, leaving namespace definitions until last
         # to avoid clobbering the namespace of other attributes
-        for attr_name in filter(lambda a: 'xmlns' not in a, self.attributes):
+        for attr_name in [a for a in self.attributes if 'xmlns' not in a]:
             self.adapter.remove_node_attribute(self.impl_node, attr_name)
         for attr_name in self.attributes:
             self.adapter.remove_node_attribute(self.impl_node, attr_name)
@@ -967,7 +967,7 @@ class Element(NameValueNodeMixin,
         prefix, local_name, node_ns_uri = \
             self.adapter.get_ns_info_from_node_name(name, self.impl_node)
         if prefix:
-            qname = u'%s:%s' % (prefix, local_name)
+            qname = '%s:%s' % (prefix, local_name)
         else:
             qname = local_name
         # If no name-derived namespace, apply an alternate namespace
@@ -1022,8 +1022,8 @@ class Element(NameValueNodeMixin,
         :param text: text content to add to this element.
         :param type: string or anything that can be coerced by :func:`unicode`.
         """
-        if not isinstance(text, basestring):
-            text = unicode(text)
+        if not isinstance(text, str):
+            text = str(text)
         self._add_text(self.impl_node, text)
 
     def _add_comment(self, element, text):
@@ -1086,8 +1086,8 @@ class AttributeDict(object):
     def __setitem__(self, name, value):
         prefix, name, ns_uri = self.adapter.get_ns_info_from_node_name(
             name, self.impl_element)
-        if not isinstance(value, basestring):
-            value = unicode(value)
+        if not isinstance(value, str):
+            value = str(value)
         self.adapter.set_node_attribute_value(
             self.impl_element, name, value, ns_uri)
 
@@ -1097,7 +1097,7 @@ class AttributeDict(object):
         self.adapter.remove_node_attribute(self.impl_element, name, ns_uri)
 
     def __iter__(self):
-        for k in self.keys():
+        for k in list(self.keys()):
             yield k
 
     iterkeys = __iter__  # Alias, per Python docs recommendation
@@ -1108,9 +1108,9 @@ class AttributeDict(object):
         return self.adapter.has_node_attribute(self.impl_element, name, ns_uri)
 
     def __unicode__(self):
-        return u'<%s.%s: %s>' % (
+        return '<%s.%s: %s>' % (
             self.__class__.__module__, self.__class__.__name__,
-            self.to_dict.items())
+            list(self.to_dict.items()))
 
     def __str__(self):
         # TODO Degrade non-ASCII characters gracefully
@@ -1169,7 +1169,7 @@ class AttributeDict(object):
         :return: an :class:`~collections.OrderedDict` of attribute name/value
             pairs.
         """
-        return collections.OrderedDict(self.items())
+        return collections.OrderedDict(list(self.items()))
 
     @property
     def element(self):
@@ -1247,7 +1247,7 @@ class NodeList(list):
                     return False
                 return True
         # Filter nodes
-        nodelist = filter(filter_fn, self)
+        nodelist = list(filter(filter_fn, self))
         # If requested, return just the first node (or None if no nodes)
         if first_only:
             return nodelist[0] if nodelist else None

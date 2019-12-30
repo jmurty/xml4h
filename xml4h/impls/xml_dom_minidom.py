@@ -1,4 +1,4 @@
-from StringIO import StringIO
+from io import StringIO
 
 from xml4h.impls.interface import XmlImplAdapter
 from xml4h import nodes, exceptions
@@ -123,7 +123,7 @@ class XmlDomImplAdapter(XmlImplAdapter):
         text_children = [n.nodeValue for n in self.get_node_children(node)
                          if n.nodeType == xml.dom.Node.TEXT_NODE]
         if text_children:
-            return u''.join(text_children)
+            return ''.join(text_children)
         else:
             return None
 
@@ -144,7 +144,7 @@ class XmlDomImplAdapter(XmlImplAdapter):
         attr_nodes = []
         if not element.attributes:
             return attr_nodes
-        for attr_name in element.attributes.keys():
+        for attr_name in list(element.attributes.keys()):
             if self.has_node_attribute(element, attr_name, ns_uri):
                 attr_nodes.append(
                     self.get_node_attribute_node(element, attr_name, ns_uri))
@@ -170,7 +170,7 @@ class XmlDomImplAdapter(XmlImplAdapter):
         else:
             result = element.getAttribute(name)
         # Minidom returns empty string for non-existent nodes, correct this
-        if result == '' and not name in element.attributes.keys():
+        if result == '' and not name in list(element.attributes.keys()):
             return None
         return result
 

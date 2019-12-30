@@ -32,7 +32,7 @@ class IncorrectArgumentTypeException(ValueError, Xml4hException):
     """
 
     def __init__(self, arg, expected_types):
-        msg = (u'Argument %s is not one of the expected types: %s'
+        msg = ('Argument %s is not one of the expected types: %s'
             % (arg, expected_types))
         super(IncorrectArgumentTypeException, self).__init__(msg)
 

@@ -89,7 +89,7 @@ class LXMLAdapter(XmlImplAdapter):
             # TODO This doesn't seem to help
             curr_node = parent
             while curr_node.__class__ == etree._Element:
-                for n, v in curr_node.attrib.items():
+                for n, v in list(curr_node.attrib.items()):
                     if '{%s}' % nodes.Node.XMLNS_URI in n:
                         _, prefix = n.split('}')
                         my_nsmap[prefix] = v
@@ -237,13 +237,13 @@ class LXMLAdapter(XmlImplAdapter):
     def get_node_attributes(self, element, ns_uri=None):
         # TODO: Filter by ns_uri
         attribs_by_qname = {}
-        for n, v in element.attrib.items():
+        for n, v in list(element.attrib.items()):
             qname, ns_uri, prefix, local_name = self._unpack_name(n, element)
             attribs_by_qname[qname] = LXMLAttribute(
                 qname, ns_uri, prefix, local_name, v, element)
         # Include namespace declarations, which we also treat as attributes
         if element.nsmap:
-            for n, v in element.nsmap.items():
+            for n, v in list(element.nsmap.items()):
                 # Only add namespace as attribute if not defined in ancestors
                 # and not the global xmlns namespace
                 if (self._is_ns_in_ancestor(element, n, v)
@@ -257,7 +257,7 @@ class LXMLAdapter(XmlImplAdapter):
                     ns_attr_name, element)
                 attribs_by_qname[qname] = LXMLAttribute(
                     qname, ns_uri, prefix, local_name, v, element)
-        return attribs_by_qname.values()
+        return list(attribs_by_qname.values())
 
     def has_node_attribute(self, element, name, ns_uri=None):
         return name in [a.qname for a
@@ -389,8 +389,8 @@ class LXMLAdapter(XmlImplAdapter):
         if uri == nodes.Node.XMLNS_URI:
             return 'xmlns'
         result = None
-        if hasattr(node, 'nsmap') and uri in node.nsmap.values():
-            for n, v in node.nsmap.items():
+        if hasattr(node, 'nsmap') and uri in list(node.nsmap.values()):
+            for n, v in list(node.nsmap.items()):
                 if v == uri:
                     result = n
                     break
@@ -402,7 +402,7 @@ class LXMLAdapter(XmlImplAdapter):
             # lxml and we'd rather use a human-assigned prefix if available.
             curr_node = node  # self.get_node_parent(node)
             while curr_node.__class__ == etree._Element:
-                for n, v in curr_node.attrib.items():
+                for n, v in list(curr_node.attrib.items()):
                     if v == uri and ('{%s}' % nodes.Node.XMLNS_URI) in n:
                         result = n.split('}')[1]
                         return result
@@ -448,7 +448,7 @@ class LXMLAdapter(XmlImplAdapter):
             if (hasattr(curr_node, 'nsmap')
                     and curr_node.nsmap.get(name) == value):
                 return True
-            for n, v in curr_node.attrib.items():
+            for n, v in list(curr_node.attrib.items()):
                 if v == value and '{%s}' % nodes.Node.XMLNS_URI in n:
                     return True
             curr_node = self.get_node_parent(curr_node)

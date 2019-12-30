@@ -108,14 +108,14 @@ class BaseParserTest(object):
     def test_unicode(self):
         # NOTE lxml doesn't support unicode namespace URIs?
         doc = self.parse(self.unicode_xml_file_path)
-        self.assertEqual(u'جذر', doc.root.name)
-        self.assertEqual(u'urn:default', doc.root.attributes[u'xmlns'])
-        self.assertEqual(u'urn:custom', doc.root.attributes[u'xmlns:důl'])
-        self.assertEqual(5, len(doc.find(ns_uri=u'urn:default')))
-        self.assertEqual(3, len(doc.find(ns_uri=u'urn:custom')))
-        self.assertEqual(u'1', doc.find_first(u'yếutố1').attributes[u'תכונה'])
-        self.assertEqual(u'tvö',
-            doc.find_first(u'yếutố2').attributes[u'důl:עודתכונה'])
+        self.assertEqual('جذر', doc.root.name)
+        self.assertEqual('urn:default', doc.root.attributes['xmlns'])
+        self.assertEqual('urn:custom', doc.root.attributes['xmlns:důl'])
+        self.assertEqual(5, len(doc.find(ns_uri='urn:default')))
+        self.assertEqual(3, len(doc.find(ns_uri='urn:custom')))
+        self.assertEqual('1', doc.find_first('yếutố1').attributes['תכונה'])
+        self.assertEqual('tvö',
+            doc.find_first('yếutố2').attributes['důl:עודתכונה'])
 
 
 class TestXmlDomParser(unittest.TestCase, BaseParserTest):

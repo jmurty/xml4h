@@ -41,8 +41,8 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
-project = u'xml4h'
-copyright = u'2012, James Murty'
+project = 'xml4h'
+copyright = '2012, James Murty'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -184,8 +184,8 @@ latex_elements = {
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title, author, documentclass [howto/manual]).
 latex_documents = [
-  ('index', 'xml4h.tex', u'xml4h Documentation',
-   u'James Murty', 'manual'),
+  ('index', 'xml4h.tex', 'xml4h Documentation',
+   'James Murty', 'manual'),
 ]
 
 # The name of an image file (relative to this directory) to place at the top of
@@ -214,8 +214,8 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    ('index', 'xml4h', u'xml4h Documentation',
-     [u'James Murty'], 1)
+    ('index', 'xml4h', 'xml4h Documentation',
+     ['James Murty'], 1)
 ]
 
 # If true, show URL addresses after external links.
@@ -228,8 +228,8 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-  ('index', 'xml4h', u'xml4h Documentation',
-   u'James Murty', 'xml4h', 'One line description of project.',
+  ('index', 'xml4h', 'xml4h Documentation',
+   'James Murty', 'xml4h', 'One line description of project.',
    'Miscellaneous'),
 ]
 

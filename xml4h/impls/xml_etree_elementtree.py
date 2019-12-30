@@ -1,7 +1,7 @@
 import re
 import copy
 
-from StringIO import StringIO
+from io import StringIO
 
 from xml4h.impls.interface import XmlImplAdapter
 from xml4h import nodes, exceptions
@@ -129,7 +129,7 @@ class ElementTreeAdapter(XmlImplAdapter):
         if isinstance(node, BaseET.Element):
             return True
         # For cElementTree we need to be more cunning (or find a better way)
-        if hasattr(node, 'makeelement') and isinstance(node.tag, basestring):
+        if hasattr(node, 'makeelement') and isinstance(node.tag, str):
             return True
 
     def map_node_to_class(self, node):
@@ -187,7 +187,7 @@ class ElementTreeAdapter(XmlImplAdapter):
             if n == node:
                 continue
             # Ignore non-Elements
-            if not isinstance(n.tag, basestring):
+            if not isinstance(n.tag, str):
                 continue
             if ns_uri != '*' and self.get_node_namespace_uri(n) != ns_uri:
                 continue
@@ -288,7 +288,7 @@ class ElementTreeAdapter(XmlImplAdapter):
 
     def get_node_name_prefix(self, node):
         # Ignore non-elements
-        if not isinstance(node.tag, basestring):
+        if not isinstance(node.tag, str):
             return None
         # Believe nodes that know their own prefix (likely only ETAttribute)
         if hasattr(node, 'prefix'):
@@ -333,11 +333,11 @@ class ElementTreeAdapter(XmlImplAdapter):
     def get_node_attributes(self, element, ns_uri=None):
         # TODO: Filter by ns_uri
         attribs_by_qname = {}
-        for n, v in element.attrib.items():
+        for n, v in list(element.attrib.items()):
             qname, ns_uri, prefix, local_name = self._unpack_name(n, element)
             attribs_by_qname[qname] = ETAttribute(
                 qname, ns_uri, prefix, local_name, v, element)
-        return attribs_by_qname.values()
+        return list(attribs_by_qname.values())
 
     def has_node_attribute(self, element, name, ns_uri=None):
         return name in [a.qname for a
@@ -474,7 +474,7 @@ class ElementTreeAdapter(XmlImplAdapter):
             # human-assigned prefix if available.
             curr_node = node
             while self._is_node_an_element(curr_node):
-                for n, v in curr_node.attrib.items():
+                for n, v in list(curr_node.attrib.items()):
                     if v == uri:
                         if n.startswith('xmlns:'):
                             result = n.split(':')[1]

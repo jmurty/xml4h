@@ -102,64 +102,64 @@ class BaseTestNodes(object):
                 self.elem3_second, self.doc).ancestors[-1].is_document)
 
     def test_children_attribute(self):
-        self.assertEquals(self.elem1, self.xml4h_root.children[0].impl_node)
-        self.assertEquals([u'元素1', 'Element2', 'Element3', 'Element4'],
+        self.assertEqual(self.elem1, self.xml4h_root.children[0].impl_node)
+        self.assertEqual(['元素1', 'Element2', 'Element3', 'Element4'],
             [n.name for n in self.xml4h_root.children])
-        self.assertEquals(['Element2'],
+        self.assertEqual(['Element2'],
             [n.name for n in self.xml4h_root.find_first('Element3').children])
 
     def test_children_nodelist_callable(self):
         """Use callable feature of children attribute's returned NodeList"""
-        self.assertEquals(self.elem1, self.xml4h_root.children()[0].impl_node)
-        self.assertEquals([u'元素1', 'Element2', 'Element3', 'Element4'],
+        self.assertEqual(self.elem1, self.xml4h_root.children()[0].impl_node)
+        self.assertEqual(['元素1', 'Element2', 'Element3', 'Element4'],
             [n.name for n in self.xml4h_root.children()])
-        self.assertEquals(['Element2'],
+        self.assertEqual(['Element2'],
             [n.name for n in
                 self.xml4h_root.find_first('Element3').children()])
         # Filter children by name
-        self.assertEquals(['Element2'],
+        self.assertEqual(['Element2'],
             [n.name for n in self.xml4h_root.children(name='Element2')])
         # Filter children by local name
-        self.assertEquals(['Element2'],
+        self.assertEqual(['Element2'],
             [n.name for n in self.xml4h_root.children(local_name='Element2')])
         # Filter children by namespace
-        self.assertEquals(['Element3', 'Element4'],
+        self.assertEqual(['Element3', 'Element4'],
             [n.name for n in self.xml4h_root.children(ns_uri='urn:ns1')])
         # Filter by node type
-        self.assertEquals([],
+        self.assertEqual([],
             [n.name for n in self.xml4h_root.children(
                                   node_type=xml4h.nodes.Text)])
-        self.assertEquals([u'元素1', 'Element2', 'Element3', 'Element4'],
+        self.assertEqual(['元素1', 'Element2', 'Element3', 'Element4'],
             [n.name for n in self.xml4h_root.children(
                                   node_type=xml4h.nodes.ELEMENT_NODE)])
-        self.assertEquals([u'元素1', 'Element2', 'Element3', 'Element4'],
+        self.assertEqual(['元素1', 'Element2', 'Element3', 'Element4'],
             [n.name for n in self.xml4h_root.children(
                                   node_type=xml4h.nodes.Element)])
         # Filter by arbitrary function
         fn = lambda x: x.name[-1] in ('1', '3')
-        self.assertEquals([u'元素1', 'Element3'],
+        self.assertEqual(['元素1', 'Element3'],
             [n.name for n in self.xml4h_root.children(filter_fn=fn)])
         # Return first result only via `first_only` flag
-        self.assertEquals('Element3',
+        self.assertEqual('Element3',
             self.xml4h_root.children(ns_uri='urn:ns1', first_only=True).name)
         self.assertEqual(None,
             self.xml4h_root.children(ns_uri='urn:wrong', first_only=True))
         # Return first result only via `first` attribute on children
-        self.assertEquals('Element3',
+        self.assertEqual('Element3',
             self.xml4h_root.children(ns_uri='urn:ns1').first.name)
         self.assertEqual(None,
             self.xml4h_root.children(ns_uri='urn:wrong').first)
         # Return first result only via `child` method
-        self.assertEquals('Element3',
+        self.assertEqual('Element3',
             self.xml4h_root.child(ns_uri='urn:ns1').name)
         self.assertEqual(None,
             self.xml4h_root.child(ns_uri='urn:wrong'))
 
     def test_siblings(self):
         wrapped_node = self.xml4h_root.children[1]
-        self.assertEqual([u'元素1', 'Element3', 'Element4'],
+        self.assertEqual(['元素1', 'Element3', 'Element4'],
             [n.name for n in wrapped_node.siblings])
-        self.assertEqual([u'元素1'],
+        self.assertEqual(['元素1'],
             [n.name for n in wrapped_node.siblings_before])
         self.assertEqual(['Element3', 'Element4'],
             [n.name for n in wrapped_node.siblings_after])
@@ -171,9 +171,9 @@ class BaseTestNodes(object):
         # Namespace data for element without namespace
         wrapped_elem = self.adapter_class.wrap_node(self.elem1, self.doc)
         self.assertEqual(None, wrapped_elem.namespace_uri)
-        self.assertEqual(u'元素1', wrapped_elem.name)
+        self.assertEqual('元素1', wrapped_elem.name)
         self.assertEqual(None, wrapped_elem.prefix)
-        self.assertEqual(u'元素1', wrapped_elem.local_name)
+        self.assertEqual('元素1', wrapped_elem.local_name)
         # Namespace data for ns element without prefix
         wrapped_elem = self.adapter_class.wrap_node(self.elem3, self.doc)
         self.assertEqual('urn:ns1', wrapped_elem.namespace_uri)
@@ -208,7 +208,7 @@ class BaseTestNodes(object):
 
     def test_name(self):
         wrapped_node = self.adapter_class.wrap_node(self.elem1, self.doc)
-        self.assertEqual(u'元素1', wrapped_node.name)
+        self.assertEqual('元素1', wrapped_node.name)
         attribute_node = wrapped_node.attribute_nodes[0]
         self.assertEqual('a', attribute_node.name)
         wrapped_node = self.adapter_class.wrap_node(self.text_node, self.doc)
@@ -340,10 +340,10 @@ class BaseTestNodes(object):
     def test_delete(self):
         # Remove single Element using delete() method without destroying it
         self.assertEqual(
-            [u'元素1', 'Element2', 'Element3', 'Element4'],
+            ['元素1', 'Element2', 'Element3', 'Element4'],
             [n.name for n in self.xml4h_root.children])
         removed_child = self.xml4h_root.children[0].delete(destroy=False)
-        self.assertEqual(u'元素1', removed_child.name)
+        self.assertEqual('元素1', removed_child.name)
         self.assertEqual(
             ['Element2', 'Element3', 'Element4'],
             [n.name for n in self.xml4h_root.children])
@@ -370,7 +370,7 @@ class BaseTestNodes(object):
         self.assertEqual(0, len(elems))
         self.assertEqual([], elems)
         # Find non-namespaced element
-        elems = self.xml4h_root.find(u'元素1')
+        elems = self.xml4h_root.find('元素1')
         self.assertEqual(1, len(elems))
         self.assertIsInstance(elems[0], xml4h.nodes.Element)
         # Find multiple non-namespaced elements
@@ -406,7 +406,7 @@ class BaseTestNodes(object):
         # Find first only
         self.assertEqual(None, self.xml4h_root.find_first('NoMatchingName'))
         self.assertEqual(self.elem1,
-                self.xml4h_root.find_first(u'元素1').impl_node)
+                self.xml4h_root.find_first('元素1').impl_node)
         self.assertEqual(self.elem2,
                 self.xml4h_root.find_first('Element2').impl_node)
 
@@ -504,8 +504,8 @@ class BaseTestNodes(object):
         elems = self.xml4h_root.xpath('//NoMatchingName')
         self.assertEqual([], elems)
         # Find non-namespaced element
-        elems = self.xml4h_root.xpath(u'//元素1')
-        self.assertEqual(self.xml4h_root.find(u'元素1'), elems)
+        elems = self.xml4h_root.xpath('//元素1')
+        self.assertEqual(self.xml4h_root.find('元素1'), elems)
         # Find multiple non-namespaced elements
         elems = self.xml4h_root.xpath('//Element2')
         self.assertEqual(
@@ -534,15 +534,15 @@ class BaseTestNodes(object):
             namespaces={'x': 'urn:ns1'})
         self.assertEqual([self.xml4h_root.Element4], elems)
         # Lookup attribute
-        result = self.xml4h_root.xpath(u'//元素1/@a',
+        result = self.xml4h_root.xpath('//元素1/@a',
             namespaces={'x': 'urn:ns2'})
         self.assertEqual(['1'], result)
         # Lookup text
-        result = self.xml4h_root.xpath(u'//元素1/text()',
+        result = self.xml4h_root.xpath('//元素1/text()',
             namespaces={'x': 'urn:ns2'})
         self.assertEqual(['Some text'], result)
         # sum() aggregate function
-        result = self.xml4h_root.xpath(u'sum(//元素1/@*)',
+        result = self.xml4h_root.xpath('sum(//元素1/@*)',
             namespaces={'x': 'urn:ns2'})
         self.assertEqual(3, result)
 
@@ -551,7 +551,7 @@ class BaseTestNodes(object):
         try:
             self.xml4h_root.DoesNotExist
             self.fail('Expected AttributeError')
-        except AttributeError, e:
+        except AttributeError as e:
             self.assertEqual(
                 """<xml4h.nodes.Element: "DocRoot"> object"""
                 """ has no attribute 'DoesNotExist'""",
@@ -559,7 +559,7 @@ class BaseTestNodes(object):
         # Look up non-existent attribute by Python key name
         try:
             self.xml4h_root['not-an-attribute']
-        except KeyError, e:
+        except KeyError as e:
             self.assertEqual("'not-an-attribute'", str(e))
 
         # Look up child element by attribute
@@ -596,17 +596,17 @@ class BaseTestNodes(object):
         try:
             self.xml4h_root._leadingunderscore
             self.fail('Expected AttributeError')
-        except AttributeError, e:
+        except AttributeError as e:
             pass
         try:
             self.xml4h_root._leadingunderscore_
             self.fail('Expected AttributeError')
-        except AttributeError, e:
+        except AttributeError as e:
             pass
 
         # Look up an attribute by key name
         self.assertEqual('2',
-            self.xml4h_doc.DocRoot.child(u'元素1')['ns1:b'])
+            self.xml4h_doc.DocRoot.child('元素1')['ns1:b'])
 
 
 class TestMinidomNodes(BaseTestNodes, unittest.TestCase):
@@ -623,7 +623,7 @@ class TestMinidomNodes(BaseTestNodes, unittest.TestCase):
         doctype = None
         doc = factory.createDocument(ns_uri, 'DocRoot', doctype)
         self.root_elem = doc.firstChild
-        self.elem1 = doc.createElement(u'元素1')
+        self.elem1 = doc.createElement('元素1')
         self.elem1.setAttribute('a', '1')
         self.elem1.setAttributeNS('urn:ns1', 'ns1:b', '2')
         self.elem1.setAttributeNS(
@@ -670,7 +670,7 @@ class TestLXMLNodes(BaseTestNodes, unittest.TestCase):
             None: 'urn:test'})
         doc = etree.ElementTree(self.root_elem)
 
-        self.elem1 = etree.Element(u'元素1',
+        self.elem1 = etree.Element('元素1',
             nsmap={'ns1': 'urn:ns1'})
         self.elem1.attrib['a'] = '1'
         self.elem1.attrib['{urn:ns1}b'] = '2'
@@ -732,7 +732,7 @@ class TestElementTreeNodes(BaseTestNodes, unittest.TestCase):
         self.root_elem = ET.Element('{urn:test}DocRoot')
         doc = ET.ElementTree(self.root_elem)
 
-        self.elem1 = ET.Element(u'元素1')
+        self.elem1 = ET.Element('元素1')
         self.elem1.attrib['xmlns:ns1'] = 'urn:ns1'
         self.elem1.attrib['a'] = '1'
         self.elem1.attrib['{urn:ns1}b'] = '2'

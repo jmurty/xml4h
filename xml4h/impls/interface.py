@@ -3,7 +3,7 @@ import abc
 from xml4h import nodes, exceptions
 
 
-class XmlImplAdapter(object):
+class XmlImplAdapter(object, metaclass=abc.ABCMeta):
     """
     Base class that defines how *xml4h* interacts with an underlying XML
     library that the adaptor "wraps" to provide additional (or at least
@@ -14,7 +14,6 @@ class XmlImplAdapter(object):
     but mostly it sketches out the methods the real implementaiton subclasses
     must provide.
     """
-    __metaclass__ = abc.ABCMeta
 
     # List of extra features supported (or not) by an adapter implementation
     SUPPORTED_FEATURES = {
