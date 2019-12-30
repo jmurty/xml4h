@@ -8,8 +8,6 @@ cache:
   directories:
     - $HOME/.pip-cache/
 env:
-  - TOX_ENV=py26
-  - TOX_ENV=py26-withlxml
   - TOX_ENV=py27
   - TOX_ENV=py27-withlxml
   - TOX_ENV=docs
