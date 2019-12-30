@@ -1,9 +1,8 @@
 sudo: false
 # Default python version is no longer 2 but 3.6 or later
 language: python
-# Be specific about which Python version to test
+# Be specific about which Python version to use for test runs
 python:
-  - "2.6"
   - "2.7"
 cache:
   directories:
