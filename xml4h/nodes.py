@@ -803,6 +803,11 @@ class Element(NameValueNodeMixin,
 
         # Always process 'xmlns' namespace definitions first, in case other
         # attributes belong to a newly-defined namespace
+        # TODO Modern equivalent for this legacy `cmp` method re-implementation
+        def cmp(a, b):
+            # https://docs.python.org/3.0/whatsnew/3.0.html#ordering-comparisons
+            return (a > b) - (a < b)
+
         def _xmlns_first(x, y):
             nx, ny = x[0], y[0]
             if nx.startswith('xmlns') and ny.startswith('xmlns'):
