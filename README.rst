@@ -94,7 +94,7 @@ lookups to read data::
     >>> doc = xml4h.parse('tests/data/monty_python_films.xml')
 
     >>> for film in doc.MontyPythonFilms.Film[:3]:
-    ...     print film['year'], ':', film.Title.text
+    ...     print(film['year'], ':', film.Title.text)
     1971 : And Now for Something Completely Different
     1974 : Monty Python and the Holy Grail
     1979 : Monty Python's Life of Brian
@@ -102,7 +102,7 @@ lookups to read data::
 You can also use a more traditional (non-magical) approach to traverse the DOM::
 
     >>> for film in doc.child('MontyPythonFilms').children('Film')[:3]:
-    ...     print film.attributes['year'], ':', film.children.first.text
+    ...     print(film.attributes['year'], ':', film.children.first.text)
     1971 : And Now for Something Completely Different
     1974 : Monty Python and the Holy Grail
     1979 : Monty Python's Life of Brian

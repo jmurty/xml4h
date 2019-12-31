@@ -48,11 +48,11 @@ as an argument::
     ...     first_film_elem.write_doc(f)
 
     >>> # Write to a string (BUT SEE SECTION BELOW...)
-    >>> from StringIO import StringIO
-    >>> str_writer = StringIO()
-    >>> first_film_elem.write_doc(str_writer)
-    >>> str_writer.getvalue()  # doctest:+ELLIPSIS
-    '<?xml version="1.0" encoding="utf-8"?><MontyPythonFilms source...
+    >>> from io import BytesIO
+    >>> writer = BytesIO()
+    >>> first_film_elem.write_doc(writer)
+    >>> writer.getvalue()  # doctest:+ELLIPSIS
+    b'<?xml version="1.0" encoding="utf-8"?><MontyPythonFilms source...
 
 
 Write to a String
@@ -66,14 +66,14 @@ The :meth:`~xml4h.nodes.Node.xml` method works like the *write* method and
 will return a string of XML content including the current node and its
 descendants::
 
-    >>> print first_film_elem.xml()  # doctest:+ELLIPSIS
+    >>> print(first_film_elem.xml().decode('utf-8'))  # doctest:+ELLIPSIS
     <Film year="1971">
         <Title>And Now for Something Completely...
 
 The :meth:`~xml4h.nodes.Node.xml_doc` method works like the *write_doc*
 method and returns a string for the whole document::
 
-    >>> print first_film_elem.xml_doc()  # doctest:+ELLIPSIS
+    >>> print(first_film_elem.xml_doc().decode('utf-8'))  # doctest:+ELLIPSIS
     <?xml version="1.0" encoding="utf-8"?>
     <MontyPythonFilms source="http://en.wikipedia.org/wiki/Monty_Python">
         <Film year="1971">
@@ -123,12 +123,13 @@ its serialisation methods by accessing the implementation node::
     >>> # Get the implementation root node, in this case an lxml node
     >>> lxml_root_node = first_film_elem.root.impl_node
     >>> lxml_root_node.__class__
-    <type 'lxml.etree._Element'>
+    <class 'lxml.etree._Element'>
 
     >>> # Use lxml features as normal; xml4h is no longer in the picture
     >>> from lxml import etree
-    >>> print etree.tostring(lxml_root_node, encoding='utf-8',
-    ...                      xml_declaration=True, pretty_print=True)  # doctest:+ELLIPSIS
+    >>> xml_str = etree.tostring(
+    ...     lxml_root_node, encoding='utf-8', xml_declaration=True, pretty_print=True)
+    >>> print(xml_str.decode('utf-8'))  # doctest:+ELLIPSIS
     <?xml version='1.0' encoding='utf-8'?>
     <MontyPythonFilms source="http://en.wikipedia.org/wiki/Monty_Python"><Film year="1971"><Title>And Now for Something Completely Different</Title>
             <Description>A collection of sketches from the first and second...

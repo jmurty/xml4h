@@ -70,7 +70,7 @@ Builder::
     >>> # Define a prefix alias to assign a new or existing namespace URI
     >>> elem2 = b.ns_prefix('my-ns', 'second-ns-uri') \
     ...     .elem('my-ns:Elem2').dom_element
-    >>> print root.xml()
+    >>> print(root.xml().decode('utf-8'))
     <Doc xmlns="ns-uri" xmlns:my-ns="second-ns-uri">
         <Elem1/>
         <my-ns:Elem2/>
@@ -89,7 +89,7 @@ And when adding nodes with the API::
     >>> # Attributes can be namespaced too
     >>> elem4.set_attributes({'my-ns:attr1': 'value'})
 
-    >>> print elem4.xml()
+    >>> print(elem4.xml().decode('utf-8'))
     <Elem4 my-ns:attr1="value" xmlns="fourth-ns-uri"/>
 
 
@@ -103,10 +103,10 @@ return only elements in that namespace::
 
     >>> # By default, find ignores namespaces...
     >>> [n.local_name for n in root.find()]
-    [u'Elem1', u'Elem2', u'Elem3', u'Elem4']
+    ['Elem1', 'Elem2', 'Elem3', 'Elem4']
     >>> # ...but will filter by namespace URI if you wish
     >>> [n.local_name for n in root.find(ns_uri='fourth-ns-uri')]
-    [u'Elem4']
+    ['Elem4']
 
 Similarly, a node's children listing can be filtered::
 
@@ -147,21 +147,21 @@ node attributes::
 
     # The full node name...
     >>> elem2.name
-    u'my-ns:Elem2'
+    'my-ns:Elem2'
     >>> # ...comprises a prefix...
     >>> elem2.prefix
-    u'my-ns'
+    'my-ns'
     >>> # ...and a local name component
     >>> elem2.local_name
-    u'Elem2'
+    'Elem2'
 
     >>> # Here is an element without a prefix alias
     >>> elem1.name
-    u'Elem1'
+    'Elem1'
     >>> elem1.prefix == None
     True
     >>> elem1.local_name
-    u'Elem1'
+    'Elem1'
 
 
 .. _xml-lib-architecture:
@@ -356,9 +356,9 @@ a :class:`~xml4h.exceptions.FeatureUnavailableException`::
 
     >>> try:
     ...     minidom_doc.root.xpath('//*')
-    ... except Exception, e:
+    ... except Exception as e:
     ...     e
-    FeatureUnavailableException('xpath',)
+    FeatureUnavailableException('xpath')
 
 
 Adapter & Implementation Quirks
