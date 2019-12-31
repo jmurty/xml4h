@@ -100,7 +100,7 @@ class Builder(object):
         """
         self.dom_element.write_doc(*args, **kwargs)
 
-    def up(self, count=1, to_name=None):
+    def up(self, to_name=None, count=1):
         """
         :return: a builder representing an ancestor of the current element,
                  by default the parent element.
