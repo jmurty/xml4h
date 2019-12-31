@@ -55,17 +55,9 @@ class Node(object):
         return (self.impl_document == other.impl_document
             and self.impl_node == other.impl_node)
 
-    def __unicode__(self):
+    def __repr__(self):
         return '<%s.%s>' % (
             self.__class__.__module__, self.__class__.__name__)
-
-    def __str__(self):
-        # TODO Degrade non-ASCII characters gracefully
-        # Avoid keyword args in encode call for compatibility with python 2.6
-        return self.__unicode__().encode('ascii', 'replace')
-
-    def __repr__(self):
-        return self.__str__()
 
     @property
     def impl_node(self):
@@ -675,7 +667,7 @@ class NameValueNodeMixin(Node):
     name may also be composed of "prefix" and "local" components.
     """
 
-    def __unicode__(self):
+    def __repr__(self):
         return '<%s.%s: "%s">' % (
             self.__class__.__module__, self.__class__.__name__,
             self.name)
@@ -1124,18 +1116,10 @@ class AttributeDict(object):
             name, self.impl_element)
         return self.adapter.has_node_attribute(self.impl_element, name, ns_uri)
 
-    def __unicode__(self):
+    def __repr__(self):
         return '<%s.%s: %s>' % (
             self.__class__.__module__, self.__class__.__name__,
             list(self.to_dict.items()))
-
-    def __str__(self):
-        # TODO Degrade non-ASCII characters gracefully
-        # Avoid keyword args in encode call for compatibility with python 2.6
-        return self.__unicode__().encode('ascii', 'replace')
-
-    def __repr__(self):
-        return self.__str__()
 
     def keys(self):
         """
