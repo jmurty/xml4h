@@ -38,7 +38,9 @@ unless overridden by passing a specific adapter class.
 """
 
 
-def parse(to_parse, ignore_whitespace_text_nodes=True, adapter=None):
+def parse(
+    to_parse, ignore_whitespace_text_nodes=True, adapter=None
+):
     """
     Parse an XML document into an *xml4h*-wrapped DOM representation
     using an underlying XML library implementation.
@@ -65,6 +67,8 @@ def parse(to_parse, ignore_whitespace_text_nodes=True, adapter=None):
     if adapter is None:
         adapter = best_adapter
     if isinstance(to_parse, bytes) and b'<' in to_parse:
+        return adapter.parse_bytes(to_parse, ignore_whitespace_text_nodes)
+    elif isinstance(to_parse, str) and '<' in to_parse:
         return adapter.parse_string(to_parse, ignore_whitespace_text_nodes)
     else:
         return adapter.parse_file(to_parse, ignore_whitespace_text_nodes)

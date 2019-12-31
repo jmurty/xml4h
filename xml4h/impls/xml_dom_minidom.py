@@ -1,4 +1,4 @@
-from io import StringIO
+from io import StringIO, BytesIO
 
 from xml4h.impls.interface import XmlImplAdapter
 from xml4h import nodes, exceptions
@@ -24,8 +24,11 @@ class XmlDomImplAdapter(XmlImplAdapter):
 
     @classmethod
     def parse_string(cls, xml_str, ignore_whitespace_text_nodes=True):
-        string_io = StringIO(xml_str)
-        return cls.parse_file(string_io, ignore_whitespace_text_nodes)
+        return cls.parse_file(StringIO(xml_str), ignore_whitespace_text_nodes)
+
+    @classmethod
+    def parse_bytes(cls, xml_bytes, ignore_whitespace_text_nodes=True):
+        return cls.parse_file(BytesIO(xml_bytes), ignore_whitespace_text_nodes)
 
     @classmethod
     def parse_file(cls, xml_file, ignore_whitespace_text_nodes=True):

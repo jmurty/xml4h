@@ -1,7 +1,7 @@
 import re
 import copy
 
-from io import StringIO
+from io import BytesIO, StringIO
 
 from xml4h.impls.interface import XmlImplAdapter
 from xml4h import nodes, exceptions
@@ -54,6 +54,12 @@ class ElementTreeAdapter(XmlImplAdapter):
     def parse_string(cls, xml_str, ignore_whitespace_text_nodes=True):
         return cls.parse_file(
             StringIO(xml_str),
+            ignore_whitespace_text_nodes=ignore_whitespace_text_nodes)
+
+    @classmethod
+    def parse_bytes(cls, xml_bytes, ignore_whitespace_text_nodes=True):
+        return cls.parse_file(
+            BytesIO(xml_bytes),
             ignore_whitespace_text_nodes=ignore_whitespace_text_nodes)
 
     @classmethod

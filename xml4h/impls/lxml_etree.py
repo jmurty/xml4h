@@ -36,6 +36,10 @@ class LXMLAdapter(XmlImplAdapter):
         return wrapped_doc
 
     @classmethod
+    def parse_bytes(cls, xml_bytes, ignore_whitespace_text_nodes=True):
+        return LXMLAdapter.parse_string(xml_bytes, ignore_whitespace_text_nodes)
+
+    @classmethod
     def parse_file(cls, xml_file, ignore_whitespace_text_nodes=True):
         impl_doc = etree.parse(xml_file)
         wrapped_doc = LXMLAdapter.wrap_document(impl_doc)

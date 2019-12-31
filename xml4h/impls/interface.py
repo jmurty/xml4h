@@ -84,6 +84,11 @@ class XmlImplAdapter(object, metaclass=abc.ABCMeta):
 
     @classmethod
     @abc.abstractmethod
+    def parse_bytes(cls, xml_bytes, ignore_whitespace_text_nodes=True):
+        raise NotImplementedError("Implementation missing for %s" % cls)
+
+    @classmethod
+    @abc.abstractmethod
     def parse_file(cls, xml_file, ignore_whitespace_text_nodes=True):
         raise NotImplementedError("Implementation missing for %s" % cls)
 
