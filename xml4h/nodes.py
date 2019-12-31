@@ -1,5 +1,5 @@
 import collections
-from io import StringIO
+from io import BytesIO, StringIO
 
 import xml4h
 
@@ -506,7 +506,12 @@ class Node(object):
 
         Delegates to :meth:`write`
         """
-        writer = StringIO()
+        # Use string writer if `encoding` is unset, unusual but possible...
+        if 'encoding' in kwargs and kwargs['encoding'] is None:
+            writer = StringIO()
+        # ...otherwise and by default, use a bytes writer
+        else:
+            writer = BytesIO()
         self.write(writer, indent=indent, **kwargs)
         return writer.getvalue()
 
