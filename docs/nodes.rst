@@ -596,7 +596,7 @@ try an example::
     >>> title_elem = desc_elem.add_element(
     ...     'Title', text='The Film that Never Was', before_this_element=True)
 
-    >>> print(doc.MontyPythonFilms.Film[-1].xml().decode('utf-8'))
+    >>> print(doc.MontyPythonFilms.Film[-1].xml())
     <Film year="never">
         <Title>The Film that Never Was</Title>
         <Description>Just testing...</Description>

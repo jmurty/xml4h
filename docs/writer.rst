@@ -66,14 +66,14 @@ The :meth:`~xml4h.nodes.Node.xml` method works like the *write* method and
 will return a string of XML content including the current node and its
 descendants::
 
-    >>> print(first_film_elem.xml().decode('utf-8'))  # doctest:+ELLIPSIS
+    >>> print(first_film_elem.xml())  # doctest:+ELLIPSIS
     <Film year="1971">
         <Title>And Now for Something Completely...
 
 The :meth:`~xml4h.nodes.Node.xml_doc` method works like the *write_doc*
 method and returns a string for the whole document::
 
-    >>> print(first_film_elem.xml_doc().decode('utf-8'))  # doctest:+ELLIPSIS
+    >>> print(first_film_elem.xml_doc())  # doctest:+ELLIPSIS
     <?xml version="1.0" encoding="utf-8"?>
     <MontyPythonFilms source="http://en.wikipedia.org/wiki/Monty_Python">
         <Film year="1971">

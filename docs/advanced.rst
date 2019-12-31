@@ -70,7 +70,7 @@ Builder::
     >>> # Define a prefix alias to assign a new or existing namespace URI
     >>> elem2 = b.ns_prefix('my-ns', 'second-ns-uri') \
     ...     .elem('my-ns:Elem2').dom_element
-    >>> print(root.xml().decode('utf-8'))
+    >>> print(root.xml())
     <Doc xmlns="ns-uri" xmlns:my-ns="second-ns-uri">
         <Elem1/>
         <my-ns:Elem2/>
@@ -89,7 +89,7 @@ And when adding nodes with the API::
     >>> # Attributes can be namespaced too
     >>> elem4.set_attributes({'my-ns:attr1': 'value'})
 
-    >>> print(elem4.xml().decode('utf-8'))
+    >>> print(elem4.xml())
     <Elem4 my-ns:attr1="value" xmlns="fourth-ns-uri"/>
 
 

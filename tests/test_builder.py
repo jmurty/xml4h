@@ -732,9 +732,7 @@ class BaseBuilderNodesTest(object):
         example_file_path = os.path.join(
             os.path.dirname(__file__), 'data/monty_python_films.xml')
         expected_xml = open(example_file_path).read()
-        writer = BytesIO()
-        b.write_doc(writer, indent=True)
-        self.assertEqual(expected_xml.encode('utf-8'), writer.getvalue())
+        self.assertEqual(expected_xml, b.xml_doc(indent=True))
 
 
 class TestXmlDomBuilder(BaseBuilderNodesTest, unittest.TestCase):

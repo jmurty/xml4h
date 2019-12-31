@@ -85,7 +85,7 @@ class Builder(object):
 
     def write(self, *args, **kwargs):
         """
-        Write XML text for the element represented by this builder.
+        Write XML bytes for the element represented by this builder.
 
         Delegates to :meth:`xml4h.nodes.Node.write`.
         """
@@ -93,14 +93,31 @@ class Builder(object):
 
     def write_doc(self, *args, **kwargs):
         """
-        Write XML text for the Document containing the element
+        Write XML bytes for the Document containing the element
         represented by this builder.
 
         Delegates to :meth:`xml4h.nodes.Node.write_doc`.
         """
         self.dom_element.write_doc(*args, **kwargs)
 
-    def up(self, to_name=None, count=1):
+    def xml(self, **kwargs):
+        """
+        :return: XML string for the element represented by this builder.
+
+        Delegates to :meth:`xml4h.nodes.Node.xml`.
+        """
+        return self.dom_element.xml(**kwargs)
+
+    def xml_doc(self, **kwargs):
+        """
+        :return: XML string for the Document containing the element represented
+        by this builder.
+
+        Delegates to :meth:`xml4h.nodes.Node.xml_doc`.
+        """
+        return self.dom_element.xml_doc(**kwargs)
+
+    def up(self, count=1, to_name=None):
         """
         :return: a builder representing an ancestor of the current element,
                  by default the parent element.
