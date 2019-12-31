@@ -168,15 +168,15 @@ def write_node(node, writer=None, encoding='utf-8', indent=0, newline='',
     elif newline is True:
         newline = '\n'
 
-    # We always need a writer, use stdout by default
+    # We always need a writer, use stdout by default with implicit encoding
     if writer is None:
         writer = sys.stdout
-
-    # Apply a text encoding if we have one
-    if encoding is None:
-        writer = writer
     else:
-        writer = codecs.getwriter(encoding)(writer)
+        # Apply a text encoding if we have one
+        if encoding is None:
+            writer = writer
+        else:
+            writer = codecs.getwriter(encoding)(writer)
 
     # Do the business...
     _write_node_impl(node, node_depth)
