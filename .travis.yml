@@ -1,15 +1,16 @@
 sudo: false
-# Default python version is no longer 2 but 3.6 or later
+# Default python version is 3.6 or later
 language: python
-# Be specific about which Python version to use for test runs
-python:
-  - "2.7"
 cache:
   directories:
     - $HOME/.pip-cache/
 env:
-  - TOX_ENV=py27
-  - TOX_ENV=py27-withlxml
+  - TOX_ENV=py36
+  - TOX_ENV=py36-withlxml
+  - TOX_ENV=py37
+  - TOX_ENV=py37-withlxml
+  - TOX_ENV=py38
+  - TOX_ENV=py38-withlxml
   - TOX_ENV=docs
 install:
   - pip install --upgrade pip
