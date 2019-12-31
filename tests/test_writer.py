@@ -36,9 +36,9 @@ class BaseWriterTest(object):
             )
         try:
             old_stdout = sys.stdout
-            sys.stdout = BytesIO()
+            sys.stdout = StringIO()
             self.builder.write_doc()
-            self.assertEqual(xml.encode('utf-8'), sys.stdout.getvalue())
+            self.assertEqual(xml, sys.stdout.getvalue())
         finally:
             sys.stdout = old_stdout
 
@@ -98,10 +98,10 @@ class BaseWriterTest(object):
             '<Elem2/>'
             '</DocRoot>'
             )
-        iostring = StringIO()
-        self.builder.dom_element.write_doc(iostring, encoding=None)
+        io_string = StringIO()
+        self.builder.dom_element.write_doc(io_string, encoding=None)
         # NOTE Exact test, no encoding of comparison XML doc string
-        self.assertEqual(xml, iostring.getvalue())
+        self.assertEqual(xml, io_string.getvalue())
 
     def test_omit_declaration(self):
         self.builder.dom_element.write_doc(self.iobytes,

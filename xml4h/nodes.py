@@ -493,28 +493,32 @@ class Node(object):
         """
         self.document.write(*args, **kwargs)
 
-    def xml(self, indent=4, **kwargs):
+    def xml(self, encoding='utf-8', indent=4, **kwargs):
         """
-        :return: this node as XML text.
+        :return: this node as an XML string.
 
         Delegates to :meth:`write`
         """
         # Use string writer if `encoding` is unset, unusual but possible...
-        if 'encoding' in kwargs and kwargs['encoding'] is None:
+        if encoding is None:
             writer = StringIO()
         # ...otherwise and by default, use a bytes writer
         else:
             writer = BytesIO()
-        self.write(writer, indent=indent, **kwargs)
-        return writer.getvalue()
+        self.write(writer, encoding=encoding, indent=indent, **kwargs)
+        xml_bytes = writer.getvalue()
+        if encoding:
+            return xml_bytes.decode(encoding)
+        else:
+            return xml_bytes
 
-    def xml_doc(self, **kwargs):
+    def xml_doc(self, encoding='utf-8', **kwargs):
         """
-        :return: the document containing this node as XML text.
+        :return: the document containing this node as an XML string.
 
         Delegates to :meth:`xml`
         """
-        return self.document.xml(**kwargs)
+        return self.document.xml(encoding=encoding, **kwargs)
 
 
 class NodeAttrAndChildElementLookupsMixin(object):
