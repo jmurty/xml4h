@@ -43,10 +43,10 @@ def parse(to_parse, ignore_whitespace_text_nodes=True, adapter=None):
     Parse an XML document into an *xml4h*-wrapped DOM representation
     using an underlying XML library implementation.
 
-    :param to_parse: an XML document file, document string, or the
-        path to an XML file. If a string value is given that contains
+    :param to_parse: an XML document file, document bytes, or the
+        path to an XML file. If a bytes value is given that contains
         a ``<`` character it is treated as literal XML data, otherwise
-        a string value is treated as a file path.
+        a bytes value is treated as a file path.
     :type to_parse: a file-like object or string
     :param bool ignore_whitespace_text_nodes: if ``True`` pure whitespace
         nodes are stripped from the parsed document, since these are
@@ -64,7 +64,7 @@ def parse(to_parse, ignore_whitespace_text_nodes=True, adapter=None):
     """
     if adapter is None:
         adapter = best_adapter
-    if isinstance(to_parse, str) and '<' in to_parse:
+    if isinstance(to_parse, bytes) and b'<' in to_parse:
         return adapter.parse_string(to_parse, ignore_whitespace_text_nodes)
     else:
         return adapter.parse_file(to_parse, ignore_whitespace_text_nodes)
