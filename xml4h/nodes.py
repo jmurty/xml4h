@@ -1,4 +1,5 @@
 import collections
+import functools
 from io import BytesIO, StringIO
 
 import xml4h
@@ -818,7 +819,13 @@ class Element(NameValueNodeMixin,
                 return 1
             else:
                 return cmp(nx, ny)
-        attr_list = sorted(list(attr_dict.items()), cmp=_xmlns_first)
+
+        # https://docs.python.org/3/library/functools.html#functools.cmp_to_key
+        # TODO Modern equivalent for this custom sorting `cmp` function
+        _xmlns_first = functools.cmp_to_key(_xmlns_first)
+        
+        attr_list = sorted(list(attr_dict.items()), key=_xmlns_first)
+
         # Add attributes
         for attr_name, v in attr_list:
             prefix, name, my_ns_uri = self.adapter.get_ns_info_from_node_name(
