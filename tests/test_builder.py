@@ -5,7 +5,7 @@ except ImportError:
     import unittest
 import functools
 import os
-from io import StringIO
+from io import BytesIO
 
 import xml.dom
 
@@ -31,7 +31,7 @@ class TestBuilderMethods(unittest.TestCase):
                 ex.__class__)
             self.assertEqual(
                 "Argument 123 is not one of the expected types: "
-                "[<type 'basestring'>, <class 'xml4h.nodes.Element'>]",
+                "[<class 'str'>, <class 'xml4h.nodes.Element'>]",
                 str(ex))
 
 
@@ -58,9 +58,9 @@ class BaseBuilderNodesTest(object):
                 .e('AndDeeper')
                 .e('DeeperStill'))
         # Check builder's current node is at deepest element
-        writer = StringIO()
+        writer = BytesIO()
         xmlb.write(writer)
-        self.assertEqual('<DeeperStill/>', writer.getvalue())
+        self.assertEqual(b'<DeeperStill/>', writer.getvalue())
         # Check builder produces expected XML doc as string
         self.assertEqual(
             '<?xml version="1.0" encoding="utf-8"?>\n'
@@ -70,7 +70,7 @@ class BaseBuilderNodesTest(object):
             '            <DeeperStill/>\n'
             '        </AndDeeper>\n'
             '    </Deeper>\n'
-            '</DocRoot>\n',
+            '</DocRoot>\n'.encode('utf-8'),
             xmlb.dom_element.xml_doc())
 
     def test_root(self):
@@ -146,7 +146,7 @@ class BaseBuilderNodesTest(object):
             '    <Elem3 hyphenated-name="v2"/>\n'
             '    <Elem4 twelve="12"/>\n'
             '    <Elem5 test="value-in-first-arg"/>\n'
-            '</DocRoot>\n',
+            '</DocRoot>\n'.encode('utf-8'),
             xmlb.dom_element.xml_doc())
 
     def test_xml(self):
@@ -157,7 +157,7 @@ class BaseBuilderNodesTest(object):
                     .e('Elem3').up())
         # xml() method outputs current node content and descendents only
         self.assertEqual(
-            '<Elem2>\n    <Elem3/>\n</Elem2>',
+            b'<Elem2>\n    <Elem3/>\n</Elem2>',
             xmlb.dom_element.xml())
         # Default string output is utf-8, and pretty-printed
         xml = (
@@ -169,7 +169,7 @@ class BaseBuilderNodesTest(object):
             '    </Elem2>\n'
             '</DocRoot>\n'
             )
-        self.assertEqual(xml, xmlb.dom_element.xml_doc())
+        self.assertEqual(xml.encode('utf-8'), xmlb.dom_element.xml_doc())
         # Mix it up a bit
         self.assertEqual(
             '<DocRoot>\n'
@@ -177,7 +177,7 @@ class BaseBuilderNodesTest(object):
             '    <Elem2>\n'
             '        <Elem3/>\n'
             '    </Elem2>\n'
-            '</DocRoot>\n',
+            '</DocRoot>\n'.encode('utf-8'),
             xmlb.dom_element.xml_doc(omit_declaration=True))
         self.assertEqual(
             '<?xml version="1.0" encoding="latin1"?>\n'
@@ -186,7 +186,7 @@ class BaseBuilderNodesTest(object):
             '  <Elem2>\n'
             '    <Elem3/>\n'
             '  </Elem2>\n'
-            '</DocRoot>\n',
+            '</DocRoot>\n'.encode('latin1'),
             xmlb.dom_element.xml_doc(encoding='latin1', indent=2))
         self.assertEqual(
             '<?xml version="1.0"?>\t'
@@ -213,7 +213,7 @@ class BaseBuilderNodesTest(object):
             '<DocRoot>\n'
             '    <Elem1>A text value</Elem1>\n'
             '    <Elem2>Seven equals 7</Elem2>\n'
-            '</DocRoot>\n',
+            '</DocRoot>\n'.encode('utf-8'),
             xmlb.dom_element.xml_doc())
         # Multiple text nodes, and text node next to nested element
         xmlb = (
@@ -233,7 +233,7 @@ class BaseBuilderNodesTest(object):
             '    <Elem2>Text\n'
             '        <Nested>Text in nested</Nested>\n'
             '    </Elem2>\n'
-            '</DocRoot>\n',
+            '</DocRoot>\n'.encode('utf-8'),
             xmlb.dom_element.xml_doc())
 
     def test_comment(self):
@@ -249,7 +249,7 @@ class BaseBuilderNodesTest(object):
             '<?xml version="1.0" encoding="utf-8"?>\n'
             '<DocRoot>\n'
             '    <Elem1><!--Here is my comment--></Elem1>\n'
-            '</DocRoot>\n',
+            '</DocRoot>\n'.encode('utf-8'),
             xmlb.dom_element.xml_doc())
 
     def test_instruction(self):
@@ -266,7 +266,7 @@ class BaseBuilderNodesTest(object):
             '<?xml version="1.0" encoding="utf-8"?>\n'
             '<DocRoot>\n'
             '    <?inst-target inst-data?>\n'
-            '</DocRoot>\n',
+            '</DocRoot>\n'.encode('utf-8'),
             xmlb.dom_element.xml_doc())
 
     def test_namespace(self):
@@ -281,7 +281,7 @@ class BaseBuilderNodesTest(object):
             '<DocRoot xmlns="urn:default">\n'
             '    <Elem1 xmlns="urn:elem1"/>\n'
             '    <Elem2 xmlns:myns="urn:elem2"/>\n'
-            '</DocRoot>\n',
+            '</DocRoot>\n'.encode('utf-8'),
             xmlb.dom_element.xml_doc())
         # Test namespaces work as expected when searching/traversing DOM
         self.assertEqual(1, len(xmlb.find(name='Elem1')))  # Ignore namespace
@@ -335,7 +335,7 @@ class BaseBuilderNodesTest(object):
                    xml4h.ElementTreeAdapter, xml4h.cElementTreeAdapter)
                    and 'myns:' or ''))
             # TODO: Any way to make lxml/ElementTree output more consistent?
-        self.assertEqual(xml, xmlb.dom_element.xml_doc())
+        self.assertEqual(xml.encode('utf-8'), xmlb.dom_element.xml_doc())
         # Test namespaces work as expected when searching/traversing DOM
         self.assertEqual(
             ['DocRoot', 'NSDefaultImplicit', 'NSDefaultExplicit',
@@ -398,7 +398,7 @@ class BaseBuilderNodesTest(object):
             '    <testns:Elem1/>\n'
             '    <testns:Elem2/>\n'
             '    <Attrs testns:attrib1="value1" testns:attrib2="value2"/>\n'
-            '</DocRoot>\n',
+            '</DocRoot>\n'.encode('utf-8'),
             xmlb.dom_element.xml_doc())
         # Attempts to use undefined namespace prefixes will fail
         xmlb = self.my_builder('DocRoot', ns_uri='urn:default')
@@ -458,7 +458,7 @@ class BaseBuilderNodesTest(object):
                 '<DocRoot>\n'
                 '    <Elem1>&lt;content/&gt; as text</Elem1>\n'
                 '    <Elem2>&lt;content/&gt; as cdata</Elem2>\n'
-                '</DocRoot>\n',
+                '</DocRoot>\n'.encode('utf-8'),
                 xmlb.dom_element.xml_doc())
         else:
             self.assertEqual(
@@ -466,7 +466,7 @@ class BaseBuilderNodesTest(object):
                 '<DocRoot>\n'
                 '    <Elem1>&lt;content/&gt; as text</Elem1>\n'
                 '    <Elem2><![CDATA[<content/> as cdata]]></Elem2>\n'
-                '</DocRoot>\n',
+                '</DocRoot>\n'.encode('utf-8'),
                 xmlb.dom_element.xml_doc())
 
     def test_element_with_extra_kwargs(self):
@@ -487,7 +487,7 @@ class BaseBuilderNodesTest(object):
             '    <Elem my-attribute="value"/>\n'
             '    <Elem>Text value</Elem>\n'
             '    <Elem x="1">More text</Elem>\n'
-            '</DocRoot>\n',
+            '</DocRoot>\n'.encode('utf-8'),
             xmlb.dom_element.xml_doc())
         # Insert a new element before another
         xmlb = (
@@ -502,7 +502,7 @@ class BaseBuilderNodesTest(object):
             '    <ThirdLastElement/>\n'
             '    <PenultimateElement/>\n'
             '    <FinalElement/>\n'
-            '</DocRoot>\n',
+            '</DocRoot>\n'.encode('utf-8'),
             xmlb.dom_element.xml_doc())
 
     def test_unicode(self):
@@ -568,10 +568,10 @@ class BaseBuilderNodesTest(object):
             '<Animal>'
                 '<Cat><Feature>Independent</Feature></Cat>'
                 '<Dog><Feature>Loyal</Feature></Dog>'
-            '</Animal>',
+            '</Animal>'.encode('utf-8'),
             cat_b.root.xml(indent=False))
         # Node and descendants are removed from original document
-        self.assertEqual('<Animal/>', dog_b.root.xml(indent=False))
+        self.assertEqual(b'<Animal/>', dog_b.root.xml(indent=False))
 
         # Clone an xml4h element node from one doc into another (it is left in
         # place in the original document)
@@ -581,13 +581,13 @@ class BaseBuilderNodesTest(object):
                 '<Cat><Feature>Independent</Feature></Cat>'
                 '<Dog><Feature>Loyal</Feature></Dog>'
                 '<Horse><Feature>Transport</Feature></Horse>'
-            '</Animal>',
+            '</Animal>'.encode('utf-8'),
             cat_b.root.xml(indent=False))
         # Node and descendants remain in original document
         self.assertEqual(
             '<Animal>'
                 '<Horse><Feature>Transport</Feature></Horse>'
-            '</Animal>',
+            '</Animal>'.encode('utf-8'),
             horse_b.root.xml(indent=False))
 
     def test_transplant_and_clone_impl_text_node(self):
@@ -620,11 +620,11 @@ class BaseBuilderNodesTest(object):
         self.assertEqual(
             '<Animal>'
                 '<Cat><Feature>IndependentLoyal</Feature><X/></Cat>'
-            '</Animal>',
+            '</Animal>'.encode('utf-8'),
             cat_b.root.xml(indent=False))
         # Check text node is no longer in original document
         self.assertEqual(
-            '<Animal><Dog><Feature/></Dog></Animal>',
+            '<Animal><Dog><Feature/></Dog></Animal>'.encode('utf-8'),
             dog_b.root.xml(indent=False))
 
         # Clone an Text node from one doc into another
@@ -633,11 +633,11 @@ class BaseBuilderNodesTest(object):
         self.assertEqual(
             '<Animal>'
                 '<Cat><Feature>IndependentLoyalTransport</Feature><X/></Cat>'
-            '</Animal>',
+            '</Animal>'.encode('utf-8'),
             cat_b.root.xml(indent=False))
         # Check text node is no longer in original document
         self.assertEqual(
-            '<Animal><Horse><Feature>Transport</Feature></Horse></Animal>',
+            '<Animal><Horse><Feature>Transport</Feature></Horse></Animal>'.encode('utf-8'),
             horse_b.root.xml(indent=False))
 
     def test_build_monty_python_film_example(self):
@@ -732,9 +732,9 @@ class BaseBuilderNodesTest(object):
         example_file_path = os.path.join(
             os.path.dirname(__file__), 'data/monty_python_films.xml')
         expected_xml = open(example_file_path).read()
-        writer = StringIO()
+        writer = BytesIO()
         b.write_doc(writer, indent=True)
-        self.assertEqual(expected_xml, writer.getvalue())
+        self.assertEqual(expected_xml.encode('utf-8'), writer.getvalue())
 
 
 class TestXmlDomBuilder(BaseBuilderNodesTest, unittest.TestCase):

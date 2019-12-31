@@ -103,7 +103,7 @@ class BaseParserTest(object):
             orig_xml = re.sub(
                 '<myns:NSCustomWithPrefixExplicit xmlns="urn:custom"/>',
                 '<NSCustomWithPrefixExplicit xmlns="urn:custom"/>', orig_xml)
-        self.assertEqual(orig_xml[:200], roundtrip_xml[:200])
+        self.assertEqual(orig_xml[:200].encode('utf-8'), roundtrip_xml[:200])
 
     def test_unicode(self):
         # NOTE lxml doesn't support unicode namespace URIs?

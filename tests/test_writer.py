@@ -5,7 +5,7 @@ except ImportError:
     import unittest
 import sys
 import functools
-from io import StringIO
+from io import BytesIO, StringIO
 
 import xml4h
 
@@ -23,7 +23,7 @@ class BaseWriterTest(object):
                 .element('Elem1').text('默认جذ').up()
                 .element('Elem2'))
         # Handy IO writer
-        self.iostr = StringIO()
+        self.iobytes = BytesIO()
 
     def test_write_to_stdout_by_default(self):
         # Default write output is utf-8, with no pretty-printing
@@ -36,15 +36,15 @@ class BaseWriterTest(object):
             )
         try:
             old_stdout = sys.stdout
-            sys.stdout = StringIO()
+            sys.stdout = BytesIO()
             self.builder.write_doc()
             self.assertEqual(xml.encode('utf-8'), sys.stdout.getvalue())
         finally:
             sys.stdout = old_stdout
 
     def test_write_current_node_and_descendents(self):
-        self.builder.dom_element.write(self.iostr)
-        self.assertEqual('<Elem2/>', self.iostr.getvalue())
+        self.builder.dom_element.write(self.iobytes)
+        self.assertEqual(b'<Elem2/>', self.iobytes.getvalue())
 
     def test_write_utf8_by_default(self):
         # Default write output is utf-8, with no pretty-printing
@@ -55,8 +55,8 @@ class BaseWriterTest(object):
             '<Elem2/>'
             '</DocRoot>'
             )
-        self.builder.dom_element.write_doc(self.iostr)
-        self.assertEqual(xml.encode('utf-8'), self.iostr.getvalue())
+        self.builder.dom_element.write_doc(self.iobytes)
+        self.assertEqual(xml.encode('utf-8'), self.iobytes.getvalue())
 
     def test_write_utf16(self):
         xml = (
@@ -66,13 +66,13 @@ class BaseWriterTest(object):
             '<Elem2/>'
             '</DocRoot>'
             )
-        self.builder.dom_element.write_doc(self.iostr, encoding='utf-16')
-        self.assertEqual(xml.encode('utf-16'), self.iostr.getvalue())
+        self.builder.dom_element.write_doc(self.iobytes, encoding='utf-16')
+        self.assertEqual(xml.encode('utf-16'), self.iobytes.getvalue())
 
     def test_write_latin1_with_illegal_characters(self):
         self.assertRaises(UnicodeEncodeError,
             self.builder.dom_element.write_doc,
-                self.iostr, encoding='latin1', indent=2)
+                self.iobytes, encoding='latin1', indent=2)
 
     def test_write_latin1(self):
         # Create latin1-friendly test document
@@ -80,14 +80,14 @@ class BaseWriterTest(object):
             self.my_builder('DocRoot')
                 .element('Elem1').text('Tést çæsè').up()
                 .element('Elem2'))
-        self.builder.dom_element.write_doc(self.iostr, encoding='latin1')
+        self.builder.dom_element.write_doc(self.iobytes, encoding='latin1')
         self.assertEqual(
             '<?xml version="1.0" encoding="latin1"?>'
             '<DocRoot>'
             '<Elem1>Tést çæsè</Elem1>'
             '<Elem2/>'
             '</DocRoot>'.encode('latin1'),
-            self.iostr.getvalue())
+            self.iobytes.getvalue())
 
     def test_with_no_encoding(self):
         """No encoding writes python unicode"""
@@ -98,33 +98,34 @@ class BaseWriterTest(object):
             '<Elem2/>'
             '</DocRoot>'
             )
-        self.builder.dom_element.write_doc(self.iostr, encoding=None)
+        iostring = StringIO()
+        self.builder.dom_element.write_doc(iostring, encoding=None)
         # NOTE Exact test, no encoding of comparison XML doc string
-        self.assertEqual(xml, self.iostr.getvalue())
+        self.assertEqual(xml, iostring.getvalue())
 
     def test_omit_declaration(self):
-        self.builder.dom_element.write_doc(self.iostr,
+        self.builder.dom_element.write_doc(self.iobytes,
                 omit_declaration=True)
         self.assertEqual(
             '<DocRoot>'
             '<Elem1>默认جذ</Elem1>'
             '<Elem2/>'
             '</DocRoot>'.encode('utf-8'),
-            self.iostr.getvalue())
+            self.iobytes.getvalue())
 
     def test_default_indent_and_newline(self):
         """Default indent of 4 spaces with newlines when indent=True"""
-        self.builder.dom_element.write_doc(self.iostr, indent=True)
+        self.builder.dom_element.write_doc(self.iobytes, indent=True)
         self.assertEqual(
             '<?xml version="1.0" encoding="utf-8"?>\n'
             '<DocRoot>\n'
             '    <Elem1>默认جذ</Elem1>\n'
             '    <Elem2/>\n'
             '</DocRoot>\n'.encode('utf-8'),
-            self.iostr.getvalue())
+            self.iobytes.getvalue())
 
     def test_custom_indent_and_newline(self):
-        self.builder.dom_element.write_doc(self.iostr,
+        self.builder.dom_element.write_doc(self.iobytes,
             indent=8, newline='\t')
         self.assertEqual(
             '<?xml version="1.0" encoding="utf-8"?>\t'
@@ -132,7 +133,7 @@ class BaseWriterTest(object):
             '        <Elem1>默认جذ</Elem1>\t'
             '        <Elem2/>\t'
             '</DocRoot>\t'.encode('utf-8'),
-            self.iostr.getvalue())
+            self.iobytes.getvalue())
 
 
 class TestXmlDomBuilder(BaseWriterTest, unittest.TestCase):
