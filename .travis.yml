@@ -1,7 +1,6 @@
-sudo: false
 language: python
   - "3.6"
   - "3.7"
   - "3.8"
-install: pip install tox-travis
+install: pip install --user tox-travis
 script: tox
