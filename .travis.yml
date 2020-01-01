@@ -1,21 +1,6 @@
-sudo: false
-# Default python version is 3.6 or later
 language: python
-cache:
-  directories:
-    - $HOME/.pip-cache/
-env:
-  - TOX_ENV=py36
-  - TOX_ENV=py36-withlxml
-  - TOX_ENV=py37
-  - TOX_ENV=py37-withlxml
-  - TOX_ENV=py38
-  - TOX_ENV=py38-withlxml
-  - TOX_ENV=docs
-install:
-  - pip install --upgrade pip
-  - pip install tox
-script:
-  - tox -e $TOX_ENV
-after_script:
-  - cat .tox/$TOX_ENV/log/*.log
+  - "3.6"
+  - "3.7"
+  - "3.8"
+install: pip install tox-travis
+script: tox
