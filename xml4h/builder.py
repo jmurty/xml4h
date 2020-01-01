@@ -111,7 +111,7 @@ class Builder(object):
     def xml_doc(self, **kwargs):
         """
         :return: XML string for the Document containing the element represented
-        by this builder.
+                 by this builder.
 
         Delegates to :meth:`xml4h.nodes.Node.xml_doc`.
         """

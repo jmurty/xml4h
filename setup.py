@@ -26,7 +26,7 @@ setup(
     install_requires=None,
     license=open('LICENSE').read(),
     # http://pypi.python.org/pypi?%3Aaction=list_classifiers
-    classifiers=(
+    classifiers=[
         'Development Status :: 4 - Beta',
         'Intended Audience :: Developers',
         'Topic :: Text Processing :: Markup :: XML',
@@ -37,6 +37,6 @@ setup(
         # 'Programming Language :: Python :: 3.0',
         # 'Programming Language :: Python :: 3.1',
         # 'Programming Language :: Python :: 3.2',
-    ),
+    ],
     test_suite='tests',
 )

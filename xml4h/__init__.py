@@ -10,7 +10,7 @@ from xml4h.writer import write_node
 
 
 __title__ = 'xml4h'
-__version__ = '1.0-pre'
+__version__ = '1.0rc0'
 
 
 # List of xml4h adapter classes, in order of preference
