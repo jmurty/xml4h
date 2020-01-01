@@ -207,16 +207,31 @@ class LXMLAdapter(XmlImplAdapter):
             return '#comment'
         elif isinstance(node, etree._ProcessingInstruction):
             return node.target
-        elif self.get_node_name_prefix(node) is not None:
-            return '%s:%s' % (node.prefix, self.get_node_local_name(node))
+        prefix = self.get_node_name_prefix(node)
+        local_name = self.get_node_local_name(node)
+        if prefix is not None:
+            return '%s:%s' % (prefix, local_name)
         else:
-            return self.get_node_local_name(node)
+            return local_name
 
     def get_node_local_name(self, node):
         return re.sub('{.*}', '', node.tag)
 
     def get_node_name_prefix(self, node):
-        return node.prefix
+        # Believe nodes that have a prefix set (likely only LXMLAttribute)
+        prefix = getattr(node, 'prefix', None)
+        if prefix:
+            return prefix
+        # Derive prefix by unpacking node name
+        qname, ns_uri, prefix, local_name = self._unpack_name(node.tag, node)
+        if prefix:
+            # Don't add unnecessary excess namespace prefixes for default ns
+            if prefix == 'xmlns':
+                return None
+            else:
+                return prefix
+        else:
+            return None
 
     def get_node_value(self, node):
         if isinstance(node, (etree._ProcessingInstruction, etree._Comment)):
@@ -372,6 +387,7 @@ class LXMLAdapter(XmlImplAdapter):
             return child
 
     def lookup_ns_uri_by_attr_name(self, node, name):
+        ns_name = None
         if name == 'xmlns':
             ns_name = None
         elif name.startswith('xmlns:'):
