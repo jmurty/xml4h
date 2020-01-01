@@ -357,8 +357,8 @@ a :class:`~xml4h.exceptions.FeatureUnavailableException`::
     >>> try:
     ...     minidom_doc.root.xpath('//*')
     ... except Exception as e:
-    ...     e
-    FeatureUnavailableException('xpath')
+    ...     e  #doctest:+ELLIPSIS
+    FeatureUnavailableException('xpath'...
 
 
 Adapter & Implementation Quirks
