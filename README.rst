@@ -1,12 +1,13 @@
-===============================
-xml4h: XML for Humans in Python
-===============================
+=================================
+xml4h: XML for Humans in Python 3
+=================================
 
-*xml4h* is an MIT licensed library for Python to make working with XML a
-human-friendly activity.
+*xml4h* is an MIT licensed library for Python to make it easier to work with XML.
 
 This library exists because Python is awesome, XML is everywhere, and combining
-the two should be a pleasure. With *xml4h*, it can be.
+the two should be a pleasure but often is not. With *xml4h*, it can be easy.
+
+As of version 1.0 *xml4h* supports Python 3.6 and later.
 
 
 Features
@@ -122,7 +123,8 @@ document::
     ...         .elem('Description').t(
     ...             "A collection of sketches from the first and second TV"
     ...             " series of Monty Python's Flying Circus purposely"
-    ...             " re-enacted and shot for film.").up()
+    ...             " re-enacted and shot for film."
+    ...             ).up()
     ...         .up()
     ...     )
 
@@ -154,18 +156,18 @@ Pretty-print your XML document with the flexible write() and xml() methods::
     </MontyPythonFilms>
 
 
-Why?
-----
+Why use *xml4h*?
+----------------
 
 Python has three popular libraries for working with XML, none of which are
 particularly easy to use:
 
-- `xml.dom.minidom <http://docs.python.org/library/xml.dom.minidom.html>`_
+- `xml.dom.minidom <https://docs.python.org/3/library/xml.dom.minidom.html>`_
   is a light-weight, moderately-featured implementation of the W3C DOM
   that is included in the standard library. Unfortunately the W3C DOM API is
-  terrible – the very opposite of pythonic – and the *minidom* does not
-  support XPath expressions.
-- `xml.etree.ElementTree <http://docs.python.org/library/xml.etree.elementtree.html>`_
+  verbose, clumsy, and not very pythonic, and the *minidom* does not support
+  XPath expressions.
+- `xml.etree.ElementTree <http://docs.python.org/3/library/xml.etree.elementtree.html>`_
   is a fast hierarchical data container that is included in the standard
   library and can be used to represent XML, mostly. The API is fairly pythonic
   and supports some basic XPath features, but it lacks some DOM traversal
@@ -192,23 +194,30 @@ the existing XML libraries, taking advantage of their power while offering an
 improved API and tool set.
 
 
-This project is heavily inspired by the work of
-`Kenneth Reitz <http://kennethreitz.com/pages/open-projects.html>`_ such as
-the excellent `Requests HTTP library <http://docs.python-requests.org/>`_.
-
-
 Development Status: beta
 ------------------------
 
-Currently *xml4h* includes adapter implementations for all three of the main
-XML processing Python libraries.
+Currently *xml4h* includes adapter implementations for three of the main XML
+processing Python libraries.
 
 If you have *lxml* available (highly recommended) it will use that, otherwise
 it will fall back to use the *(c)ElementTree* then the *minidom* libraries.
 
 
+
 History
 -------
+
+1.0
+...
+
+- Add support for Python 3 (3.6+)
+- Dropped support for Python 2.
+- Fix node namespace prefix values for lxml adapter.
+- Improve builder's ``up()`` method to accept and distinguish between a count
+  of parents to step up, or the name of a target ancestor node.
+- Add ``xml()`` and ``xml_doc()`` methods to document builder to more easily
+  get string content from it, without resorting to the write methods.
 
 0.2.0
 .....
