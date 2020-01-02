@@ -9,18 +9,17 @@ import codecs
 from xml4h import exceptions
 
 
-def write_node(node, writer=None, encoding='utf-8', indent=0, newline='',
+def write_node(node, writer, encoding='utf-8', indent=0, newline='',
         omit_declaration=False, node_depth=0, quote_char='"'):
     """
     Serialize an *xml4h* DOM node and its descendants to text, writing
-    the output to a given *writer* or to stdout.
+    the output to the given *writer*.
 
     :param node: the DOM node whose content and descendants will
         be serialized.
     :type node: an :class:`xml4h.nodes.Node` or subclass
-    :param writer: an object such as a file or stream to which XML text
-        is sent. If *None* text is sent to :attr:`sys.stdout`.
-    :type writer: a file, stream, etc or None
+    :param writer: a file or stream to which XML text is written.
+    :type writer: a file, stream, etc
     :param string encoding: the character encoding for serialized text.
     :param indent: indentation prefix to apply to descendent nodes for
         pretty-printing. The value can take many forms:
@@ -168,15 +167,12 @@ def write_node(node, writer=None, encoding='utf-8', indent=0, newline='',
     elif newline is True:
         newline = '\n'
 
-    # We always need a writer, use stdout by default with implicit encoding
-    if writer is None:
-        writer = sys.stdout
-    else:
-        # Apply a text encoding if we have one
-        if encoding is None:
-            writer = writer
-        else:
-            writer = codecs.getwriter(encoding)(writer)
+    # If we have a target encoding and are writing to a binary IO stream, wrap
+    # the writer with an encoding writer to produce the correct bytes.
+    # We detect binary IO streams by the *absence* of the `encoding` attribute
+    # that is present on `io.TextIOBase`-derived objects.
+    if encoding and not hasattr(writer, 'encoding'):
+        writer = codecs.getwriter(encoding)(writer)
 
     # Do the business...
     _write_node_impl(node, node_depth)

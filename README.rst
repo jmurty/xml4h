@@ -142,7 +142,7 @@ document::
 
 Pretty-print your XML document with the flexible write() and xml() methods::
 
-    >>> b.write_doc(indent=4, newline=True) # doctest: +ELLIPSIS
+    >>> print(b.xml_doc(indent=4, newline=True)) # doctest: +ELLIPSIS
     <?xml version="1.0" encoding="utf-8"?>
     <MontyPythonFilms source="http://en.wikipedia.org/wiki/Monty_Python">
         <Film year="1971">
@@ -154,6 +154,7 @@ Pretty-print your XML document with the flexible write() and xml() methods::
             <Description>King Arthur and his knights embark ...</Description>
         </Film>
     </MontyPythonFilms>
+    <BLANKLINE>
 
 
 Why use *xml4h*?
@@ -218,6 +219,10 @@ History
   of parents to step up, or the name of a target ancestor node.
 - Add ``xml()`` and ``xml_doc()`` methods to document builder to more easily
   get string content from it, without resorting to the write methods.
+- The ``write()`` and ``write_doc()`` methods no longer send output to
+  ``sys.stdout`` by default. The user must explicitly provide a target writer
+  object, and hopefully be more mindful of the need to set up encoding correctly
+  when providing a text stream object.
 
 0.2.0
 .....

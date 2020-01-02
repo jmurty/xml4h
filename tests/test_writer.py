@@ -25,8 +25,8 @@ class BaseWriterTest(object):
         # Handy IO writer
         self.iobytes = BytesIO()
 
-    def test_write_to_stdout_by_default(self):
-        # Default write output is utf-8, with no pretty-printing
+    def test_write_defaults(self):
+        """ Default write output is utf-8 with no pretty-printing """
         xml = (
             '<?xml version="1.0" encoding="utf-8"?>'
             '<DocRoot>'
@@ -34,13 +34,9 @@ class BaseWriterTest(object):
             '<Elem2/>'
             '</DocRoot>'
             )
-        try:
-            old_stdout = sys.stdout
-            sys.stdout = StringIO()
-            self.builder.write_doc()
-            self.assertEqual(xml, sys.stdout.getvalue())
-        finally:
-            sys.stdout = old_stdout
+        io_string = StringIO()
+        self.builder.write_doc(io_string)
+        self.assertEqual(xml, io_string.getvalue())
 
     def test_write_current_node_and_descendents(self):
         self.builder.dom_element.write(self.iobytes)

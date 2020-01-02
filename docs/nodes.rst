@@ -240,7 +240,7 @@ find anything::
 
     >>> # Parse a namespaced version of the Monty Python Films doc
     >>> ns_doc = xml4h.parse('tests/data/monty_python_films.ns.xml')
-    >>> ns_doc.write(indent=True)  #doctest:+ELLIPSIS
+    >>> print(ns_doc.xml())  #doctest:+ELLIPSIS
     <?xml version="1.0" encoding="utf-8"?>
     <MontyPythonFilms source="http://en.wikipedia.org/wiki/Monty_Python" xmlns="uri:monty-python" xmlns:work="uri:artistic-work">
         <work:Film year="1971">

@@ -2,9 +2,9 @@
 Writer
 ======
 
-The *xml4h* writer produces serialized XML text documents much as you would
-expect, and in respect that it is a little unlike the writer methods in some of
-the other Python XML libraries.
+The *xml4h* writer produces serialized XML text documents formatted more
+traditionally – and in our opinion more correctly – than the other Python XML
+libraries.
 
 
 Write methods
@@ -14,14 +14,19 @@ To write out an XML document with *xml4h* you will generally use the
 :meth:`~xml4h.nodes.Node.write` or :meth:`~xml4h.nodes.Node.write_doc` methods
 available on any *xml4h* node.
 
+The writer methods require a file or any IO stream object as the first
+argument, and will automatically handle text or binary IO streams.
+
 The :meth:`~xml4h.nodes.Node.write` method outputs the current node and any
 descendants::
 
     >>> import xml4h
     >>> doc = xml4h.parse('tests/data/monty_python_films.xml')
-
     >>> first_film_elem = doc.find('Film')[0]
-    >>> first_film_elem.write(indent=True)  # doctest:+ELLIPSIS
+
+    >>> # Write XML node to stdout
+    >>> import sys
+    >>> first_film_elem.write(sys.stdout, indent=True)  # doctest:+ELLIPSIS
     <Film year="1971">
         <Title>And Now for Something Completely Different</Title>
         <Description>A collection of sketches from the first and second...
@@ -30,7 +35,7 @@ descendants::
 The :meth:`~xml4h.nodes.Node.write_doc` method outputs the entire document no
 matter which node you call it on::
 
-    >>> first_film_elem.write_doc(indent=True)  # doctest:+ELLIPSIS
+    >>> first_film_elem.write_doc(sys.stdout, indent=True)  # doctest:+ELLIPSIS
     <?xml version="1.0" encoding="utf-8"?>
     <MontyPythonFilms source="http://en.wikipedia.org/wiki/Monty_Python">
         <Film year="1971">
@@ -39,24 +44,15 @@ matter which node you call it on::
         </Film>
      ...
 
-The *write* methods send output to :attr:`sys.stdout` by default. To send
-output to a file, or any other writer-like object, provide the target writer
-as an argument::
+To send output to a file::
 
     >>> # Write to a file
     >>> with open('/tmp/example.xml', 'wb') as f:
     ...     first_film_elem.write_doc(f)
 
-    >>> # Write to a string (BUT SEE SECTION BELOW...)
-    >>> from io import BytesIO
-    >>> writer = BytesIO()
-    >>> first_film_elem.write_doc(writer)
-    >>> writer.getvalue()  # doctest:+ELLIPSIS
-    b'<?xml version="1.0" encoding="utf-8"?><MontyPythonFilms source...
 
-
-Write to a String
------------------
+Get XML as a string
+-------------------
 
 Because you will often want to generate a string of XML content directly,
 *xml4h* includes the convenience methods :meth:`~xml4h.nodes.Node.xml`
@@ -83,9 +79,9 @@ method and returns a string for the whole document::
         ...
 
 .. note::
-   *xml4h* assumes that when you directly generate an XML string in this way it
-   is intended for human consumption, so it applies pretty-print formatting
-   by default.
+   *xml4h* assumes that when you directly generate an XML string with these
+   methods it is intended for human consumption, so it applies pretty-print
+   formatting by default.
 
 
 Format Output
@@ -122,14 +118,14 @@ its serialisation methods by accessing the implementation node::
 
     >>> # Get the implementation root node, in this case an lxml node
     >>> lxml_root_node = first_film_elem.root.impl_node
-    >>> lxml_root_node.__class__
+    >>> type(lxml_root_node)
     <class 'lxml.etree._Element'>
 
     >>> # Use lxml features as normal; xml4h is no longer in the picture
     >>> from lxml import etree
-    >>> xml_str = etree.tostring(
+    >>> xml_bytes = etree.tostring(
     ...     lxml_root_node, encoding='utf-8', xml_declaration=True, pretty_print=True)
-    >>> print(xml_str.decode('utf-8'))  # doctest:+ELLIPSIS
+    >>> print(xml_bytes.decode('utf-8'))  # doctest:+ELLIPSIS
     <?xml version='1.0' encoding='utf-8'?>
     <MontyPythonFilms source="http://en.wikipedia.org/wiki/Monty_Python"><Film year="1971"><Title>And Now for Something Completely Different</Title>
             <Description>A collection of sketches from the first and second...
