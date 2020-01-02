@@ -6,6 +6,7 @@ The *xml4h* writer produces serialized XML text documents formatted more
 traditionally – and in our opinion more correctly – than the other Python XML
 libraries.
 
+.. _writer-write-methods:
 
 Write methods
 -------------
@@ -50,6 +51,7 @@ To send output to a file::
     >>> with open('/tmp/example.xml', 'wb') as f:
     ...     first_film_elem.write_doc(f)
 
+.. _writer-xml-methods:
 
 Get XML as a string
 -------------------
@@ -83,6 +85,8 @@ method and returns a string for the whole document::
    methods it is intended for human consumption, so it applies pretty-print
    formatting by default.
 
+
+.. _writer-formatting:
 
 Format Output
 -------------

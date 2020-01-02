@@ -8,6 +8,7 @@ work with an in-memory XML document object model (DOM).
 This section of the document covers the main features of *xml4h* nodes.
 For the full API-level documentation see :ref:`api-nodes`.
 
+.. _node-traversal:
 
 Traversing Nodes
 ----------------
