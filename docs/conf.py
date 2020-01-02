@@ -42,7 +42,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = 'xml4h'
-copyright = '2012, James Murty'
+copyright = '2020, James Murty'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
