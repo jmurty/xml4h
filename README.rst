@@ -1,13 +1,13 @@
-=================================
-xml4h: XML for Humans in Python 3
-=================================
+===============================
+xml4h: XML for Humans in Python
+===============================
 
 *xml4h* is an MIT licensed library for Python to make it easier to work with XML.
 
 This library exists because Python is awesome, XML is everywhere, and combining
 the two should be a pleasure but often is not. With *xml4h*, it can be easy.
 
-As of version 1.0 *xml4h* supports Python 3.6 and later.
+As of version 1.0 *xml4h* supports Python versions 2.7 and 3.6+.
 
 
 Features
@@ -49,9 +49,9 @@ Or install the tarball manually with::
 Links
 -----
 
-- GitHub for source code and issues: http://github.com/jmurty/xml4h
-- ReadTheDocs for documentation: http://xml4h.readthedocs.org
-- Install from the Python Package Index: http://pypi.python.org/pypi/xml4h
+- GitHub for source code and issues: https://github.com/jmurty/xml4h
+- ReadTheDocs for documentation: https://xml4h.readthedocs.org
+- Install from the Python Package Index: https://pypi.python.org/pypi/xml4h
 
 
 Introduction
@@ -96,7 +96,7 @@ to read data::
     >>> doc = xml4h.parse('tests/data/monty_python_films.xml')
 
     >>> for film in doc.MontyPythonFilms.Film[:3]:
-    ...     print(film['year'], ':', film.Title.text)
+    ...     print(film['year'] + ' : ' + film.Title.text)
     1971 : And Now for Something Completely Different
     1974 : Monty Python and the Holy Grail
     1979 : Monty Python's Life of Brian
@@ -105,7 +105,7 @@ You can also use more :ref:`explicit (non-magical) methods <node-traversal>`
 to traverse the DOM::
 
     >>> for film in doc.child('MontyPythonFilms').children('Film')[:3]:
-    ...     print(film.attributes['year'], ':', film.children.first.text)
+    ...     print(film.attributes['year'] + ' : ' + film.children.first.text)
     1971 : And Now for Something Completely Different
     1974 : Monty Python and the Holy Grail
     1979 : Monty Python's Life of Brian
@@ -218,7 +218,7 @@ History
 ...
 
 - Add support for Python 3 (3.6+)
-- Dropped support for Python 2.
+- Dropped support for Python versions before 2.7.
 - Fix node namespace prefix values for lxml adapter.
 - Improve builder's ``up()`` method to accept and distinguish between a count
   of parents to step up, or the name of a target ancestor node.

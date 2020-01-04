@@ -1,3 +1,5 @@
+import six
+
 import xml4h
 
 # Make commonly-used classes and functions available in xml4h module
@@ -66,9 +68,9 @@ def parse(
     """
     if adapter is None:
         adapter = best_adapter
-    if isinstance(to_parse, bytes) and b'<' in to_parse:
+    if isinstance(to_parse, six.binary_type) and b'<' in to_parse:
         return adapter.parse_bytes(to_parse, ignore_whitespace_text_nodes)
-    elif isinstance(to_parse, str) and '<' in to_parse:
+    elif isinstance(to_parse, six.string_types) and '<' in to_parse:
         return adapter.parse_string(to_parse, ignore_whitespace_text_nodes)
     else:
         return adapter.parse_file(to_parse, ignore_whitespace_text_nodes)
@@ -97,7 +99,7 @@ def build(tagname_or_element, ns_uri=None, adapter=None):
     """
     if adapter is None:
         adapter = best_adapter
-    if isinstance(tagname_or_element, str):
+    if isinstance(tagname_or_element, six.string_types):
         doc = adapter.create_document(
             tagname_or_element, ns_uri=ns_uri)
         element = doc.root

@@ -1,4 +1,5 @@
 # Nose for running tests
+six
 nose
 coverage
 tox

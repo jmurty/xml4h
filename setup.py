@@ -23,7 +23,9 @@ setup(
     package_dir={'xml4h': 'xml4h'},
     package_data={'': ['README.rst', 'LICENSE']},
     include_package_data=True,
-    install_requires=None,
+    install_requires=[
+        'six',
+    ],
     license=open('LICENSE').read(),
     # http://pypi.python.org/pypi?%3Aaction=list_classifiers
     classifiers=[

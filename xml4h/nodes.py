@@ -1,6 +1,6 @@
+import six
 import collections
 import functools
-from io import BytesIO, StringIO
 
 import xml4h
 
@@ -503,10 +503,10 @@ class Node(object):
         """
         # Use string writer if `encoding` is unset, unusual but possible...
         if encoding is None:
-            writer = StringIO()
+            writer = six.StringIO()
         # ...otherwise and by default, use a bytes writer
         else:
-            writer = BytesIO()
+            writer = six.BytesIO()
         self.write(writer, encoding=encoding, indent=indent, **kwargs)
         xml_bytes = writer.getvalue()
         if encoding:
@@ -679,10 +679,10 @@ class NameValueNodeMixin(Node):
             self.name)
 
     def _tounicode(self, value):
-        if value is None or isinstance(value, str):
+        if value is None or isinstance(value, six.string_types):
             return value
         else:
-            return str(value)
+            return six.text_type(value)
 
     @property
     def prefix(self):
@@ -844,8 +844,8 @@ class Element(NameValueNodeMixin,
                 if ns_uri == self.adapter.get_node_namespace_uri(element):
                     my_ns_uri = None
             # Forcibly convert all data to unicode text
-            if not isinstance(v, str):
-                v = str(v)
+            if not isinstance(v, six.string_types):
+                v = six.text_type(v)
             if prefix:
                 qname = '%s:%s' % (prefix, name)
             else:
@@ -1037,8 +1037,8 @@ class Element(NameValueNodeMixin,
         :param text: text content to add to this element.
         :param type: string or anything that can be coerced by :func:`unicode`.
         """
-        if not isinstance(text, str):
-            text = str(text)
+        if not isinstance(text, six.string_types):
+            text = six.text_type(text)
         self._add_text(self.impl_node, text)
 
     def _add_comment(self, element, text):

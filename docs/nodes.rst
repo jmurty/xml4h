@@ -62,7 +62,7 @@ document using element names as Python attributes (``MontyPythonFilms``,
     >>> doc = xml4h.parse('tests/data/monty_python_films.xml')
 
     >>> for film in doc.MontyPythonFilms.Film:
-    ...     print(film['year'], ':', film.Title.text)  # doctest:+ELLIPSIS
+    ...     print(film['year'] + ' : ' + film.Title.text)  # doctest:+ELLIPSIS
     1971 : And Now for Something Completely Different
     1974 : Monty Python and the Holy Grail
     ...

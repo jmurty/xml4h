@@ -1,9 +1,11 @@
 import abc
+import six
 
 from xml4h import nodes, exceptions
 
 
-class XmlImplAdapter(object, metaclass=abc.ABCMeta):
+@six.add_metaclass(abc.ABCMeta)
+class XmlImplAdapter(object):
     """
     Base class that defines how *xml4h* interacts with an underlying XML
     library that the adaptor "wraps" to provide additional (or at least

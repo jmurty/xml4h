@@ -1,4 +1,4 @@
-from io import StringIO, BytesIO
+from six import StringIO, BytesIO
 
 from xml4h.impls.interface import XmlImplAdapter
 from xml4h import nodes, exceptions

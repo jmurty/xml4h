@@ -1,7 +1,7 @@
 import re
 import copy
 
-from io import BytesIO, StringIO
+import six
 
 from xml4h.impls.interface import XmlImplAdapter
 from xml4h import nodes, exceptions
@@ -53,13 +53,13 @@ class ElementTreeAdapter(XmlImplAdapter):
     @classmethod
     def parse_string(cls, xml_str, ignore_whitespace_text_nodes=True):
         return cls.parse_file(
-            StringIO(xml_str),
+            six.StringIO(xml_str),
             ignore_whitespace_text_nodes=ignore_whitespace_text_nodes)
 
     @classmethod
     def parse_bytes(cls, xml_bytes, ignore_whitespace_text_nodes=True):
         return cls.parse_file(
-            BytesIO(xml_bytes),
+            six.BytesIO(xml_bytes),
             ignore_whitespace_text_nodes=ignore_whitespace_text_nodes)
 
     @classmethod
@@ -135,7 +135,8 @@ class ElementTreeAdapter(XmlImplAdapter):
         if isinstance(node, BaseET.Element):
             return True
         # For cElementTree we need to be more cunning (or find a better way)
-        if hasattr(node, 'makeelement') and isinstance(node.tag, str):
+        if hasattr(node, 'makeelement') \
+                and isinstance(node.tag, six.string_types):
             return True
 
     def map_node_to_class(self, node):
@@ -193,7 +194,7 @@ class ElementTreeAdapter(XmlImplAdapter):
             if n == node:
                 continue
             # Ignore non-Elements
-            if not isinstance(n.tag, str):
+            if not isinstance(n.tag, six.string_types):
                 continue
             if ns_uri != '*' and self.get_node_namespace_uri(n) != ns_uri:
                 continue
@@ -294,7 +295,7 @@ class ElementTreeAdapter(XmlImplAdapter):
 
     def get_node_name_prefix(self, node):
         # Ignore non-elements
-        if not isinstance(node.tag, str):
+        if not isinstance(node.tag, six.string_types):
             return None
         # Believe nodes that know their own prefix (likely only ETAttribute)
         if hasattr(node, 'prefix'):

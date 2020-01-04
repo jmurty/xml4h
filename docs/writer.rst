@@ -122,8 +122,8 @@ its serialisation methods by accessing the implementation node::
 
     >>> # Get the implementation root node, in this case an lxml node
     >>> lxml_root_node = first_film_elem.root.impl_node
-    >>> type(lxml_root_node)
-    <class 'lxml.etree._Element'>
+    >>> type(lxml_root_node)  # doctest:+ELLIPSIS
+    <... 'lxml.etree._Element'>
 
     >>> # Use lxml features as normal; xml4h is no longer in the picture
     >>> from lxml import etree

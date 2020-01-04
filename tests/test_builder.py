@@ -5,6 +5,7 @@ except ImportError:
     import unittest
 import functools
 import os
+import six
 
 import xml.dom
 
@@ -28,10 +29,17 @@ class TestBuilderMethods(unittest.TestCase):
             self.assertEqual(
                 xml4h.exceptions.IncorrectArgumentTypeException,
                 ex.__class__)
-            self.assertEqual(
-                "Argument 123 is not one of the expected types: "
-                "[<class 'str'>, <class 'xml4h.nodes.Element'>]",
-                str(ex))
+            if six.PY3:
+                expected = (
+                    "Argument 123 is not one of the expected types: "
+                    "[<class 'str'>, <class 'xml4h.nodes.Element'>]"
+                )
+            else:
+                expected = (
+                    "Argument 123 is not one of the expected types: "
+                    "[<type 'str'>, <class 'xml4h.nodes.Element'>]"
+                )
+            self.assertEqual(expected, str(ex))
 
 
 class BaseBuilderNodesTest(object):
@@ -503,39 +511,40 @@ class BaseBuilderNodesTest(object):
             xmlb.dom_element.xml_doc())
 
     def test_unicode(self):
-        ns_default = 'urn:默认'
-        ns_custom = 'urn:習俗'
+        ns_default = u'urn:默认'
+        ns_custom = u'urn:習俗'
         # NOTE lxml doesn't support unicode namespace URIs
         if self.adapter == xml4h.LXMLAdapter:
-            ns_default = 'urn:default'
-            ns_custom = 'urn:custom'
+            ns_default = u'urn:default'
+            ns_custom = u'urn:custom'
         xmlb = (
-            self.my_builder('جذر', ns_uri=ns_default)
-                .ns_prefix('důl', ns_custom)
-                .e('důl:ぷㄩƦ').up()
-                .e('yếutố1')
-                    .attrs({'תכונה': '1'})
+            self.my_builder(u'جذر', ns_uri=ns_default)
+                .ns_prefix(u'důl', ns_custom)
+                .e(u'důl:ぷㄩƦ').up()
+                .e(u'yếutố1')
+                    .attrs({u'תכונה': '1'})
                     .up()
-                .e('yếutố2')
-                    .attrs({'důl:עודתכונה': 'tvö'})
+                .e(u'yếutố2')
+                    .attrs({u'důl:עודתכונה': u'tvö'})
             )
         xml = (
-            '<?xml version="1.0" encoding="utf-8"?>\n'
-            '<جذر xmlns="%(ns_default)s" xmlns:důl="%(ns_custom)s">\n'
-            '    <důl:ぷㄩƦ/>\n'
-            '    <yếutố1 תכונה="1"/>\n'
-            '    <yếutố2 důl:עודתכונה="tvö"/>\n'
-            '</جذر>\n') % {'ns_default': ns_default, 'ns_custom': ns_custom}
+            u'<?xml version="1.0" encoding="utf-8"?>\n'
+            u'<جذر xmlns="%(ns_default)s" xmlns:důl="%(ns_custom)s">\n'
+            u'    <důl:ぷㄩƦ/>\n'
+            u'    <yếutố1 תכונה="1"/>\n'
+            u'    <yếutố2 důl:עודתכונה="tvö"/>\n'
+            u'</جذر>\n') % {'ns_default': ns_default, 'ns_custom': ns_custom}
         self.assertEqual(xml, xmlb.dom_element.xml_doc())
         doc = xmlb.document
-        self.assertEqual('جذر', doc.root.name)
+        self.assertEqual(u'جذر', doc.root.name)
         self.assertEqual(ns_default, doc.root.attributes['xmlns'])
-        self.assertEqual(ns_custom, doc.root.attributes['xmlns:důl'])
+        self.assertEqual(ns_custom, doc.root.attributes[u'xmlns:důl'])
         self.assertEqual(3, len(doc.find(ns_uri=ns_default)))
         self.assertEqual(1, len(doc.find(ns_uri=ns_custom)))
-        self.assertEqual('1', doc.find_first('yếutố1').attributes['תכונה'])
-        self.assertEqual('tvö',
-            doc.find_first('yếutố2').attributes['důl:עודתכונה'])
+        self.assertEqual('1', doc.find_first(u'yếutố1').attributes[u'תכונה'])
+        self.assertEqual(
+            u'tvö',
+            doc.find_first(u'yếutố2').attributes[u'důl:עודתכונה'])
 
     def test_transplant_and_clone_xml4h_element(self):
         """
