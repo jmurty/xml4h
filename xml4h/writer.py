@@ -60,17 +60,6 @@ def write_node(node, writer, encoding='utf-8', indent=0, newline='',
             .replace(">", "&gt;")
             )
 
-    def _write_py2_py3_compatible(data):
-        """ Pre-encode data for Python 2 if writer will not do it """
-        # This is a very hacky test to find situations where a Python 2 writer
-        # needs to be given encoded byte values because it is not capable of
-        # encoding non-ASCII text data itself
-        # TODO There must be a less hacky way of doing this...
-        # 
-        if encoding and six.PY2 and not hasattr(writer, 'encode'):
-            data = data.encode(encoding)
-        writer.write(data)
-
     def _write_node_impl(node, node_depth):
         """
         Internal write implementation that does the real work while keeping
@@ -102,13 +91,13 @@ def write_node(node, writer, encoding='utf-8', indent=0, newline='',
                 writer.write("]")
             writer.write(">")
         elif node.is_text:
-            _write_py2_py3_compatible(
+            writer.write(
                 _sanitize_write_value(node.value)
             )
         elif node.is_cdata:
             if ']]>' in node.value:
                 raise ValueError("']]>' is not allowed in CDATA node value")
-            _write_py2_py3_compatible(
+            writer.write(
                 "<![CDATA[%s]]>" % node.value
             )
         #elif node.is_entity_reference:  # TODO
@@ -117,7 +106,7 @@ def write_node(node, writer, encoding='utf-8', indent=0, newline='',
             writer.write("<!ENTITY ")
             if node.is_paremeter_entity:
                 writer.write('%% ')
-            _write_py2_py3_compatible(
+            writer.write(
                 "%s %s%s%s>"
                 % (node.name, quote_char, node.value, quote_char)
             )
@@ -127,10 +116,10 @@ def write_node(node, writer, encoding='utf-8', indent=0, newline='',
         elif node.is_comment:
             if '--' in node.value:
                 raise ValueError("'--' is not allowed in COMMENT node value")
-            _write_py2_py3_compatible("<!--%s-->" % node.value)
+            writer.write("<!--%s-->" % node.value)
         elif node.is_notation:
             writer.write(newline + indent * node_depth)
-            _write_py2_py3_compatible("<!NOTATION %s" % node.name)
+            writer.write("<!NOTATION %s" % node.name)
             if node.is_system_identifier:
                 writer.write(" system %s%s%s>"
                     % (quote_char, node.external_id, quote_char))
@@ -139,10 +128,10 @@ def write_node(node, writer, encoding='utf-8', indent=0, newline='',
                     % (quote_char, node.external_id, quote_char,
                     quote_char, node.uri, quote_char))
         elif node.is_attribute:
-            _write_py2_py3_compatible(
+            writer.write(
                 " %s=%s" % (node.name, quote_char)
             )
-            _write_py2_py3_compatible(
+            writer.write(
                 _sanitize_write_value(node.value)
             )
             writer.write(quote_char)
@@ -151,7 +140,7 @@ def write_node(node, writer, encoding='utf-8', indent=0, newline='',
             if node_depth > 0:
                 writer.write(newline)
             writer.write(indent * node_depth)
-            _write_py2_py3_compatible("<" + node.name)
+            writer.write("<" + node.name)
 
             for attr in node.attribute_nodes:
                 _write_node_impl(attr, node_depth)
@@ -166,7 +155,7 @@ def write_node(node, writer, encoding='utf-8', indent=0, newline='',
                         found_indented_child = True
                 if found_indented_child:
                     writer.write(newline + indent * node_depth)
-                _write_py2_py3_compatible('</%s>' % node.name)
+                writer.write('</%s>' % node.name)
             else:
                 writer.write('/>')
         else:
@@ -191,9 +180,16 @@ def write_node(node, writer, encoding='utf-8', indent=0, newline='',
 
     # If we have a target encoding and are writing to a binary IO stream, wrap
     # the writer with an encoding writer to produce the correct bytes.
-    # We detect binary IO streams by the *absence* of the `encoding` attribute
-    # that is present on `io.TextIOBase`-derived objects.
-    if encoding and not hasattr(writer, 'encoding'):
+    # We detect binary IO streams by:
+    # - Python 3: the *absence* of the `encoding` attribute that is present on
+    #   `io.TextIOBase`-derived objects
+    # - Python 2: the *absence* of the `encode` attribute that is present on
+    #   `StringIO` objects
+    if (
+        encoding
+        and not hasattr(writer, 'encoding')
+        and not hasattr(writer, 'encode')
+    ):
         writer = codecs.getwriter(encoding)(writer)
 
     # Do the business...
