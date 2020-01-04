@@ -297,9 +297,11 @@ class ElementTreeAdapter(XmlImplAdapter):
         # Ignore non-elements
         if not isinstance(node.tag, six.string_types):
             return None
-        # Believe nodes that know their own prefix (likely only ETAttribute)
-        if hasattr(node, 'prefix'):
-            return node.prefix
+        # Believe nodes that have their own prefix (likely only ETAttribute)
+        prefix = getattr(node, 'prefix', None)
+        if prefix:
+            return prefix
+        # Derive prefix by unpacking node name
         qname, ns_uri, prefix, local_name = self._unpack_name(node.tag, node)
         if prefix:
             # Don't add unnecessary excess namespace prefixes for elements

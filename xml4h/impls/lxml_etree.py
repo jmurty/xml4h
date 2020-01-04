@@ -218,13 +218,17 @@ class LXMLAdapter(XmlImplAdapter):
         return re.sub('{.*}', '', node.tag)
 
     def get_node_name_prefix(self, node):
-        # Believe nodes that have a prefix set (likely only LXMLAttribute)
-        prefix = getattr(node, 'prefix', None)
-        if prefix:
-            return prefix
+        # Believe non-Element nodes that have a prefix set (e.g. LXMLAttribute)
+        if node.prefix and not isinstance(node, etree._Element):
+            return node.prefix
         # Derive prefix by unpacking node name
         qname, ns_uri, prefix, local_name = self._unpack_name(node.tag, node)
         if prefix:
+            # Don't add unnecessary excess namespace prefixes for elements
+            # with a local default namespace declaration
+            xmlns_val = self.get_node_attribute_value(node, 'xmlns')
+            if xmlns_val == ns_uri:
+                return None
             # Don't add unnecessary excess namespace prefixes for default ns
             if prefix == 'xmlns':
                 return None

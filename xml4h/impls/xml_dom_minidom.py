@@ -105,13 +105,31 @@ class XmlDomImplAdapter(XmlImplAdapter):
         return element.childNodes
 
     def get_node_name(self, node):
-        return node.nodeName
+        if node.nodeType not in (
+            xml.dom.Node.ELEMENT_NODE, xml.dom.Node.ATTRIBUTE_NODE
+        ):
+            return node.nodeName
+        # Special handling of node names for Element and Attribute nodes where
+        # we want to exclude the namespace prefix in some cases
+        prefix = self.get_node_name_prefix(node)
+        local_name = self.get_node_local_name(node)
+        if prefix is not None:
+            return '%s:%s' % (prefix, local_name)
+        else:
+            return local_name
 
     def get_node_local_name(self, node):
         return node.localName
 
     def get_node_name_prefix(self, node):
-        return node.prefix
+        prefix = node.prefix
+        # Don't add unnecessary excess namespace prefixes for elements
+        # with a local default namespace declaration
+        if prefix and node.nodeType == xml.dom.Node.ELEMENT_NODE:
+            xmlns_val = self.get_node_attribute_value(node, 'xmlns')
+            if xmlns_val == self.get_node_namespace_uri(node):
+                return None
+        return prefix
 
     def get_node_value(self, node):
         return node.nodeValue

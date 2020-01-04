@@ -326,20 +326,16 @@ class BaseBuilderNodesTest(object):
             '<DocRoot xmlns="urn:default" xmlns:myns="urn:custom">\n'
             '    <NSDefaultImplicit/>\n'
             '    <NSDefaultExplicit xmlns="urn:default"/>\n'
-            '    <%sNSCustomExplicit xmlns="urn:custom"/>\n'
+            '    <NSCustomExplicit xmlns="urn:custom"/>\n'
             '    <myns:NSCustomWithPrefixImplicit/>\n'
-            '    <%sNSCustomWithPrefixExplicit xmlns="urn:custom"/>\n'
+            '    <NSCustomWithPrefixExplicit xmlns="urn:custom"/>\n'
             '    <Attrs1 default-ns-explicit="1"'
                        ' default-ns-implicit="1"/>\n'
             '    <Attrs2'
                        ' myns:custom-ns-prefix-explicit="1"'
                        ' myns:custom-ns-prefix-implicit="1"/>\n'
             '</DocRoot>\n'
-            % (self.adapter == xml4h.LXMLAdapter and 'myns:' or '',
-               self.adapter not in (
-                   xml4h.ElementTreeAdapter, xml4h.cElementTreeAdapter)
-                   and 'myns:' or ''))
-            # TODO: Any way to make lxml/ElementTree output more consistent?
+        )
         self.assertEqual(xml, xmlb.dom_element.xml_doc())
         # Test namespaces work as expected when searching/traversing DOM
         self.assertEqual(

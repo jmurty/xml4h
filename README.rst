@@ -228,6 +228,9 @@ History
   ``sys.stdout`` by default. The user must explicitly provide a target writer
   object, and hopefully be more mindful of the need to set up encoding correctly
   when providing a text stream object.
+- Handling of redundant Element namespace prefixes is now more consistent: we
+  always strip the prefix when the element has an `xmlns` attribute defining
+  the same namespace URI.
 
 0.2.0
 .....
