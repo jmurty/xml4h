@@ -7,7 +7,7 @@ xml4h: XML for Humans in Python
 This library exists because Python is awesome, XML is everywhere, and combining
 the two should be a pleasure but often is not. With *xml4h*, it can be easy.
 
-As of version 1.0 *xml4h* supports Python versions 2.7 and 3.6+.
+As of version 1.0 *xml4h* supports Python versions 2.7 and 3.5+.
 
 
 Features
