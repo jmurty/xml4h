@@ -88,9 +88,8 @@ Let's start with an example XML document::
         <... more Film elements here ...>
     </MontyPythonFilms>
 
-With *xml4h* you can :ref:`parse the XML file <parser-parse>` and use 
-:ref:`"magical" element and attribute lookups <magical-node-traversal>`
-to read data::
+With *xml4h* you can parse the XML file and use "magical" element and attribute
+lookups to read data::
 
     >>> import xml4h
     >>> doc = xml4h.parse('tests/data/monty_python_films.xml')
@@ -101,8 +100,7 @@ to read data::
     1974 : Monty Python and the Holy Grail
     1979 : Monty Python's Life of Brian
 
-You can also use more :ref:`explicit (non-magical) methods <node-traversal>`
-to traverse the DOM::
+You can also use more explicit (non-magical) methods to traverse the DOM::
 
     >>> for film in doc.child('MontyPythonFilms').children('Film')[:3]:
     ...     print(film.attributes['year'] + ' : ' + film.children.first.text)
@@ -110,10 +108,9 @@ to traverse the DOM::
     1974 : Monty Python and the Holy Grail
     1979 : Monty Python's Life of Brian
 
-The :ref:`*xml4h* builder <builder>` makes programmatic document creation
-simple, with a :ref:`method-chaining feature <builder-method-chaining>` that
-allows for expressive but sparse code that mirrors the document itself.
-Here is the code to build part of the above XML document::
+The *xml4h* builder makes programmatic document creation simple, with a
+method-chaining feature that allows for expressive but sparse code that mirrors
+the document itself. Here is the code to build part of the above XML document::
 
     >>> b = (xml4h.build('MontyPythonFilms')
     ...     .attributes({'source': 'http://en.wikipedia.org/wiki/Monty_Python'})
@@ -143,9 +140,8 @@ Here is the code to build part of the above XML document::
     ... )
 
 Pretty-print your XML document with *xml4h*'s writer implementation with
-methods to :ref:`write content to a stream <writer-write-methods>` or :ref:`get
-the content as text <writer-xml-methods>` with flexible :ref:`formatting
-options <writer-formatting>`::
+methods to write content to a stream or get the content as text with flexible
+formatting options::
 
     >>> print(b.xml_doc(indent=4, newline=True)) # doctest: +ELLIPSIS
     <?xml version="1.0" encoding="utf-8"?>

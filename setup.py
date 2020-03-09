@@ -13,6 +13,7 @@ setup(
     version=xml4h.__version__,
     description='XML for Humans in Python',
     long_description=open('README.rst').read(),
+    long_description_content_type='text/x-rst',
     author='James Murty',
     author_email='james@murty.co',
     url='https://github.com/jmurty/xml4h',
@@ -26,7 +27,7 @@ setup(
     install_requires=[
         'six',
     ],
-    license=open('LICENSE').read(),
+    license='MIT License',
     # http://pypi.python.org/pypi?%3Aaction=list_classifiers
     classifiers=[
         'Development Status :: 4 - Beta',
