@@ -217,7 +217,7 @@ History
 1.0
 ...
 
-- Add support for Python 3 (3.6+)
+- Add support for Python 3 (3.5+)
 - Dropped support for Python versions before 2.7.
 - Fix node namespace prefix values for lxml adapter.
 - Improve builder's ``up()`` method to accept and distinguish between a count
