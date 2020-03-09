@@ -8,6 +8,7 @@ work with an in-memory XML document object model (DOM).
 This section of the document covers the main features of *xml4h* nodes.
 For the full API-level documentation see :ref:`api-nodes`.
 
+.. _node-traversal:
 
 Traversing Nodes
 ----------------
@@ -61,7 +62,7 @@ document using element names as Python attributes (``MontyPythonFilms``,
     >>> doc = xml4h.parse('tests/data/monty_python_films.xml')
 
     >>> for film in doc.MontyPythonFilms.Film:
-    ...     print film['year'], ':', film.Title.text  # doctest:+ELLIPSIS
+    ...     print(film['year'] + ' : ' + film.Title.text)  # doctest:+ELLIPSIS
     1971 : And Now for Something Completely Different
     1974 : Monty Python and the Holy Grail
     ...
@@ -124,7 +125,7 @@ Find Methods
       >>> # Find ALL elements in the document
       >>> elems = doc.find()
       >>> [e.name for e in elems]  # doctest:+ELLIPSIS
-      [u'MontyPythonFilms', u'Film', u'Title', u'Description', u'Film', u'Title', u'Description',...
+      ['MontyPythonFilms', 'Film', 'Title', 'Description', 'Film', 'Title', 'Description',...
 
       >>> # Find the seven <Film> elements in the XML document
       >>> film_elems = doc.find('Film')
@@ -148,7 +149,7 @@ Find Methods
       <xml4h.nodes.Element: "Film">
 
       >>> # Search for an element that does not exist
-      >>> print doc.find_first('OopsWrongName')
+      >>> print(doc.find_first('OopsWrongName'))
       None
 
   If you were paying attention you may have noticed in the example above that
@@ -199,7 +200,7 @@ perform the same work as the find queries we saw above::
       >>> # Query for ALL elements in the document
       >>> elems = doc.xpath('//*')  # doctest:+ELLIPSIS
       >>> [e.name for e in elems]  # doctest:+ELLIPSIS
-      [u'MontyPythonFilms', u'Film', u'Title', u'Description', u'Film', u'Title', u'Description',...
+      ['MontyPythonFilms', 'Film', 'Title', 'Description', 'Film', 'Title', 'Description',...
 
       >>> # Query for the seven <Film> elements in the XML document
       >>> film_elems = doc.xpath('//Film')
@@ -240,7 +241,7 @@ find anything::
 
     >>> # Parse a namespaced version of the Monty Python Films doc
     >>> ns_doc = xml4h.parse('tests/data/monty_python_films.ns.xml')
-    >>> ns_doc.write(indent=True)  #doctest:+ELLIPSIS
+    >>> print(ns_doc.xml())  #doctest:+ELLIPSIS
     <?xml version="1.0" encoding="utf-8"?>
     <MontyPythonFilms source="http://en.wikipedia.org/wiki/Monty_Python" xmlns="uri:monty-python" xmlns:work="uri:artistic-work">
         <work:Film year="1971">
@@ -339,7 +340,7 @@ nodes you need:
       <xml4h.nodes.Element: "Film">
 
       >>> # Apply filtering with child
-      >>> print doc.root.child('WrongName')
+      >>> print(doc.root.child('WrongName'))
       None
 
 - Get the first of a set of children with the ``first`` attribute::
@@ -351,7 +352,7 @@ nodes you need:
 - Filter the node list by name::
 
       >>> for n in doc.root.children('Film'):
-      ...     print n.Title.text
+      ...     print(n.Title.text)
       And Now for Something Completely Different
       Monty Python and the Holy Grail
       Monty Python's Life of Brian
@@ -373,7 +374,7 @@ nodes you need:
       >>> # Filter to films released in the year 1979
       >>> for n in doc.root.children('Film',
       ...         filter_fn=lambda node: node.attributes['year'] == '1979'):
-      ...     print n.Title.text
+      ...     print(n.Title.text)
       Monty Python's Life of Brian
 
 
@@ -420,9 +421,9 @@ Text node::
     True
 
     >>> text_node.name
-    u'#text'
+    '#text'
     >>> text_node.value
-    u'And Now for Something Completely Different'
+    'And Now for Something Completely Different'
 
 And here is the same for an Attribute node::
 
@@ -432,9 +433,9 @@ And here is the same for an Attribute node::
     True
 
     >>> year_attr.name
-    u'year'
+    'year'
     >>> year_attr.value
-    u'1971'
+    '1971'
 
 The name attribute of a node is not necessarily a plain string, in the case of
 nodes within a defined namespaced the ``name`` attribute may comprise two
@@ -596,7 +597,7 @@ try an example::
     >>> title_elem = desc_elem.add_element(
     ...     'Title', text='The Film that Never Was', before_this_element=True)
 
-    >>> print doc.MontyPythonFilms.Film[-1].xml()
+    >>> print(doc.MontyPythonFilms.Film[-1].xml())
     <Film year="never">
         <Title>The Film that Never Was</Title>
         <Description>Just testing...</Description>

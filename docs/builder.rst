@@ -43,7 +43,7 @@ Here is some example code to build a document about Monty Python films::
 
 The code above produces the following XML document (abbreviated)::
 
-    >>> xmlb.write_doc(indent=True)  # doctest:+ELLIPSIS
+    >>> print(xmlb.xml_doc(indent=True))  # doctest:+ELLIPSIS
     <?xml version="1.0" encoding="utf-8"?>
     <MontyPythonFilms source="http://en.wikipedia.org/wiki/Monty_Python">
         <Film year="1971">
@@ -55,6 +55,7 @@ The code above produces the following XML document (abbreviated)::
             <Description>King Arthur and his knights embark on a low-budget...
         </Film>
     </MontyPythonFilms>
+    <BLANKLINE>
 
 
 Getting Started
@@ -124,12 +125,13 @@ same document with less code::
     ...         .element('ChildElement2')
     ...     )
 
-    >>> b.write_doc(indent=4)
+    >>> print(b.xml_doc(indent=4))
     <?xml version="1.0" encoding="utf-8"?>
     <RootElement a="1" b="2" c="3">
         <ChildElement1/>
         <ChildElement2/>
     </RootElement>
+    <BLANKLINE>
 
 Notice how you can use chained method calls to write code with a structure
 that mirrors that of the XML document you want to produce? This makes it
@@ -259,7 +261,7 @@ content. Luckily, the code is simpler than that description...
     ...     .elem('Review').t('One of my favourite films!').up())
 
     >>> # See the results
-    >>> lob_builder.write(indent=True)  # doctest:+ELLIPSIS
+    >>> print(lob_builder.xml())  # doctest:+ELLIPSIS
     <Film stars="5" year="1979">
         <Title>Monty Python's Life of Brian</Title>
         <Description>Brian is born on the first Christmas, in the stable...
@@ -290,7 +292,7 @@ Here is a trivial example of this technique::
     <...
 
     >>> # Check the final document
-    >>> odd_b.write_doc(indent=True)
+    >>> print(odd_b.xml_doc(indent=True))
     <?xml version="1.0" encoding="utf-8"?>
     <EvenAndOdd>
         <Odd>
@@ -308,3 +310,4 @@ Here is a trivial example of this technique::
             <Number>10</Number>
         </Even>
     </EvenAndOdd>
+    <BLANKLINE>

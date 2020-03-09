@@ -1,5 +1,6 @@
+import six
 import collections
-from StringIO import StringIO
+import functools
 
 import xml4h
 
@@ -54,17 +55,9 @@ class Node(object):
         return (self.impl_document == other.impl_document
             and self.impl_node == other.impl_node)
 
-    def __unicode__(self):
-        return u'<%s.%s>' % (
-            self.__class__.__module__, self.__class__.__name__)
-
-    def __str__(self):
-        # TODO Degrade non-ASCII characters gracefully
-        # Avoid keyword args in encode call for compatibility with python 2.6
-        return self.__unicode__().encode('ascii', 'replace')
-
     def __repr__(self):
-        return self.__str__()
+        return '<%s.%s>' % (
+            self.__class__.__module__, self.__class__.__name__)
 
     @property
     def impl_node(self):
@@ -447,15 +440,14 @@ class Node(object):
 
     # Methods that operate on this Node implementation adapter
 
-    def write(self, writer=None, encoding='utf-8', indent=0, newline='',
+    def write(self, writer, encoding='utf-8', indent=0, newline='',
             omit_declaration=False, node_depth=0, quote_char='"'):
         """
         Serialize this node and its descendants to text, writing
-        the output to a given *writer* or to stdout.
+        the output to the given *writer*.
 
-        :param writer: an object such as a file or stream to which XML text
-            is sent. If *None* text is sent to :attr:`sys.stdout`.
-        :type writer: a file, stream, etc or None
+        :param writer: a file or stream to which XML text is written.
+        :type writer: a file, stream, etc
         :param string encoding: the character encoding for serialized text.
         :param indent: indentation prefix to apply to descendent nodes for
             pretty-printing. The value can take many forms:
@@ -487,36 +479,48 @@ class Node(object):
         Delegates to :func:`xml4h.writer.write_node` applied to this node.
         """
         xml4h.write_node(self,
-            writer=writer, encoding=encoding, indent=indent,
+            writer, encoding=encoding, indent=indent,
             newline=newline, omit_declaration=omit_declaration,
             node_depth=node_depth, quote_char=quote_char)
 
-    def write_doc(self, *args, **kwargs):
+    def write_doc(self, writer, *args, **kwargs):
         """
         Serialize to text the document containing this node, writing
-        the output to a given *writer* or stdout.
+        the output to the given *writer*.
+
+        :param writer: a file or stream to which XML text is written.
+        :type writer: a file, stream, etc
 
         Delegates to :meth:`write`
         """
-        self.document.write(*args, **kwargs)
+        self.document.write(writer, *args, **kwargs)
 
-    def xml(self, indent=4, **kwargs):
+    def xml(self, encoding='utf-8', indent=4, **kwargs):
         """
-        :return: this node as XML text.
+        :return: this node as an XML string.
 
         Delegates to :meth:`write`
         """
-        writer = StringIO()
-        self.write(writer, indent=indent, **kwargs)
-        return writer.getvalue()
+        # Use string writer if `encoding` is unset, unusual but possible...
+        if encoding is None:
+            writer = six.StringIO()
+        # ...otherwise and by default, use a bytes writer
+        else:
+            writer = six.BytesIO()
+        self.write(writer, encoding=encoding, indent=indent, **kwargs)
+        xml_bytes = writer.getvalue()
+        if encoding:
+            return xml_bytes.decode(encoding)
+        else:
+            return xml_bytes
 
-    def xml_doc(self, **kwargs):
+    def xml_doc(self, encoding='utf-8', **kwargs):
         """
-        :return: the document containing this node as XML text.
+        :return: the document containing this node as an XML string.
 
         Delegates to :meth:`xml`
         """
-        return self.document.xml(**kwargs)
+        return self.document.xml(encoding=encoding, **kwargs)
 
 
 class NodeAttrAndChildElementLookupsMixin(object):
@@ -586,7 +590,7 @@ class XPathMixin(object):
 
     def _maybe_wrap_node(self, node):
         # Don't try and wrap base types (e.g. attribute values or node text)
-        if isinstance(node, (basestring, int, long, float)):
+        if isinstance(node, (str, int, float)):
             return node
         else:
             return self.adapter.wrap_node(
@@ -669,16 +673,16 @@ class NameValueNodeMixin(Node):
     name may also be composed of "prefix" and "local" components.
     """
 
-    def __unicode__(self):
-        return u'<%s.%s: "%s">' % (
+    def __repr__(self):
+        return '<%s.%s: "%s">' % (
             self.__class__.__module__, self.__class__.__name__,
             self.name)
 
     def _tounicode(self, value):
-        if value is None or isinstance(value, unicode):
+        if value is None or isinstance(value, six.string_types):
             return value
         else:
-            return unicode(value)
+            return six.text_type(value)
 
     @property
     def prefix(self):
@@ -798,6 +802,11 @@ class Element(NameValueNodeMixin,
 
         # Always process 'xmlns' namespace definitions first, in case other
         # attributes belong to a newly-defined namespace
+        # TODO Modern equivalent for this legacy `cmp` method re-implementation
+        def cmp(a, b):
+            # https://docs.python.org/3.0/whatsnew/3.0.html#ordering-comparisons
+            return (a > b) - (a < b)
+
         def _xmlns_first(x, y):
             nx, ny = x[0], y[0]
             if nx.startswith('xmlns') and ny.startswith('xmlns'):
@@ -808,7 +817,13 @@ class Element(NameValueNodeMixin,
                 return 1
             else:
                 return cmp(nx, ny)
-        attr_list = sorted(attr_dict.items(), cmp=_xmlns_first)
+
+        # https://docs.python.org/3/library/functools.html#functools.cmp_to_key
+        # TODO Modern equivalent for this custom sorting `cmp` function
+        _xmlns_first = functools.cmp_to_key(_xmlns_first)
+        
+        attr_list = sorted(list(attr_dict.items()), key=_xmlns_first)
+
         # Add attributes
         for attr_name, v in attr_list:
             prefix, name, my_ns_uri = self.adapter.get_ns_info_from_node_name(
@@ -829,8 +844,8 @@ class Element(NameValueNodeMixin,
                 if ns_uri == self.adapter.get_node_namespace_uri(element):
                     my_ns_uri = None
             # Forcibly convert all data to unicode text
-            if not isinstance(v, basestring):
-                v = unicode(v)
+            if not isinstance(v, six.string_types):
+                v = six.text_type(v)
             if prefix:
                 qname = '%s:%s' % (prefix, name)
             else:
@@ -870,7 +885,7 @@ class Element(NameValueNodeMixin,
     def attributes(self, attr_obj):
         # Remove existing attributes, leaving namespace definitions until last
         # to avoid clobbering the namespace of other attributes
-        for attr_name in filter(lambda a: 'xmlns' not in a, self.attributes):
+        for attr_name in [a for a in self.attributes if 'xmlns' not in a]:
             self.adapter.remove_node_attribute(self.impl_node, attr_name)
         for attr_name in self.attributes:
             self.adapter.remove_node_attribute(self.impl_node, attr_name)
@@ -967,7 +982,7 @@ class Element(NameValueNodeMixin,
         prefix, local_name, node_ns_uri = \
             self.adapter.get_ns_info_from_node_name(name, self.impl_node)
         if prefix:
-            qname = u'%s:%s' % (prefix, local_name)
+            qname = '%s:%s' % (prefix, local_name)
         else:
             qname = local_name
         # If no name-derived namespace, apply an alternate namespace
@@ -1022,8 +1037,8 @@ class Element(NameValueNodeMixin,
         :param text: text content to add to this element.
         :param type: string or anything that can be coerced by :func:`unicode`.
         """
-        if not isinstance(text, basestring):
-            text = unicode(text)
+        if not isinstance(text, six.string_types):
+            text = six.text_type(text)
         self._add_text(self.impl_node, text)
 
     def _add_comment(self, element, text):
@@ -1086,8 +1101,8 @@ class AttributeDict(object):
     def __setitem__(self, name, value):
         prefix, name, ns_uri = self.adapter.get_ns_info_from_node_name(
             name, self.impl_element)
-        if not isinstance(value, basestring):
-            value = unicode(value)
+        if not isinstance(value, str):
+            value = str(value)
         self.adapter.set_node_attribute_value(
             self.impl_element, name, value, ns_uri)
 
@@ -1097,7 +1112,7 @@ class AttributeDict(object):
         self.adapter.remove_node_attribute(self.impl_element, name, ns_uri)
 
     def __iter__(self):
-        for k in self.keys():
+        for k in list(self.keys()):
             yield k
 
     iterkeys = __iter__  # Alias, per Python docs recommendation
@@ -1107,18 +1122,10 @@ class AttributeDict(object):
             name, self.impl_element)
         return self.adapter.has_node_attribute(self.impl_element, name, ns_uri)
 
-    def __unicode__(self):
-        return u'<%s.%s: %s>' % (
-            self.__class__.__module__, self.__class__.__name__,
-            self.to_dict.items())
-
-    def __str__(self):
-        # TODO Degrade non-ASCII characters gracefully
-        # Avoid keyword args in encode call for compatibility with python 2.6
-        return self.__unicode__().encode('ascii', 'replace')
-
     def __repr__(self):
-        return self.__str__()
+        return '<%s.%s: %s>' % (
+            self.__class__.__module__, self.__class__.__name__,
+            list(self.to_dict.items()))
 
     def keys(self):
         """
@@ -1169,7 +1176,7 @@ class AttributeDict(object):
         :return: an :class:`~collections.OrderedDict` of attribute name/value
             pairs.
         """
-        return collections.OrderedDict(self.items())
+        return collections.OrderedDict(list(self.items()))
 
     @property
     def element(self):
@@ -1247,7 +1254,7 @@ class NodeList(list):
                     return False
                 return True
         # Filter nodes
-        nodelist = filter(filter_fn, self)
+        nodelist = list(filter(filter_fn, self))
         # If requested, return just the first node (or None if no nodes)
         if first_only:
             return nodelist[0] if nodelist else None

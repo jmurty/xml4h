@@ -1,4 +1,4 @@
-from StringIO import StringIO
+from six import StringIO, BytesIO
 
 from xml4h.impls.interface import XmlImplAdapter
 from xml4h import nodes, exceptions
@@ -24,8 +24,11 @@ class XmlDomImplAdapter(XmlImplAdapter):
 
     @classmethod
     def parse_string(cls, xml_str, ignore_whitespace_text_nodes=True):
-        string_io = StringIO(xml_str)
-        return cls.parse_file(string_io, ignore_whitespace_text_nodes)
+        return cls.parse_file(StringIO(xml_str), ignore_whitespace_text_nodes)
+
+    @classmethod
+    def parse_bytes(cls, xml_bytes, ignore_whitespace_text_nodes=True):
+        return cls.parse_file(BytesIO(xml_bytes), ignore_whitespace_text_nodes)
 
     @classmethod
     def parse_file(cls, xml_file, ignore_whitespace_text_nodes=True):
@@ -102,13 +105,31 @@ class XmlDomImplAdapter(XmlImplAdapter):
         return element.childNodes
 
     def get_node_name(self, node):
-        return node.nodeName
+        if node.nodeType not in (
+            xml.dom.Node.ELEMENT_NODE, xml.dom.Node.ATTRIBUTE_NODE
+        ):
+            return node.nodeName
+        # Special handling of node names for Element and Attribute nodes where
+        # we want to exclude the namespace prefix in some cases
+        prefix = self.get_node_name_prefix(node)
+        local_name = self.get_node_local_name(node)
+        if prefix is not None:
+            return '%s:%s' % (prefix, local_name)
+        else:
+            return local_name
 
     def get_node_local_name(self, node):
         return node.localName
 
     def get_node_name_prefix(self, node):
-        return node.prefix
+        prefix = node.prefix
+        # Don't add unnecessary excess namespace prefixes for elements
+        # with a local default namespace declaration
+        if prefix and node.nodeType == xml.dom.Node.ELEMENT_NODE:
+            xmlns_val = self.get_node_attribute_value(node, 'xmlns')
+            if xmlns_val == self.get_node_namespace_uri(node):
+                return None
+        return prefix
 
     def get_node_value(self, node):
         return node.nodeValue
@@ -123,7 +144,7 @@ class XmlDomImplAdapter(XmlImplAdapter):
         text_children = [n.nodeValue for n in self.get_node_children(node)
                          if n.nodeType == xml.dom.Node.TEXT_NODE]
         if text_children:
-            return u''.join(text_children)
+            return ''.join(text_children)
         else:
             return None
 
@@ -144,7 +165,7 @@ class XmlDomImplAdapter(XmlImplAdapter):
         attr_nodes = []
         if not element.attributes:
             return attr_nodes
-        for attr_name in element.attributes.keys():
+        for attr_name in list(element.attributes.keys()):
             if self.has_node_attribute(element, attr_name, ns_uri):
                 attr_nodes.append(
                     self.get_node_attribute_node(element, attr_name, ns_uri))
@@ -170,7 +191,7 @@ class XmlDomImplAdapter(XmlImplAdapter):
         else:
             result = element.getAttribute(name)
         # Minidom returns empty string for non-existent nodes, correct this
-        if result == '' and not name in element.attributes.keys():
+        if result == '' and not name in list(element.attributes.keys()):
             return None
         return result
 

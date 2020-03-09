@@ -2,11 +2,12 @@
 xml4h: XML for Humans in Python
 ===============================
 
-*xml4h* is an MIT licensed library for Python to make working with XML a
-human-friendly activity.
+*xml4h* is an MIT licensed library for Python to make it easier to work with XML.
 
 This library exists because Python is awesome, XML is everywhere, and combining
-the two should be a pleasure. With *xml4h*, it can be.
+the two should be a pleasure but often is not. With *xml4h*, it can be easy.
+
+As of version 1.0 *xml4h* supports Python versions 2.7 and 3.5+.
 
 
 Features
@@ -48,9 +49,9 @@ Or install the tarball manually with::
 Links
 -----
 
-- GitHub for source code and issues: http://github.com/jmurty/xml4h
-- ReadTheDocs for documentation: http://xml4h.readthedocs.org
-- Install from the Python Package Index: http://pypi.python.org/pypi/xml4h
+- GitHub for source code and issues: https://github.com/jmurty/xml4h
+- ReadTheDocs for documentation: https://xml4h.readthedocs.org
+- Install from the Python Package Index: https://pypi.python.org/pypi/xml4h
 
 
 Introduction
@@ -87,30 +88,32 @@ Let's start with an example XML document::
         <... more Film elements here ...>
     </MontyPythonFilms>
 
-With *xml4h* you can parse the XML file and use "magical" element and attribute
-lookups to read data::
+With *xml4h* you can :ref:`parse the XML file <parser-parse>` and use 
+:ref:`"magical" element and attribute lookups <magical-node-traversal>`
+to read data::
 
     >>> import xml4h
     >>> doc = xml4h.parse('tests/data/monty_python_films.xml')
 
     >>> for film in doc.MontyPythonFilms.Film[:3]:
-    ...     print film['year'], ':', film.Title.text
+    ...     print(film['year'] + ' : ' + film.Title.text)
     1971 : And Now for Something Completely Different
     1974 : Monty Python and the Holy Grail
     1979 : Monty Python's Life of Brian
 
-You can also use a more traditional (non-magical) approach to traverse the DOM::
+You can also use more :ref:`explicit (non-magical) methods <node-traversal>`
+to traverse the DOM::
 
     >>> for film in doc.child('MontyPythonFilms').children('Film')[:3]:
-    ...     print film.attributes['year'], ':', film.children.first.text
+    ...     print(film.attributes['year'] + ' : ' + film.children.first.text)
     1971 : And Now for Something Completely Different
     1974 : Monty Python and the Holy Grail
     1979 : Monty Python's Life of Brian
 
-The *xml4h* builder makes programmatic document creation simple, with
-a method-chaining feature that allows for expressive but sparse code that
-mirrors the document itself. Here is the code to build part of the above XML
-document::
+The :ref:`*xml4h* builder <builder>` makes programmatic document creation
+simple, with a :ref:`method-chaining feature <builder-method-chaining>` that
+allows for expressive but sparse code that mirrors the document itself.
+Here is the code to build part of the above XML document::
 
     >>> b = (xml4h.build('MontyPythonFilms')
     ...     .attributes({'source': 'http://en.wikipedia.org/wiki/Monty_Python'})
@@ -122,7 +125,8 @@ document::
     ...         .elem('Description').t(
     ...             "A collection of sketches from the first and second TV"
     ...             " series of Monty Python's Flying Circus purposely"
-    ...             " re-enacted and shot for film.").up()
+    ...             " re-enacted and shot for film."
+    ...             ).up()
     ...         .up()
     ...     )
 
@@ -138,9 +142,12 @@ document::
     ...     .up()
     ... )
 
-Pretty-print your XML document with the flexible write() and xml() methods::
+Pretty-print your XML document with *xml4h*'s writer implementation with
+methods to :ref:`write content to a stream <writer-write-methods>` or :ref:`get
+the content as text <writer-xml-methods>` with flexible :ref:`formatting
+options <writer-formatting>`::
 
-    >>> b.write_doc(indent=4, newline=True) # doctest: +ELLIPSIS
+    >>> print(b.xml_doc(indent=4, newline=True)) # doctest: +ELLIPSIS
     <?xml version="1.0" encoding="utf-8"?>
     <MontyPythonFilms source="http://en.wikipedia.org/wiki/Monty_Python">
         <Film year="1971">
@@ -152,20 +159,21 @@ Pretty-print your XML document with the flexible write() and xml() methods::
             <Description>King Arthur and his knights embark ...</Description>
         </Film>
     </MontyPythonFilms>
+    <BLANKLINE>
 
 
-Why?
-----
+Why use *xml4h*?
+----------------
 
 Python has three popular libraries for working with XML, none of which are
 particularly easy to use:
 
-- `xml.dom.minidom <http://docs.python.org/library/xml.dom.minidom.html>`_
+- `xml.dom.minidom <https://docs.python.org/3/library/xml.dom.minidom.html>`_
   is a light-weight, moderately-featured implementation of the W3C DOM
   that is included in the standard library. Unfortunately the W3C DOM API is
-  terrible – the very opposite of pythonic – and the *minidom* does not
-  support XPath expressions.
-- `xml.etree.ElementTree <http://docs.python.org/library/xml.etree.elementtree.html>`_
+  verbose, clumsy, and not very pythonic, and the *minidom* does not support
+  XPath expressions.
+- `xml.etree.ElementTree <http://docs.python.org/3/library/xml.etree.elementtree.html>`_
   is a fast hierarchical data container that is included in the standard
   library and can be used to represent XML, mostly. The API is fairly pythonic
   and supports some basic XPath features, but it lacks some DOM traversal
@@ -192,23 +200,37 @@ the existing XML libraries, taking advantage of their power while offering an
 improved API and tool set.
 
 
-This project is heavily inspired by the work of
-`Kenneth Reitz <http://kennethreitz.com/pages/open-projects.html>`_ such as
-the excellent `Requests HTTP library <http://docs.python-requests.org/>`_.
-
-
 Development Status: beta
 ------------------------
 
-Currently *xml4h* includes adapter implementations for all three of the main
-XML processing Python libraries.
+Currently *xml4h* includes adapter implementations for three of the main XML
+processing Python libraries.
 
 If you have *lxml* available (highly recommended) it will use that, otherwise
 it will fall back to use the *(c)ElementTree* then the *minidom* libraries.
 
 
+
 History
 -------
+
+1.0
+...
+
+- Add support for Python 3 (3.5+)
+- Dropped support for Python versions before 2.7.
+- Fix node namespace prefix values for lxml adapter.
+- Improve builder's ``up()`` method to accept and distinguish between a count
+  of parents to step up, or the name of a target ancestor node.
+- Add ``xml()`` and ``xml_doc()`` methods to document builder to more easily
+  get string content from it, without resorting to the write methods.
+- The ``write()`` and ``write_doc()`` methods no longer send output to
+  ``sys.stdout`` by default. The user must explicitly provide a target writer
+  object, and hopefully be more mindful of the need to set up encoding correctly
+  when providing a text stream object.
+- Handling of redundant Element namespace prefixes is now more consistent: we
+  always strip the prefix when the element has an `xmlns` attribute defining
+  the same namespace URI.
 
 0.2.0
 .....

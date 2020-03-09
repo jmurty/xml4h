@@ -3,24 +3,24 @@ Writer to serialize XML DOM documents or sections to text.
 """
 # This implementation is adapted (heavily) from the standard library method
 # xml.dom.minidom.writexml
-import sys
+import six
+
 import codecs
 
 from xml4h import exceptions
 
 
-def write_node(node, writer=None, encoding='utf-8', indent=0, newline='',
+def write_node(node, writer, encoding='utf-8', indent=0, newline='',
         omit_declaration=False, node_depth=0, quote_char='"'):
     """
     Serialize an *xml4h* DOM node and its descendants to text, writing
-    the output to a given *writer* or to stdout.
+    the output to the given *writer*.
 
     :param node: the DOM node whose content and descendants will
         be serialized.
     :type node: an :class:`xml4h.nodes.Node` or subclass
-    :param writer: an object such as a file or stream to which XML text
-        is sent. If *None* text is sent to :attr:`sys.stdout`.
-    :type writer: a file, stream, etc or None
+    :param writer: a file or stream to which XML text is written.
+    :type writer: a file, stream, etc
     :param string encoding: the character encoding for serialized text.
     :param indent: indentation prefix to apply to descendent nodes for
         pretty-printing. The value can take many forms:
@@ -91,19 +91,25 @@ def write_node(node, writer=None, encoding='utf-8', indent=0, newline='',
                 writer.write("]")
             writer.write(">")
         elif node.is_text:
-            writer.write(_sanitize_write_value(node.value))
+            writer.write(
+                _sanitize_write_value(node.value)
+            )
         elif node.is_cdata:
             if ']]>' in node.value:
                 raise ValueError("']]>' is not allowed in CDATA node value")
-            writer.write("<![CDATA[%s]]>" % node.value)
+            writer.write(
+                "<![CDATA[%s]]>" % node.value
+            )
         #elif node.is_entity_reference:  # TODO
         elif node.is_entity:
             writer.write(newline + indent * node_depth)
             writer.write("<!ENTITY ")
             if node.is_paremeter_entity:
                 writer.write('%% ')
-            writer.write("%s %s%s%s>"
-                % (node.name, quote_char, node.value, quote_char))
+            writer.write(
+                "%s %s%s%s>"
+                % (node.name, quote_char, node.value, quote_char)
+            )
         elif node.is_processing_instruction:
             writer.write(newline + indent * node_depth)
             writer.write("<?%s %s?>" % (node.target, node.data))
@@ -122,8 +128,12 @@ def write_node(node, writer=None, encoding='utf-8', indent=0, newline='',
                     % (quote_char, node.external_id, quote_char,
                     quote_char, node.uri, quote_char))
         elif node.is_attribute:
-            writer.write(" %s=%s" % (node.name, quote_char))
-            writer.write(_sanitize_write_value(node.value))
+            writer.write(
+                " %s=%s" % (node.name, quote_char)
+            )
+            writer.write(
+                _sanitize_write_value(node.value)
+            )
             writer.write(quote_char)
         elif node.is_element:
             # Only need a preceding newline if we're in a sub-element
@@ -168,14 +178,18 @@ def write_node(node, writer=None, encoding='utf-8', indent=0, newline='',
     elif newline is True:
         newline = '\n'
 
-    # We always need a writer, use stdout by default
-    if writer is None:
-        writer = sys.stdout
-
-    # Apply a text encoding if we have one
-    if encoding is None:
-        writer = writer
-    else:
+    # If we have a target encoding and are writing to a binary IO stream, wrap
+    # the writer with an encoding writer to produce the correct bytes.
+    # We detect binary IO streams by:
+    # - Python 3: the *absence* of the `encoding` attribute that is present on
+    #   `io.TextIOBase`-derived objects
+    # - Python 2: the *absence* of the `encode` attribute that is present on
+    #   `StringIO` objects
+    if (
+        encoding
+        and not hasattr(writer, 'encoding')
+        and not hasattr(writer, 'encode')
+    ):
         writer = codecs.getwriter(encoding)(writer)
 
     # Do the business...

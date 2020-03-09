@@ -5,6 +5,8 @@ Parser
 The *xml4h* parser is a simple wrapper around the parser provided by an
 underlying :ref:`XML library implementation <xml-lib-adapters>`.
 
+.. _parser-parse:
+
 Parse function
 --------------
 

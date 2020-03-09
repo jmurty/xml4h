@@ -1,8 +1,10 @@
 import abc
+import six
 
 from xml4h import nodes, exceptions
 
 
+@six.add_metaclass(abc.ABCMeta)
 class XmlImplAdapter(object):
     """
     Base class that defines how *xml4h* interacts with an underlying XML
@@ -14,7 +16,6 @@ class XmlImplAdapter(object):
     but mostly it sketches out the methods the real implementaiton subclasses
     must provide.
     """
-    __metaclass__ = abc.ABCMeta
 
     # List of extra features supported (or not) by an adapter implementation
     SUPPORTED_FEATURES = {
@@ -81,6 +82,11 @@ class XmlImplAdapter(object):
     @classmethod
     @abc.abstractmethod
     def parse_string(cls, xml_str, ignore_whitespace_text_nodes=True):
+        raise NotImplementedError("Implementation missing for %s" % cls)
+
+    @classmethod
+    @abc.abstractmethod
+    def parse_bytes(cls, xml_bytes, ignore_whitespace_text_nodes=True):
         raise NotImplementedError("Implementation missing for %s" % cls)
 
     @classmethod

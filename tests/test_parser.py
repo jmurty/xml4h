@@ -1,8 +1,6 @@
 # -*- coding: utf-8 -*-
-try:
-    import unittest2 as unittest
-except ImportError:
-    import unittest
+import six
+import unittest
 import os
 import re
 
@@ -86,8 +84,11 @@ class BaseParserTest(object):
 
     def test_roundtrip(self):
         orig_xml = open(self.small_xml_file_path).read()
-        doc = self.parse(self.small_xml_file_path)
-        roundtrip_xml = doc.xml_doc()
+        # We discard semantically unnecessary namespace prefixes on
+        # element names.
+        orig_xml = re.sub(
+            '<myns:NSCustomWithPrefixExplicit xmlns="urn:custom"/>',
+            '<NSCustomWithPrefixExplicit xmlns="urn:custom"/>', orig_xml)
         if self.adapter == xml4h.LXMLAdapter:
             # lxml parser does not make it possible to retain semantically
             # unnecessary 'xmlns' namespace definitions in all elements.
@@ -95,21 +96,15 @@ class BaseParserTest(object):
             orig_xml = re.sub(
                 '<NSDefaultExplicit xmlns="urn:default"/>',
                 '<NSDefaultExplicit/>', orig_xml)
-        elif self.adapter == xml4h.ElementTreeAdapter:
-            # ElementTreeAdapter avoids retaining semantically unnecessary
-            # namespace prefixes on element names. Ideally it could tell when
-            # such a prefix was present in the incoming XML and retain it then,
-            # but this isn't possible with the current ElementTree parser.
-            orig_xml = re.sub(
-                '<myns:NSCustomWithPrefixExplicit xmlns="urn:custom"/>',
-                '<NSCustomWithPrefixExplicit xmlns="urn:custom"/>', orig_xml)
-        self.assertEqual(orig_xml[:200], roundtrip_xml[:200])
+        doc = self.parse(self.small_xml_file_path)
+        roundtrip_xml = doc.xml_doc()
+        self.assertEqual(six.text_type(orig_xml), roundtrip_xml)
 
     def test_unicode(self):
         # NOTE lxml doesn't support unicode namespace URIs?
         doc = self.parse(self.unicode_xml_file_path)
         self.assertEqual(u'جذر', doc.root.name)
-        self.assertEqual(u'urn:default', doc.root.attributes[u'xmlns'])
+        self.assertEqual(u'urn:default', doc.root.attributes['xmlns'])
         self.assertEqual(u'urn:custom', doc.root.attributes[u'xmlns:důl'])
         self.assertEqual(5, len(doc.find(ns_uri=u'urn:default')))
         self.assertEqual(3, len(doc.find(ns_uri=u'urn:custom')))

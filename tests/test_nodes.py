@@ -102,55 +102,55 @@ class BaseTestNodes(object):
                 self.elem3_second, self.doc).ancestors[-1].is_document)
 
     def test_children_attribute(self):
-        self.assertEquals(self.elem1, self.xml4h_root.children[0].impl_node)
-        self.assertEquals([u'元素1', 'Element2', 'Element3', 'Element4'],
+        self.assertEqual(self.elem1, self.xml4h_root.children[0].impl_node)
+        self.assertEqual([u'元素1', 'Element2', 'Element3', 'Element4'],
             [n.name for n in self.xml4h_root.children])
-        self.assertEquals(['Element2'],
+        self.assertEqual(['Element2'],
             [n.name for n in self.xml4h_root.find_first('Element3').children])
 
     def test_children_nodelist_callable(self):
         """Use callable feature of children attribute's returned NodeList"""
-        self.assertEquals(self.elem1, self.xml4h_root.children()[0].impl_node)
-        self.assertEquals([u'元素1', 'Element2', 'Element3', 'Element4'],
+        self.assertEqual(self.elem1, self.xml4h_root.children()[0].impl_node)
+        self.assertEqual([u'元素1', 'Element2', 'Element3', 'Element4'],
             [n.name for n in self.xml4h_root.children()])
-        self.assertEquals(['Element2'],
+        self.assertEqual(['Element2'],
             [n.name for n in
                 self.xml4h_root.find_first('Element3').children()])
         # Filter children by name
-        self.assertEquals(['Element2'],
+        self.assertEqual(['Element2'],
             [n.name for n in self.xml4h_root.children(name='Element2')])
         # Filter children by local name
-        self.assertEquals(['Element2'],
+        self.assertEqual(['Element2'],
             [n.name for n in self.xml4h_root.children(local_name='Element2')])
         # Filter children by namespace
-        self.assertEquals(['Element3', 'Element4'],
+        self.assertEqual(['Element3', 'Element4'],
             [n.name for n in self.xml4h_root.children(ns_uri='urn:ns1')])
         # Filter by node type
-        self.assertEquals([],
+        self.assertEqual([],
             [n.name for n in self.xml4h_root.children(
                                   node_type=xml4h.nodes.Text)])
-        self.assertEquals([u'元素1', 'Element2', 'Element3', 'Element4'],
+        self.assertEqual([u'元素1', 'Element2', 'Element3', 'Element4'],
             [n.name for n in self.xml4h_root.children(
                                   node_type=xml4h.nodes.ELEMENT_NODE)])
-        self.assertEquals([u'元素1', 'Element2', 'Element3', 'Element4'],
+        self.assertEqual([u'元素1', 'Element2', 'Element3', 'Element4'],
             [n.name for n in self.xml4h_root.children(
                                   node_type=xml4h.nodes.Element)])
         # Filter by arbitrary function
         fn = lambda x: x.name[-1] in ('1', '3')
-        self.assertEquals([u'元素1', 'Element3'],
+        self.assertEqual([u'元素1', 'Element3'],
             [n.name for n in self.xml4h_root.children(filter_fn=fn)])
         # Return first result only via `first_only` flag
-        self.assertEquals('Element3',
+        self.assertEqual('Element3',
             self.xml4h_root.children(ns_uri='urn:ns1', first_only=True).name)
         self.assertEqual(None,
             self.xml4h_root.children(ns_uri='urn:wrong', first_only=True))
         # Return first result only via `first` attribute on children
-        self.assertEquals('Element3',
+        self.assertEqual('Element3',
             self.xml4h_root.children(ns_uri='urn:ns1').first.name)
         self.assertEqual(None,
             self.xml4h_root.children(ns_uri='urn:wrong').first)
         # Return first result only via `child` method
-        self.assertEquals('Element3',
+        self.assertEqual('Element3',
             self.xml4h_root.child(ns_uri='urn:ns1').name)
         self.assertEqual(None,
             self.xml4h_root.child(ns_uri='urn:wrong'))
@@ -551,7 +551,7 @@ class BaseTestNodes(object):
         try:
             self.xml4h_root.DoesNotExist
             self.fail('Expected AttributeError')
-        except AttributeError, e:
+        except AttributeError as e:
             self.assertEqual(
                 """<xml4h.nodes.Element: "DocRoot"> object"""
                 """ has no attribute 'DoesNotExist'""",
@@ -559,7 +559,7 @@ class BaseTestNodes(object):
         # Look up non-existent attribute by Python key name
         try:
             self.xml4h_root['not-an-attribute']
-        except KeyError, e:
+        except KeyError as e:
             self.assertEqual("'not-an-attribute'", str(e))
 
         # Look up child element by attribute
@@ -596,12 +596,12 @@ class BaseTestNodes(object):
         try:
             self.xml4h_root._leadingunderscore
             self.fail('Expected AttributeError')
-        except AttributeError, e:
+        except AttributeError as e:
             pass
         try:
             self.xml4h_root._leadingunderscore_
             self.fail('Expected AttributeError')
-        except AttributeError, e:
+        except AttributeError as e:
             pass
 
         # Look up an attribute by key name

@@ -1,3 +1,5 @@
+import six
+
 import xml4h
 
 # Make commonly-used classes and functions available in xml4h module
@@ -10,7 +12,7 @@ from xml4h.writer import write_node
 
 
 __title__ = 'xml4h'
-__version__ = '0.2.0'
+__version__ = '1.0rc0'
 
 
 # List of xml4h adapter classes, in order of preference
@@ -38,15 +40,17 @@ unless overridden by passing a specific adapter class.
 """
 
 
-def parse(to_parse, ignore_whitespace_text_nodes=True, adapter=None):
+def parse(
+    to_parse, ignore_whitespace_text_nodes=True, adapter=None
+):
     """
     Parse an XML document into an *xml4h*-wrapped DOM representation
     using an underlying XML library implementation.
 
-    :param to_parse: an XML document file, document string, or the
-        path to an XML file. If a string value is given that contains
+    :param to_parse: an XML document file, document bytes, or the
+        path to an XML file. If a bytes value is given that contains
         a ``<`` character it is treated as literal XML data, otherwise
-        a string value is treated as a file path.
+        a bytes value is treated as a file path.
     :type to_parse: a file-like object or string
     :param bool ignore_whitespace_text_nodes: if ``True`` pure whitespace
         nodes are stripped from the parsed document, since these are
@@ -64,7 +68,9 @@ def parse(to_parse, ignore_whitespace_text_nodes=True, adapter=None):
     """
     if adapter is None:
         adapter = best_adapter
-    if isinstance(to_parse, basestring) and '<' in to_parse:
+    if isinstance(to_parse, six.binary_type) and b'<' in to_parse:
+        return adapter.parse_bytes(to_parse, ignore_whitespace_text_nodes)
+    elif isinstance(to_parse, six.string_types) and '<' in to_parse:
         return adapter.parse_string(to_parse, ignore_whitespace_text_nodes)
     else:
         return adapter.parse_file(to_parse, ignore_whitespace_text_nodes)
@@ -93,7 +99,7 @@ def build(tagname_or_element, ns_uri=None, adapter=None):
     """
     if adapter is None:
         adapter = best_adapter
-    if isinstance(tagname_or_element, basestring):
+    if isinstance(tagname_or_element, six.string_types):
         doc = adapter.create_document(
             tagname_or_element, ns_uri=ns_uri)
         element = doc.root
@@ -101,5 +107,5 @@ def build(tagname_or_element, ns_uri=None, adapter=None):
         element = tagname_or_element
     else:
         raise xml4h.exceptions.IncorrectArgumentTypeException(
-            tagname_or_element, [basestring, xml4h.nodes.Element])
+            tagname_or_element, [str, xml4h.nodes.Element])
     return Builder(element)

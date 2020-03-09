@@ -5,7 +5,7 @@ except ImportError:
     import unittest
 import functools
 import os
-from StringIO import StringIO
+import six
 
 import xml.dom
 
@@ -25,14 +25,21 @@ class TestBuilderMethods(unittest.TestCase):
     def test_builder_method_with_illegal_object(self):
         try:
             xml4h.build(123)
-        except Exception, ex:
+        except Exception as ex:
             self.assertEqual(
                 xml4h.exceptions.IncorrectArgumentTypeException,
                 ex.__class__)
-            self.assertEqual(
-                u"Argument 123 is not one of the expected types: "
-                u"[<type 'basestring'>, <class 'xml4h.nodes.Element'>]",
-                unicode(ex))
+            if six.PY3:
+                expected = (
+                    "Argument 123 is not one of the expected types: "
+                    "[<class 'str'>, <class 'xml4h.nodes.Element'>]"
+                )
+            else:
+                expected = (
+                    "Argument 123 is not one of the expected types: "
+                    "[<type 'str'>, <class 'xml4h.nodes.Element'>]"
+                )
+            self.assertEqual(expected, str(ex))
 
 
 class BaseBuilderNodesTest(object):
@@ -58,9 +65,7 @@ class BaseBuilderNodesTest(object):
                 .e('AndDeeper')
                 .e('DeeperStill'))
         # Check builder's current node is at deepest element
-        writer = StringIO()
-        xmlb.write(writer)
-        self.assertEqual('<DeeperStill/>', writer.getvalue())
+        self.assertEqual('<DeeperStill/>', xmlb.xml())
         # Check builder produces expected XML doc as string
         self.assertEqual(
             '<?xml version="1.0" encoding="utf-8"?>\n'
@@ -108,14 +113,14 @@ class BaseBuilderNodesTest(object):
 
         # Can navigate up to a given element tagname
         self.assertEqual('AndDeeper',
-            xmlb.up(to_name='AndDeeper').dom_element.name)
+            xmlb.up('AndDeeper').dom_element.name)
         self.assertEqual('Deeper',
-            xmlb.up(to_name='Deeper').dom_element.name)
+            xmlb.up('Deeper').dom_element.name)
         self.assertEqual('DocRoot',
-            xmlb.up(to_name='DocRoot').dom_element.name)
+            xmlb.up('DocRoot').dom_element.name)
         # ...but not past the root element if there is no such tagname
         self.assertEqual('DocRoot',
-            xmlb.up(to_name='NoSuchName').dom_element.name)
+            xmlb.up('NoSuchName').dom_element.name)
 
     def test_attributes(self):
         # Aliases
@@ -321,20 +326,16 @@ class BaseBuilderNodesTest(object):
             '<DocRoot xmlns="urn:default" xmlns:myns="urn:custom">\n'
             '    <NSDefaultImplicit/>\n'
             '    <NSDefaultExplicit xmlns="urn:default"/>\n'
-            '    <%sNSCustomExplicit xmlns="urn:custom"/>\n'
+            '    <NSCustomExplicit xmlns="urn:custom"/>\n'
             '    <myns:NSCustomWithPrefixImplicit/>\n'
-            '    <%sNSCustomWithPrefixExplicit xmlns="urn:custom"/>\n'
+            '    <NSCustomWithPrefixExplicit xmlns="urn:custom"/>\n'
             '    <Attrs1 default-ns-explicit="1"'
                        ' default-ns-implicit="1"/>\n'
             '    <Attrs2'
                        ' myns:custom-ns-prefix-explicit="1"'
                        ' myns:custom-ns-prefix-implicit="1"/>\n'
             '</DocRoot>\n'
-            % (self.adapter == xml4h.LXMLAdapter and 'myns:' or '',
-               self.adapter not in (
-                   xml4h.ElementTreeAdapter, xml4h.cElementTreeAdapter)
-                   and 'myns:' or ''))
-            # TODO: Any way to make lxml/ElementTree output more consistent?
+        )
         self.assertEqual(xml, xmlb.dom_element.xml_doc())
         # Test namespaces work as expected when searching/traversing DOM
         self.assertEqual(
@@ -510,8 +511,8 @@ class BaseBuilderNodesTest(object):
         ns_custom = u'urn:習俗'
         # NOTE lxml doesn't support unicode namespace URIs
         if self.adapter == xml4h.LXMLAdapter:
-            ns_default = 'urn:default'
-            ns_custom = 'urn:custom'
+            ns_default = u'urn:default'
+            ns_custom = u'urn:custom'
         xmlb = (
             self.my_builder(u'جذر', ns_uri=ns_default)
                 .ns_prefix(u'důl', ns_custom)
@@ -529,15 +530,16 @@ class BaseBuilderNodesTest(object):
             u'    <yếutố1 תכונה="1"/>\n'
             u'    <yếutố2 důl:עודתכונה="tvö"/>\n'
             u'</جذر>\n') % {'ns_default': ns_default, 'ns_custom': ns_custom}
-        self.assertEqual(xml.encode('utf-8'), xmlb.dom_element.xml_doc())
+        self.assertEqual(xml, xmlb.dom_element.xml_doc())
         doc = xmlb.document
         self.assertEqual(u'جذر', doc.root.name)
-        self.assertEqual(ns_default, doc.root.attributes[u'xmlns'])
+        self.assertEqual(ns_default, doc.root.attributes['xmlns'])
         self.assertEqual(ns_custom, doc.root.attributes[u'xmlns:důl'])
         self.assertEqual(3, len(doc.find(ns_uri=ns_default)))
         self.assertEqual(1, len(doc.find(ns_uri=ns_custom)))
-        self.assertEqual(u'1', doc.find_first(u'yếutố1').attributes[u'תכונה'])
-        self.assertEqual(u'tvö',
+        self.assertEqual('1', doc.find_first(u'yếutố1').attributes[u'תכונה'])
+        self.assertEqual(
+            u'tvö',
             doc.find_first(u'yếutố2').attributes[u'důl:עודתכונה'])
 
     def test_transplant_and_clone_xml4h_element(self):
@@ -732,9 +734,7 @@ class BaseBuilderNodesTest(object):
         example_file_path = os.path.join(
             os.path.dirname(__file__), 'data/monty_python_films.xml')
         expected_xml = open(example_file_path).read()
-        writer = StringIO()
-        b.write_doc(writer, indent=True)
-        self.assertEqual(expected_xml, writer.getvalue())
+        self.assertEqual(expected_xml, b.xml_doc(indent=True))
 
 
 class TestXmlDomBuilder(BaseBuilderNodesTest, unittest.TestCase):

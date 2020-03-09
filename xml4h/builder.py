@@ -85,7 +85,7 @@ class Builder(object):
 
     def write(self, *args, **kwargs):
         """
-        Write XML text for the element represented by this builder.
+        Write XML bytes for the element represented by this builder.
 
         Delegates to :meth:`xml4h.nodes.Node.write`.
         """
@@ -93,41 +93,65 @@ class Builder(object):
 
     def write_doc(self, *args, **kwargs):
         """
-        Write XML text for the Document containing the element
+        Write XML bytes for the Document containing the element
         represented by this builder.
 
         Delegates to :meth:`xml4h.nodes.Node.write_doc`.
         """
         self.dom_element.write_doc(*args, **kwargs)
 
-    def up(self, count=1, to_name=None):
+    def xml(self, **kwargs):
+        """
+        :return: XML string for the element represented by this builder.
+
+        Delegates to :meth:`xml4h.nodes.Node.xml`.
+        """
+        return self.dom_element.xml(**kwargs)
+
+    def xml_doc(self, **kwargs):
+        """
+        :return: XML string for the Document containing the element represented
+                 by this builder.
+
+        Delegates to :meth:`xml4h.nodes.Node.xml_doc`.
+        """
+        return self.dom_element.xml_doc(**kwargs)
+
+    def up(self, count_or_element_name=1):
         """
         :return: a builder representing an ancestor of the current element,
                  by default the parent element.
 
-        :param count: return the n'th ancestor element; defaults to 1 which
-            means the immediate parent. If *count* is greater than the number
-            of number of ancestors return the document's root element.
-        :type count: integer >= 1 or None
-        :param to_name: return the nearest ancestor element with the matching
-            name, or the document's root element if there are no matching
-            elements. This argument trumps the ``count`` argument.
-        :type to_name: string or None
+        :param count_or_element_name:
+            when an integer, return the n'th ancestor element up to the
+            document's root element.
+            when a string, return the nearest ancestor element with that name,
+            or the document's root element if there are no matching ancestors.
+            Defaults to integer value 1 which means the immediate parent.
+        :type count_or_element_name: integer or string
         """
         elem = self._element
+        to_count = to_name = None
+        if isinstance(count_or_element_name, int):
+            to_count = count_or_element_name
+        else:
+            to_name = count_or_element_name
         up_count = 0
         while True:
             # Don't go up beyond the document root
             if elem.is_root or elem.parent is None:
                 break
+            # Go up to element's parent
             elem = elem.parent
-            if to_name is None:
-                up_count += 1
-                if up_count >= count:
-                    break
-            else:
+            # If we have a name to match and it matches, stop
+            if to_name:
                 if elem.name == to_name:
                     break
+                continue
+            # If we have a count to reach and have reached it, stop
+            up_count += 1
+            if up_count >= to_count:
+                break
         return Builder(elem)
 
     def transplant(self, node):
