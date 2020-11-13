@@ -10,6 +10,14 @@ except ImportError:
     pass
 
 
+permit_parse_unsafe_entities = False
+"""
+Permit parsing of documents that contain entities, which is forbidden by
+default for security because entity references can expose content of arbitrary
+local files. Set to True to re-enable parsing of entities.
+"""
+
+
 class LXMLAdapter(XmlImplAdapter):
     """
     Adapter to the `lxml <http://lxml.de>`_ XML library implementation.
@@ -30,7 +38,9 @@ class LXMLAdapter(XmlImplAdapter):
     @classmethod
     def parse_string(cls, xml_str, ignore_whitespace_text_nodes=True):
         impl_root_elem = etree.fromstring(xml_str)
-        wrapped_doc = LXMLAdapter.wrap_document(impl_root_elem.getroottree())
+        impl_doc = impl_root_elem.getroottree()
+        cls.maybe_raise_if_doc_has_entities(impl_doc)
+        wrapped_doc = LXMLAdapter.wrap_document(impl_doc)
         if ignore_whitespace_text_nodes:
             cls.ignore_whitespace_text_nodes(wrapped_doc)
         return wrapped_doc
@@ -42,10 +52,34 @@ class LXMLAdapter(XmlImplAdapter):
     @classmethod
     def parse_file(cls, xml_file, ignore_whitespace_text_nodes=True):
         impl_doc = etree.parse(xml_file)
+        cls.maybe_raise_if_doc_has_entities(impl_doc)
         wrapped_doc = LXMLAdapter.wrap_document(impl_doc)
         if ignore_whitespace_text_nodes:
             cls.ignore_whitespace_text_nodes(wrapped_doc)
         return wrapped_doc
+
+    @classmethod
+    def maybe_raise_if_doc_has_entities(cls, impl_doc):
+        # No need to check of unsafe entities are permitted
+        if permit_parse_unsafe_entities:
+            return
+        # This entity checking is a highly simplified copy of code from
+        # defusedxml's `lxml.check_docinfo()` at
+        # https://github.com/tiran/defusedxml/blob/d46e04f/defusedxml/lxml.py
+        docinfo = impl_doc.docinfo
+        if docinfo:
+            for dtd in (docinfo.internalDTD, docinfo.externalDTD):
+                if not dtd:
+                    continue
+                entities = list(dtd.iterentities())
+                if entities:
+                    raise exceptions.Xml4hException(
+                        "Parsed document contains entities which are forbidden"
+                        " by default for security, they can expose local file"
+                        " content. To re-enable parsing of entities set:"
+                        " xml4h.impls.lxml_etree"
+                        ".permit_parse_unsafe_entities=True"
+                    )
 
     @classmethod
     def new_impl_document(cls, root_tagname, ns_uri=None, **kwargs):

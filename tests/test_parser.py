@@ -5,6 +5,7 @@ import os
 import re
 
 import xml4h
+from xml4h.exceptions import Xml4hException
 
 
 class TestParserBasics(unittest.TestCase):
@@ -117,17 +118,6 @@ class BaseParserTest(object):
         self.assertEqual(u'tvö',
             doc.find_first(u'yếutố2').attributes[u'důl:עודתכונה'])
 
-    def test_secure_against_external_entity_reference(self):
-        # Create local file referenced by XML test doc
-        with open("/tmp/a-local-file.txt", "wt") as f:
-            f.write("Oh no!")
-        try:
-            doc = self.parse(self.local_file_entity_ref_xml_file_path)
-        except Exception:
-            pass  # Parse failures are better than leaking local file data
-        else:
-            self.assertIsNone(doc.userInfo.lastName.text)
-
 
 class TestXmlDomParser(unittest.TestCase, BaseParserTest):
 
@@ -143,6 +133,30 @@ class TestLXMLEtreeParser(unittest.TestCase, BaseParserTest):
         if not xml4h.LXMLAdapter.is_available():
             self.skipTest("lxml library is not installed")
         return xml4h.LXMLAdapter
+
+    def test_secure_by_default_against_external_entity_reference(self):
+        # Create local file referenced by XML test doc
+        with open("/tmp/a-local-file.txt", "wt") as f:
+            f.write("Oh no!")
+        try:
+            self.parse(self.local_file_entity_ref_xml_file_path)
+            self.fail("XML doc with an entity should have been rejected")
+        except Xml4hException:
+            # Impls that can parse entities refuse to do so by default
+            pass
+
+    def test_can_reenableexternal_insecure_entity_parsing(self):
+        # Create local file referenced by XML test doc
+        with open("/tmp/a-local-file.txt", "wt") as f:
+            f.write("Oh no!")
+        xml4h.impls.lxml_etree.permit_parse_unsafe_entities = True
+        try:
+            doc = self.parse(self.local_file_entity_ref_xml_file_path)
+            # Local file content leak!
+            self.assertEqual("Oh no!", doc.userInfo.lastName.text)
+        finally:
+            # Reset default flag
+            xml4h.impls.lxml_etree.permit_parse_unsafe_entities = False
 
 
 class TestElementTreeEtreeParser(unittest.TestCase, BaseParserTest):
