@@ -39,6 +39,11 @@ class BaseParserTest(object):
         return os.path.join(
             os.path.dirname(__file__), 'data/example_doc.unicode.xml')
 
+    @property
+    def local_file_entity_ref_xml_file_path(self):
+        return os.path.join(
+            os.path.dirname(__file__), 'data/local_file_entity_ref.xml')
+
     def parse(self, xml_str):
         return xml4h.parse(xml_str, adapter=self.adapter)
 
@@ -111,6 +116,17 @@ class BaseParserTest(object):
         self.assertEqual(u'1', doc.find_first(u'yếutố1').attributes[u'תכונה'])
         self.assertEqual(u'tvö',
             doc.find_first(u'yếutố2').attributes[u'důl:עודתכונה'])
+
+    def test_secure_against_external_entity_reference(self):
+        # Create local file referenced by XML test doc
+        with open("/tmp/a-local-file.txt", "wt") as f:
+            f.write("Oh no!")
+        try:
+            doc = self.parse(self.local_file_entity_ref_xml_file_path)
+        except Exception:
+            pass  # Parse failures are better than leaking local file data
+        else:
+            self.assertIsNone(doc.userInfo.lastName.text)
 
 
 class TestXmlDomParser(unittest.TestCase, BaseParserTest):
